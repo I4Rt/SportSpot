@@ -1,5 +1,4 @@
 from config import *
-from model.User import *
 from controllers import mainController
 
 

@@ -1,8 +1,8 @@
 from flask import render_template, flash, redirect, url_for, make_response
 from config import *
 from tools.jwtHolder import *
-from model.TestTable import *
-from model.User import *
+from model.data.TestTable import *
+from model.system.User import *
 from flask_jwt_extended import *
 import json
 
