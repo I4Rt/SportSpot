@@ -6,8 +6,10 @@ from model.User import *
 from flask_jwt_extended import *
 import json
 
+
+
 @cross_origin()
-@jwt_required()
+@jwt_required
 @app.route('/', methods=['GET'])
 def main():
     print(verify_jwt_in_request())
@@ -20,7 +22,7 @@ def main():
 @app.route('/test', methods=['get', 'post'])
 def test():
     print(request.json)
-    return {'status': 'ok'}
+    return {'answer': 'ok'}
 
 @cross_origin()
 @app.route('/authorize', methods=['get', 'post',])
@@ -39,7 +41,19 @@ def authorize():
                 'refresh_token': refresh_token
             }
     return {'answer': 'not valid data'}
+
+
+@cross_origin
+@app.route("/refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def refresh():
+    identity = get_jwt_identity()
+    if identity:
+        access_token = create_access_token(identity=identity)
+        return {'access_token': access_token}
+    return {"answer": "your token is too old or not valid"}
     
+        
 @cross_origin()
 @app.route('/getTestData', methods=['get', 'post',])
 def getTestData():
