@@ -7,4 +7,5 @@ class SectorType(db.Model):
     name = db.Column(db.String(150), unique=False)
     
     def __init__(self, name:str):
+        super.__init__(self)
         self.name = name

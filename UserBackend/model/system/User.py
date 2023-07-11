@@ -1,13 +1,11 @@
 from __future__ import annotations
 from config import *
 from typing import List
-
-class User(db.Model):
+from model.data.BaseData import *
+class User(db.Model, BaseData):
     
     
     
-    
-    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), unique=False)
     surname = db.Column(db.String(150), unique=False)
     login = db.Column(db.String(30), unique=True)
@@ -23,6 +21,8 @@ class User(db.Model):
         self.login = login
         self.password = password
         self.role = role
+        db.Model.__init__(self)
+        BaseData.__init__(self, self.id)
         
     def access(self, route):
         USER = ['main']
