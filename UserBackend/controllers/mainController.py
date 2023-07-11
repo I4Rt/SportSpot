@@ -1,10 +1,23 @@
 from flask import render_template, flash, redirect, url_for, make_response
 from config import *
 from tools.jwtHolder import *
-from model.TestTable import *
-from model.User import *
+from model.data.TestTable import *
+from model.system.User import *
 from flask_jwt_extended import *
 import json
+
+from model.data.Sector import Sector
+from model.data.Camera import Camera 
+from model.data.Room import Room
+from model.data.types.RoomType import RoomType
+from model.data.types.SectorType import SectorType
+
+from system.DataHodler import *
+from random import randint
+
+DataHolder.getInstance().setParam("cameraNumber", 60)
+DataHolder.getInstance().setParam("roomNumber", 15)
+
 
 
 
@@ -57,10 +70,39 @@ def refresh():
 @cross_origin()
 @app.route('/getTestData', methods=['get', 'post',])
 def getTestData():
-    testData = TestTable.getAll()
+    testData = Camera.getAll()
     result = {"data": []}
     for data in testData:
-        result["data"].append(data.getJson())
+        result["data"].append(data.getParamsList())
+    resp = make_response(result)
+    resp.headers['Content-Type'] = "application/json"
+    return resp
+
+
+@app.route('/testSave', methods=['get', 'post'])
+def testSave():
+    obj = Camera('Вторая камера')
+    obj.save()
+    return make_response("ok")
+
+@app.route('/example', methods=['get', 'post'])
+def dbWorkExample():
+    room = Room(f'Помещение {DataHolder.getInstance().getParam("roomNumber")}', randint(0,3))
+    room.save()
+    for i in range(randint(1, 3)):
+        cam = Camera(f'камера {DataHolder.getInstance().getParam("cameraNumber")}')
+        cam.save()
+        for j in range(randint(1, 5)):
+            sec = Sector(f'Сектор {DataHolder.getInstance().getParam("cameraNumber")}-{j}', randint(1, 2), cam.id, room.id)
+            sec.save()
+        DataHolder.getInstance().setParam("cameraNumber", DataHolder.getInstance().getParam("cameraNumber") + 1)  
+    DataHolder.getInstance().setParam("roomNumber", DataHolder.getInstance().getParam("roomNumber") + 1)
+    
+    result = {'room': room.getParamsList(), 'cameras': [], }
+    for camera in room.getCameras():
+        result['cameras'].append({'data':camera.getParamsList(), 'sectors': []})
+        for sector in camera.getSectors():
+            result['cameras'][-1]['sectors'].append(sector.getParamsList())
     resp = make_response(result)
     resp.headers['Content-Type'] = "application/json"
     return resp
