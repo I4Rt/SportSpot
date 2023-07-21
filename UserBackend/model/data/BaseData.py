@@ -17,8 +17,11 @@ class BaseData(Jsonifyer):
    
     @classmethod 
     def getAll(cls) -> List:
-        print(cls)
         return cls.query.all()
+    
+    @classmethod 
+    def getByID(cls, searchId:int) -> object:
+        return cls.query.filter_by(id=searchId).first()
     
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} {self.getParamsList()}>"

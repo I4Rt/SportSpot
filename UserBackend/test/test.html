@@ -4,18 +4,81 @@
       test
     </title>
   </head>
+  
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+
+  <style>
+    .list{
+      display: flex;
+      flex-direction: column;
+      width: 300px;
+    }
+    .camera, .sector{
+      width:  100%;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items:center;
+      padding:  0px;
+      margin: 0px;
+    }
+    .camera{
+      flex-direction: column;
+    }
+    .camName{
+      width:  100%;
+      background-color: rgb(104, 104, 104);
+      padding:  0px;
+      margin: 0px;
+    }
+    .sectorName{
+      max-width: 80%;
+      overflow: hidden;
+    }
+    .sectorButton{
+      width: 30px;
+      height: 30px;
+      background-color: rgb(16, 60, 45);
+    }
+  </style>
+  <main>
+    <div class="list">
+    </div> 
+
+  </main>
   <script>
-    fetch('http://192.168.43.243:5000/authorize', {
-      method: 'POST',
+    
+    
+
+    function setList(data){
+      for (var i = 0; i < data["camerasList"].length; i++){
+        let camera = data["camerasList"][i];
+        //console.log(camera)
+        $('.list').append(`<div class="camera" id="cam-${i}"><div class="camName">${camera["name"]}</div></div>`)
+        for(j = 0; j < camera["sectors"].length; j++){
+          sector = camera["sectors"][j]
+          //console.log(sector)
+          $(`#cam-${i}`).append(`<div class='sector' id ='sector-${i}-${j}'><div class='sectorName'>${sector["name"]}</div><div id ='del-${i}-${j}' class='sectorButton'>X</div></div>`)
+        }
+      }
+    }
+
+
+    let jwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6dHJ1ZSwiaWF0IjoxNjg4NTQ3ODI1LCJqdGkiOiIwZDQ1NzRhMC1lNTc0LTRiOGQtYWEzZS0xZjM3MTQyZjUwM2EiLCJ0eXBlIjoiYWNjZXNzIiwic3ViIjoxLCJuYmYiOjE2ODg1NDc4MjUsImV4cCI6MTY4ODU0ODcyNX0.NUUwZovyMJ9D8udfnErfT-gYexa4TLVgKMVKIGO9lgo'
+    fetch('http://127.0.0.1:5000/getCameraSectorsByRoomId?id=17', {
+      method: 'GET',
+      cors: 'no-cors',
       headers: {
-        'Content-Type': 'application/json;charset=utf-8'
-      },
-      body: JSON.stringify({'login': 'I4Rt', "password": 'Yahoo'})
+        'Content-Type': 'application/json;charset=utf-8',
+      }
     })
     .then(response => response.text())
-    .then((response) => {
-        console.log(response)
+    .then(text => {
+      setList(JSON.parse(text))
     })
     
+
   </script>
 </html>

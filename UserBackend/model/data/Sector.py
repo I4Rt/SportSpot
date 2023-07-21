@@ -61,6 +61,11 @@ class Sector(db.Model, BaseData):
         
     def getCamera(self):
         return modules.Camera.Camera.query.filter_by(id = self.camId)
+    
+    
+    def getSectorType(self):
+        if self.typeId != None:
+            return modules.types.SectorType.SectorType.getByID(self.typeId)
         
     def orderPointsOfMe(self):
         data = __class__.orderPoints(self.__points)

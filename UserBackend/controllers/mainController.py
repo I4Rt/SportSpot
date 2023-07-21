@@ -90,7 +90,12 @@ def dbWorkExample():
     room = Room(f'Помещение {DataHolder.getInstance().getParam("roomNumber")}', randint(0,3))
     room.save()
     for i in range(randint(1, 3)):
-        cam = Camera(f'камера {DataHolder.getInstance().getParam("cameraNumber")}')
+        cam = Camera(f'камера {DataHolder.getInstance().getParam("cameraNumber")}', 
+                     f'192.168.0.{DataHolder.getInstance().getParam("cameraNumber")}',
+                     5678,
+                     '.vmf8',
+                     'login',
+                     'password111')
         cam.save()
         for j in range(randint(1, 5)):
             sec = Sector(f'Сектор {DataHolder.getInstance().getParam("cameraNumber")}-{j}', randint(1, 2), cam.id, room.id)
@@ -104,5 +109,132 @@ def dbWorkExample():
         for sector in camera.getSectors():
             result['cameras'][-1]['sectors'].append(sector.getParamsList())
     resp = make_response(result)
+    resp.headers['Content-Type'] = "application/json"
+    return resp
+
+
+@cross_origin
+@jwt_required
+@app.route('/getCameras', methods=['get', 'post'])
+def getCameras():
+    data = []
+    cams = Camera.getAll()
+    for cam in cams:
+        data.append(cam.getParamsList())
+    resp = make_response(data)
+    resp.headers['Content-Type'] = "application/json"
+    return resp
+
+
+@cross_origin
+@jwt_required
+@app.route('/getCameraByID', methods=['get', 'post'])
+def getCameraByID():
+    try:
+        camera = Camera.getByID(request.args.get('id'))
+        data = camera.getParamsList()
+    except Exception:
+        data = {"answer": "No such ID"}
+    resp = make_response(data)
+    resp.headers['Content-Type'] = "application/json"
+    return resp
+
+@cross_origin
+@jwt_required
+@app.route('/getSectorsByCameraID', methods=['get', 'post'])
+def getSectorsByCameraID():
+    try:
+        objectiveData = Camera.getSectorsById(request.args.get('id'))
+        data = []
+        for obj in objectiveData:
+            params = obj.getParamsList()
+            params["points"] = obj.getPointList()
+            data.append(params)
+    except Exception: 
+        data = {"answer": "No such ID"}
+    resp = make_response(data)
+    resp.headers['Content-Type'] = "application/json"
+    return resp
+
+@jwt_required
+@app.route('/getSectorByID', methods=['get', 'post'])
+def getSectorByID():
+    try:
+        sector = Sector.getByID(request.args.get('id'))
+        data = sector.getParamsList()
+        data["points"] = sector.getPointList()
+        data["type"] = sector.getSectorType().getParamsList()
+    except Exception:
+        data = {"answer": "No such ID"}
+    resp = make_response(data)
+    resp.headers['Content-Type'] = "application/json"
+    return resp
+
+@cross_origin
+@jwt_required
+@app.route('/getSectorTypes', methods=['get', 'post'])
+def getSectorTypes():
+    objectiveData = SectorType.getAll()
+    data = []
+    for obj in objectiveData:
+        data.append(obj.getParamsList())
+    return data
+
+@cross_origin
+@jwt_required
+@app.route('/getRooms', methods=['get', 'post'])
+def getRooms():
+    objectiveData = Room.getAll()
+    data = []
+    for obj in objectiveData:
+        dataList = obj.getParamsList()
+        dataList['roomType'] = RoomType.getByID(dataList["classId"]).getParamsList()
+        data.append(dataList)
+    resp = make_response(data)
+    resp.headers['Content-Type'] = "application/json"
+    return resp
+@cross_origin
+@jwt_required
+@app.route('/getRoomByID', methods=['get', 'post'])
+def getRoomByID():
+    try:
+        room = Room.getByID(request.args.get('id'))
+        data = room.getParamsList()
+        data["sectors"] = []
+        for sector in room.getSectors():
+            sectorInfo = sector.getParamsList()
+            sectorInfo["points"] = sector.getPointList()
+            sectorInfo["type"] = sector.getSectorType().getParamsList()
+            data["sectors"].append(sectorInfo)
+    except Exception:
+        data = {"answer": "No such ID"}
+    resp = make_response(data)
+    resp.headers['Content-Type'] = "application/json"
+    return resp
+
+@cross_origin
+@app.route('/getCameraSectorsByRoomId', methods=['get', 'post'])
+def getCameraSectorsByRoomId():
+    
+    room = Room.getByID(request.args.get('id'))
+    if room != None:
+        data = room.getParamsList()
+        camerasObj = room.getCameras()
+        cameras = []
+        for cam in camerasObj:
+            curCamera = cam.getParamsList()
+            curCamera["sectors"] = []
+            cameras.append(curCamera)
+        for sector in room.getSectors():
+            sectorInfo = sector.getParamsList()
+            sectorInfo["points"] = sector.getPointList()
+            sectorInfo["sectorType"] = sector.getSectorType().getParamsList()["name"]
+            for cam in cameras:
+                if cam["id"] == sectorInfo["camId"]:
+                    cam["sectors"].append(sectorInfo)
+        data["camerasList"] = cameras
+    else:
+        data = {"answer": "No such room"}
+    resp = make_response(data)
     resp.headers['Content-Type'] = "application/json"
     return resp

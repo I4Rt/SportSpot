@@ -24,9 +24,13 @@ class Room(db.Model, BaseData):
     BAD CODE
     """ 
     def getCameras(self) -> List[modules.Camera.Camera]:
+        exist = []
         result = []
         for sector in modules.Sector.Sector.query.filter_by(roomId=self.id).all():
-            result.append(modules.Camera.Camera.query.filter_by(id=sector.camId).first())
+            camera = modules.Camera.Camera.query.filter_by(id=sector.camId).first()
+            if camera.id not in exist:
+                exist.append(camera.id)
+                result.append(camera)
         return result
     
     def getObjectClass(self):

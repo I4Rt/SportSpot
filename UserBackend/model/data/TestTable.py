@@ -14,7 +14,7 @@ class TestTable(db.Model, BaseData):
         self.data = data
         
     
-    def getParamsList(self) -> str:
+    def getParams(self) -> str:
         try:
             return {'type': 'testData', 'id': self.id, 'data':loads(self.data).encode('utf8')}
         except Exception:
