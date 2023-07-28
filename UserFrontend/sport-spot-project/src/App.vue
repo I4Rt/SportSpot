@@ -1,6 +1,7 @@
 <template>
 
   <!-- <search-page></search-page> -->
+
   <new-registation v-if="!autorization" @sendLogin="onLogin"></new-registation>
   
   <main-page v-else-if="autorization" @logout="showLoginPage"></main-page>
@@ -11,6 +12,7 @@
 
 <script>
 import NewRegistation from './components/NewRegistation.vue'
+
 import MainPage from './components/MainPage.vue';
 
 // import bootstrap from 'bootstrap'
@@ -23,6 +25,7 @@ export default {
   name: 'App',
   components: {
     // SearchPeople
+
     NewRegistation,
     MainPage
   },
@@ -43,6 +46,7 @@ export default {
     onLogin(data) {
       this.autorization = data
     }
+
   }
 }
 </script>

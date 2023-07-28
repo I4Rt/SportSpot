@@ -3,18 +3,18 @@ from tools.Jsonifyer import Jsonifyer
 from config import *
 from typing import List
 from json import *
-
-class TestTable(db.Model, Jsonifyer):
-    id = db.Column(db.Integer, primary_key=True)
+from model.data.BaseData import BaseData
+class TestTable(db.Model, BaseData):
     data = db.Column(db.Text, unique=False)
     
     def __init__(self, 
                  data:str = ''):
-        super.__init__(self)
+        db.Model.__init__(self)
+        BaseData.__init__(self, self.id)
         self.data = data
         
     
-    def getJson(self) -> str:
+    def getParams(self) -> str:
         try:
             return {'type': 'testData', 'id': self.id, 'data':loads(self.data).encode('utf8')}
         except Exception:
@@ -24,6 +24,5 @@ class TestTable(db.Model, Jsonifyer):
     def saveData(self, newData: object) -> None:
         self.data = dumps(newData).encode('utf8')
         
-    @staticmethod
-    def getAll() -> List[TestTable]:
-        return TestTable.query.all()
+    
+    
