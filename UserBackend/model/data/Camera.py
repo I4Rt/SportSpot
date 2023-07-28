@@ -30,6 +30,10 @@ class Camera(db.Model, BaseData):
     def getSectorsById(searchId):
         return modules.Sector.Sector.query.filter_by(camId=searchId).all()
         
-        
+    def dropSectors(self):
+        db.session.query(modules.Sector.Sector).filter(
+            modules.Sector.Sector.camId == self.id
+            ).delete()
+         
 
             

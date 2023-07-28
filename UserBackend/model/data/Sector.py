@@ -53,6 +53,10 @@ class Sector(db.Model, BaseData):
         poly = Polygon(border)
         return p.within(poly)
     
+    @staticmethod
+    def getUnusedSectors(id) -> List[Sector]:
+        return Sector.query.filter(Sector.roomId != id).all()
+    
     def getPointList(self):
         return json.loads(self.__points)
     

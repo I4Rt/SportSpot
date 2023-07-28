@@ -19,7 +19,9 @@ class Room(db.Model, BaseData):
     
     def getSectors(self) -> List[modules.Sector.Sector]:
         return modules.Sector.Sector.query.filter_by(roomId=self.id).all()
-       
+    
+    
+    
     """
     BAD CODE
     """ 
@@ -35,6 +37,11 @@ class Room(db.Model, BaseData):
     
     def getObjectClass(self):
        return modules.types.RoomType.RoomType.query.filter_by(id = self.classId)
+   
+    def dropSectors(self):
+        db.session.query(modules.Sector.Sector).filter(
+            modules.Sector.Sector.roomId == self.id
+            ).update({modules.Sector.Sector.roomId:None})
         
     
         

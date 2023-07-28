@@ -23,6 +23,18 @@ class BaseData(Jsonifyer):
     def getByID(cls, searchId:int) -> object:
         return cls.query.filter_by(id=searchId).first()
     
+    # do not work
+    # @classmethod 
+    # def deleteByID(cls, targetId:int) -> None:
+    #     print(f'deleting {cls.__name__} by id {targetId}')
+    #     cls.query.filter_by(id=targetId).delete()
+    
+    def delete(self):
+        print(f'deleting {self}')
+        db.session.delete(self)
+        db.session.commit()
+    
+    
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} {self.getParamsList()}>"
     
