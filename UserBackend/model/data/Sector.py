@@ -6,6 +6,7 @@ import  model.data as modules
 from shapely.geometry import Point, Polygon
 import numpy as np
 import math
+from sqlalchemy import or_
     
 
 class Sector(db.Model, BaseData):
@@ -55,7 +56,7 @@ class Sector(db.Model, BaseData):
     
     @staticmethod
     def getUnusedSectors(id) -> List[Sector]:
-        return Sector.query.filter(Sector.roomId != id).all()
+        return Sector.query.filter(or_(Sector.roomId != id, Sector.roomId == None)).all()
     
     def getPointList(self):
         return json.loads(self.__points)

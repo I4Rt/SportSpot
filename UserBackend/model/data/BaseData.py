@@ -16,11 +16,11 @@ class BaseData(Jsonifyer):
         db.session.commit()
    
     @classmethod 
-    def getAll(cls) -> List:
+    def getAll(cls) -> List[BaseData]:
         return cls.query.all()
     
     @classmethod 
-    def getByID(cls, searchId:int) -> object:
+    def getByID(cls, searchId:int) -> BaseData:
         return cls.query.filter_by(id=searchId).first()
     
     # do not work

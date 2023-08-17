@@ -1,9 +1,8 @@
-
 import inspect
 import json
 
 class Jsonifyer:
-    types = [int, str, float]
+    types = [int, str, float, type(None)]
     def getJson(self) -> str:
         result = json.dumps(self.getParamsList())
         return result
@@ -14,6 +13,5 @@ class Jsonifyer:
                 if not i[0].startswith('_'):
                     if not inspect.ismethod(i[1]):
                         if type(i[1]) in self.types:
-                            result[i[0]] = i[1] 
-        print(result)
+                            result[i[0]] = i[1]
         return result

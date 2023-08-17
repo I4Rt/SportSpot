@@ -11,6 +11,8 @@ from model.data.Camera import Camera
 from model.data.Room import Room
 from model.data.types.RoomType import RoomType
 from model.data.types.SectorType import SectorType
+import time
+from model.data.Task import Task
 
 from system.DataHodler import *
 from random import randint
@@ -212,18 +214,20 @@ def getUnusedCameraSectorsByRoomId():
         data = []
         for sec in unusedSectors:
             camera = Camera.query.filter_by(id=sec.camId).first()
-            if camera.id not in exist:
-                exist.append(camera.id)
-                camParams = camera.getParamsList()
-                camParams["sectors"] = []
-                data.append(camParams)
-            
-            sectorInfo = sec.getParamsList()
-            sectorInfo["points"] = sec.getPointList()
-            sectorInfo["sectorType"] = sec.getSectorType().getParamsList()["name"]
-            for cam in data:
-                if cam['id'] == sec.camId:
-                    cam["sectors"].append(sectorInfo)
+            if camera != None:
+                if camera.id not in exist:
+                    exist.append(camera.id)
+                    camParams = camera.getParamsList()
+                    camParams["sectors"] = []
+                    data.append(camParams)
+                sectorInfo = sec.getParamsList()
+                sectorInfo["points"] = sec.getPointList()
+                sectorInfo["sectorType"] = sec.getSectorType().getParamsList()["name"]
+                for cam in data:
+                    if cam['id'] == sec.camId:
+                        cam["sectors"].append(sectorInfo)
+            else:
+                sec.remove()
         resp = make_response({'camerasList': data})
     except Exception:
         resp = make_response({'Answer': data})
@@ -342,8 +346,46 @@ def setSector():
     return resp
 
 @cross_origin
+@app.route('/setTask', methods=['get', 'post'])
+def setTask():
+    code = 200
+    data = {'OperationStatus': 'Done'}
+    try:
+        id = request.json['id']
+        name = request.json['name']
+        comment = request.json['comment']
+        begin = request.json['begin']
+        end = request.json['end']
+        roomId = request.json['roomId']
+        targetCount = request.json['targetCount']
+        if points == None:
+            points = []
+        task = None
+        if id == None:
+            task = Task(begin, end, roomId, name, targetCount, comment)
+        else:
+            task = Task.getByID(id)
+            task.name = name
+            task.comment = comment
+            task.begin = begin
+            task.end = end
+            task.roomId = roomId
+            task.targetCount = targetCount
+        task.save()
+        data = task.getParamsList()
+    except Exception as e:
+        data = {"answer": e}
+        code = 500
+    resp = make_response(data)
+    resp.headers['Content-Type'] = "application/json"
+    resp.status_code = code
+    return resp
+
+
+@cross_origin
 @app.route('/setRoom', methods=['get', 'post'])
 def setRoom():
+    print(request.json)
     code = 200
     data = {'OperationStatus': 'Done'}
     try:
@@ -419,6 +461,21 @@ def removeRoom():
     resp.status_code = code
     return resp
 
+@cross_origin
+@app.route('/removeTask', methods=['get'])
+def removeTask():
+    code = 200
+    data = {'OperationStatus': 'Done'}
+    try:
+        task = Task.getByID(request.args.get('id'))
+        task.delete()
+    except Exception:
+        data = {"answer": 'No Such ID'}
+        code = 500
+    resp = make_response(data)
+    resp.headers['Content-Type'] = "application/json"
+    resp.status_code = code
+    return resp
 
 
 
@@ -502,20 +559,26 @@ def getUnusedTest():
 # cam stream
 stream = None
 stream = cv2.VideoCapture(0)
-def gen():
-    while True:
+def getFrame(stream):
+    i = 0
+    while i < 2:
+        i += 1
         success, image = stream.read()
         ret, jpeg = cv2.imencode('.jpg', image)
         frame = jpeg.tobytes()
         yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-    
+                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        time.sleep(2)
+    return 0
+
 @cross_origin
 @app.route('/videoStream')
 def video_feed():
     global stream
     stream = cv2.VideoCapture(0)
-    return Response(gen(),
+    data = getFrame(stream)
+    
+    return Response(data,
                     mimetype='multipart/x-mixed-replace; boundary=frame')
     
 @cross_origin
