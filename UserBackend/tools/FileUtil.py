@@ -25,7 +25,6 @@ class FileUtil:
 
 if __name__ == "__main__":
     cap = cv2.VideoCapture(0)
-
     _, img = cap.read()
     print(FileUtil.convertImageToBytes(img))
     
