@@ -316,6 +316,9 @@ def setSector():
         camId = request.json['camId']
         roomId = request.json['roomId']
         points = request.json['points']
+        if points == None:
+            points = []
+        
         
         sector = None
         if id == None:
