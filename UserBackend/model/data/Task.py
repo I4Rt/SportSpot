@@ -6,7 +6,7 @@ import  model.data as modules
 from model.data.Result import Result
 
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import or_, and_
 
 class Task(db.Model, BaseData):
@@ -72,7 +72,18 @@ class Task(db.Model, BaseData):
         
     @classmethod
     def getTasksByRoomId(cls, searchId) -> List[Task]:
-        cls.query.filter_by(roomId=searchId).all()
+        return cls.query.filter_by(roomId=searchId).all()
+        
+    @classmethod
+    def getTasksAtDay(cls, date) -> List[Task]:
+        
+        eTime = date + timedelta(days=1)
+        return db.session.query(Task).filter(
+            and_(
+                 date <= cls.begin, 
+                 eTime > cls.end,
+            ) 
+        ).all()
         
     @classmethod
     def getContainedTasksByRoomId(cls, selfId, roomId, bTime, eTime) -> List[Task]:
@@ -91,7 +102,6 @@ class Task(db.Model, BaseData):
         return result.getPeopleCount()
     
     def setCount(self, newCount):
-        
         result = self.__getResult()
         result.setPeopleCount(newCount)
         result.save()

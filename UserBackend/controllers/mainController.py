@@ -11,12 +11,20 @@ from model.data.Camera import Camera
 from model.data.Room import Room
 from model.data.types.RoomType import RoomType
 from model.data.types.SectorType import SectorType
-import time
 from model.data.Task import Task
+
+from system.streaming.Stream import Stream
+from system.streaming.StreamInterface import StreamInterface
+
+import time
+from datetime import datetime
+
 
 from system.DataHodler import *
 from random import randint
 import cv2
+
+
 
 DataHolder.getInstance().setParam("cameraNumber", 60)
 DataHolder.getInstance().setParam("roomNumber", 15)
@@ -158,6 +166,24 @@ def getRooms():
     resp = make_response(data)
     resp.headers['Content-Type'] = "application/json"
     return resp
+
+@cross_origin
+@jwt_required
+@app.route('/getTasks', methods=['get', 'post'])
+def getTasks():
+    try:
+        date = datetime.strptime(request.json['date'], '%m/%d/%y')
+    except Exception as e:
+        return make_response({'answer': str(e)})
+    objectiveData = Task.getTasksAtDay(date)
+    data = []
+    for obj in objectiveData:
+        dataList = obj.getParamsList()
+        dataList['statistics'] = obj.getCount()
+        data.append(dataList)
+    resp = make_response(data)
+    resp.headers['Content-Type'] = "application/json"
+    return resp
 @cross_origin
 @jwt_required
 @app.route('/getRoomByID', methods=['get', 'post'])
@@ -277,32 +303,34 @@ def removeSectorFromRoomLsit():
 def setCamera():
     code = 200
     data = {'OperationStatus': 'Done'}
-    try:
-        id = request.json['id']
-        name = request.json['name']
-        ip = request.json['ip']
-        chanel = request.json['chanel']
-        codec = request.json['codec']
-        login = request.json['login']
-        password = request.json['password']
-        
-        camera = None
-        if id == None:
-            camera = Camera(name,ip,chanel,codec,login,password)
-        else:
-            camera = Camera.getByID(id)
-            camera.name = name
-            camera.ip = ip
-            camera.chanel = chanel
-            camera.codec = codec
-            camera.login = login
-            camera.password = password
-        camera.save()
-        data = camera.getJson()
-    except Exception as e:
-        print(e)
-        data = {"answer": 'error'}
-        code = 500
+    # try:
+    id = request.json['id']
+    name = request.json['name']
+    ip = request.json['ip']
+    chanel = request.json['chanel']
+    codec = request.json['codec']
+    login = request.json['login']
+    password = request.json['password']
+    fullRoute = request.json['fullRoute']
+    
+    camera = None
+    if id == None:
+        camera = Camera(name,ip,chanel,codec,login,password, fullRoute)
+    else:
+        camera = Camera.getByID(id)
+        camera.name = name
+        camera.ip = ip
+        camera.chanel = chanel
+        camera.codec = codec
+        camera.login = login
+        camera.password = password
+        camera.fullRoute = fullRoute
+    camera.save()
+    data = camera.getJson()
+    # except Exception as e:
+    #     print(e)
+    #     data = {"answer": 'error'}
+    #     code = 500
     resp = make_response(data)
     resp.headers['Content-Type'] = "application/json"
     resp.status_code = code
@@ -354,12 +382,11 @@ def setTask():
         id = request.json['id']
         name = request.json['name']
         comment = request.json['comment']
-        begin = request.json['begin']
-        end = request.json['end']
+        begin = datetime.strptime(request.json['begin'], '%m/%d/%y %H:%M:%S')
+        end = datetime.strptime(request.json['end'], '%m/%d/%y %H:%M:%S')
         roomId = request.json['roomId']
         targetCount = request.json['targetCount']
-        if points == None:
-            points = []
+        
         task = None
         if id == None:
             task = Task(begin, end, roomId, name, targetCount, comment)
@@ -374,7 +401,7 @@ def setTask():
         task.save()
         data = task.getParamsList()
     except Exception as e:
-        data = {"answer": e}
+        data = {"answer": str(e)}
         code = 500
     resp = make_response(data)
     resp.headers['Content-Type'] = "application/json"
@@ -477,13 +504,6 @@ def removeTask():
     resp.status_code = code
     return resp
 
-
-
-
-
-
-
-
 # not ness
 @cross_origin()
 @jwt_required
@@ -495,29 +515,29 @@ def main():
     #print(user)
     return "OK"
 
-@cross_origin()
-@app.route('/test', methods=['get', 'post'])
-def test():
-    print(request.json)
-    return {'answer': 'ok'}
+# @cross_origin()
+# @app.route('/test', methods=['get', 'post'])
+# def test():
+#     print(request.json)
+#     return {'answer': 'ok'}
       
-@cross_origin()
-@app.route('/getTestData', methods=['get', 'post',])
-def getTestData():
-    testData = Camera.getAll()
-    result = {"data": []}
-    for data in testData:
-        result["data"].append(data.getParamsList())
-    resp = make_response(result)
-    resp.headers['Content-Type'] = "application/json"
-    return resp
+# @cross_origin()
+# @app.route('/getTestData', methods=['get', 'post',])
+# def getTestData():
+#     testData = Camera.getAll()
+#     result = {"data": []}
+#     for data in testData:
+#         result["data"].append(data.getParamsList())
+#     resp = make_response(result)
+#     resp.headers['Content-Type'] = "application/json"
+#     return resp
 
 
-@app.route('/testSave', methods=['get', 'post'])
-def testSave():
-    obj = Camera('Вторая камера')
-    obj.save()
-    return make_response("ok")
+# @app.route('/testSave', methods=['get', 'post'])
+# def testSave():
+#     obj = Camera('Вторая камера')
+#     obj.save()
+#     return make_response("ok")
 
 @app.route('/example', methods=['get', 'post'])
 def dbWorkExample():
@@ -557,33 +577,85 @@ def getUnusedTest():
     return resp
 
 # cam stream
-stream = None
-stream = cv2.VideoCapture(0)
-def getFrame(stream):
-    i = 0
-    while i < 2:
-        i += 1
-        success, image = stream.read()
-        ret, jpeg = cv2.imencode('.jpg', image)
-        frame = jpeg.tobytes()
-        yield (b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-        time.sleep(2)
-    return 0
+# stream = None
+# stream = cv2.VideoCapture(0)
+# def getFrame(stream):
+#     i = 0
+#     while True:
+#         i += 1
+#         success, image = stream.read()
+#         ret, jpeg = cv2.imencode('.jpg', image)
+#         frame = jpeg.tobytes()
+#         if i < 10:
+#             yield (b'--frame\r\n'
+#                     b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+#         else:
+#             yield (b'--frame\r\n'
+#                     b'Content-Type: image/jpeg\r\n\r\n'+ b'\r\n')
+#         time.sleep(0.2)
 
-@cross_origin
-@app.route('/videoStream')
-def video_feed():
-    global stream
-    stream = cv2.VideoCapture(0)
-    data = getFrame(stream)
+# @cross_origin
+# @app.route('/videoStream')
+# def video_feed():
+#     global stream
+#     stream = cv2.VideoCapture(0)
+#     data = getFrame(stream)
+#     print('i\'v been asked for photo')
+#     return Response(data,
+#                     mimetype='multipart/x-mixed-replace; boundary=frame')
     
-    return Response(data,
+# @cross_origin
+# @app.route('/stopVideo')
+# def stopVideo():
+#     stream.release()
+#     return make_response('OK')
+    
+
+ 
+# # cam = Camera('test', fullRoute='0')
+# # stream = Stream(cam, timeLimit = 20)
+    
+# # @cross_origin
+# # @app.route('/testVideo')
+# # def testVideo():
+# #     global stream
+# #     stream.init()
+# #     return Response(stream.getStream(),
+# #                     mimetype='multipart/x-mixed-replace; boundary=frame')
+    
+# # @cross_origin
+# # @app.route('/testRefreshVideo')
+# # def testRefreshVideo():
+# #     global stream
+# #     stream.resetTime()
+# #     return 'ok'
+
+
+# video stream branch
+@cross_origin
+@app.route('/getVideo')
+def getVideo():
+    try:
+        camId = request.args.get('camId')
+    except:
+        return make_response({'answer': 'Add camId param correctly'})
+    camera = Camera.getByID(camId)
+    if camera is None:
+        return make_response({'answer': 'No such id'})
+    
+    return Response(StreamInterface.getStream(camera),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
     
 @cross_origin
-@app.route('/stopVideo')
-def stopVideo():
-    stream.release()
-    return make_response('OK')
+@app.route('/refreshVideo')
+def refreshVideo():
+    try:
+        camId = request.args.get('camId')
+    except:
+        return make_response({'answer': 'Add camId param correctly'})
+    camera = Camera.getByID(camId)
+    if camera is None:
+        return make_response({'answer': 'No such id'})
+    return make_response({'answer': StreamInterface.refreshStream(camera)})
+    
     
