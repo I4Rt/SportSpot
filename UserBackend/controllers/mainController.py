@@ -13,9 +13,10 @@ from model.data.types.RoomType import RoomType
 from model.data.types.SectorType import SectorType
 from model.data.Task import Task
 
-# from system.streaming.Stream import Stream
-# from system.streaming.StreamInterface import StreamInterface
+from system.streaming.Stream import Stream
+from system.streaming.StreamInterface import StreamInterface
 
+import time
 from datetime import datetime
 
 
@@ -631,30 +632,30 @@ def getUnusedTest():
 
 
 # video stream branch
-# @cross_origin
-# @app.route('/getVideo')
-# def getVideo():
-#     try:
-#         camId = request.args.get('camId')
-#     except:
-#         return make_response({'answer': 'Add camId param correctly'})
-#     camera = Camera.getByID(camId)
-#     if camera is None:
-#         return make_response({'answer': 'No such id'})
+@cross_origin
+@app.route('/getVideo')
+def getVideo():
+    try:
+        camId = request.args.get('camId')
+    except:
+        return make_response({'answer': 'Add camId param correctly'})
+    camera = Camera.getByID(camId)
+    if camera is None:
+        return make_response({'answer': 'No such id'})
     
-#     return Response(StreamInterface.getStream(camera),
-#                     mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(StreamInterface.getStream(camera),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
     
-# @cross_origin
-# @app.route('/refreshVideo')
-# def refreshVideo():
-#     try:
-#         camId = request.args.get('camId')
-#     except:
-#         return make_response({'answer': 'Add camId param correctly'})
-#     camera = Camera.getByID(camId)
-#     if camera is None:
-#         return make_response({'answer': 'No such id'})
-#     return make_response({'answer': StreamInterface.refreshStream(camera)})
+@cross_origin
+@app.route('/refreshVideo')
+def refreshVideo():
+    try:
+        camId = request.args.get('camId')
+    except:
+        return make_response({'answer': 'Add camId param correctly'})
+    camera = Camera.getByID(camId)
+    if camera is None:
+        return make_response({'answer': 'No such id'})
+    return make_response({'answer': StreamInterface.refreshStream(camera)})
     
     
