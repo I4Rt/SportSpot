@@ -172,7 +172,7 @@ def getRooms():
 @app.route('/getTasks', methods=['get', 'post'])
 def getTasks():
     try:
-        date = datetime.strptime(request.json['date'], '%m/%d/%y')
+        date = datetime.strptime(request.json['date'], '%m/%d/%Y')
     except Exception as e:
         return make_response({'answer': str(e)})
     objectiveData = Task.getTasksAtDay(date)
@@ -382,8 +382,8 @@ def setTask():
         id = request.json['id']
         name = request.json['name']
         comment = request.json['comment']
-        begin = datetime.strptime(request.json['begin'], '%m/%d/%y %H:%M:%S')
-        end = datetime.strptime(request.json['end'], '%m/%d/%y %H:%M:%S')
+        begin = datetime.strptime(request.json['begin'], '%m/%d/%Y %H:%M:%S')
+        end = datetime.strptime(request.json['end'], '%m/%d/%Y %H:%M:%S')
         roomId = request.json['roomId']
         targetCount = request.json['targetCount']
         
