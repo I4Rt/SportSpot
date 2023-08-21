@@ -11,9 +11,10 @@ class Camera(db.Model, BaseData):
     codec = db.Column(db.String(150), unique=False)
     login = db.Column(db.String(150), unique=False)
     password = db.Column(db.String(150), unique=False)
+    fullRoute = db.Column(db.Text(), unique = True)
     # TODO: make the rest of the fields
     
-    def __init__(self, name:str, ip:str = None, chanel:int = None, codec:str = None, login:str = None, password:str = None):
+    def __init__(self, name:str, ip:str = None, chanel:int = None, codec:str = None, login:str = None, password:str = None, fullRoute: str | int | None= None):
         db.Model.__init__(self)
         BaseData.__init__(self, self.id)
         self.name = name
@@ -22,6 +23,7 @@ class Camera(db.Model, BaseData):
         self.codec = codec
         self.login = login
         self.password = password
+        self.fullRoute = fullRoute
         
         
     def getSectors(self):
@@ -36,4 +38,13 @@ class Camera(db.Model, BaseData):
             ).delete()
          
 
-            
+    def getRoute(self):
+        route = None
+        # Bad route
+        if self.fullRoute == None:
+            route = 'rtsp://' + self.login + ':' + self.password + '@'+self.ip + ':' + '2345' +'/'
+        else:
+            route = self.fullRoute
+            if route.isdigit():
+                route = int(self.fullRoute)
+        return route
