@@ -1,7 +1,5 @@
 <template>
-
 <div class="container login">
-
     <form @submit.prevent="checkForm">
         <div class="form-group">
             <label for="login">Login: </label>
@@ -14,7 +12,6 @@
                 Поле должно содержать минимум 5 символов
             </p>
         </div>
-
         <div class="form-group">
             <label for="password">Password: </label>
             <input type="password" v-model.trim="user.password" class="form-control"
@@ -25,7 +22,6 @@
              <p v-if="v$.user.password.$dirty && v$.user.password.minLength.$invalid" class="invalid-feedback">
                 Поле должно содержать минимум 5 символов
             </p>
-
         </div >
         <div class="row justify-content-around form-group">
             <button type="submit" class="btn btn-primary col-auto" >Войти</button>
@@ -39,7 +35,6 @@
 
 <script>
 import { useVuelidate } from '@vuelidate/core'
-
 import { required, minLength } from '@vuelidate/validators'
 
     export default{
@@ -54,12 +49,10 @@ import { required, minLength } from '@vuelidate/validators'
             return {
                 user: {
                     login: '',
-
                     password: '',
                 },
                 accessToken: '',
                 autorized: false
-
 
             }
         },
@@ -71,7 +64,6 @@ import { required, minLength } from '@vuelidate/validators'
         },
         methods: {
             checkForm() {
-
                this.v$.user.$touch()
                 if (!this.v$.user.$error) {
                     console.log('Валидация прошла успешно')
@@ -83,7 +75,6 @@ import { required, minLength } from '@vuelidate/validators'
 
             created() {
                 console.log('post request')
-
                     fetch('http://192.168.43.243:5000/authorize', {
                           method: 'POST',
                           headers: {
@@ -109,14 +100,12 @@ import { required, minLength } from '@vuelidate/validators'
                         .then((response) => {
                             console.log(response)
                         });
-
             }
         }
     }
 </script>
 
 <style>
-
 .login {
   max-width: 400px;
   margin: 0 auto;
@@ -126,7 +115,6 @@ import { required, minLength } from '@vuelidate/validators'
 .form-control {
   width: 400px;
 }
-
 .form-group {
     width: 400px;
 }

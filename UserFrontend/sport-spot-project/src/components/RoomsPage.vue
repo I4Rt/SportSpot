@@ -34,51 +34,67 @@
             </div>
             <div class="">
               <label> Класс помещения: </label>
-              <input class="input-field" type="text" v-model.trim="room.class"
-                     :class="v$.room.class.$error ? 'is-invalid' : ''">
-              <p v-if="v$.room.class.$dirty && v$.room.class.required.$invalid" class="invalid-feedback">
+              <input class="input-field" type="text" v-model.trim="room.classId"
+                     :class="v$.room.classId.$error ? 'is-invalid' : ''">
+              <p v-if="v$.room.classId.$dirty && v$.room.classId.required.$invalid" class="invalid-feedback">
                 Обязательное поле
               </p>
             </div>
             <div class="form-group" >
-              <button type="submit" class="btn btn-primary" >Сохранить</button>
+              <button type="submit" class="btn btn-success" >Сохранить</button>
             </div>
           </form>
+          <button
+              class="btn btn-primary"
+              @click="removeRoom(room.id); resetRoom()"
+              style="position: absolute; top: 0; right: 0; margin-right: 15px; margin-top: 116px">
+            Удалить
+          </button>
+
           <label style="font-weight: 700">Сектора</label>
           <div class="row" v-if="roomSelected">
             <div class="col-6">
               <label>Назначенные</label>
-              <table class="window">
-                <tr  v-for="(camera, index) in getCamerasByRoomID(room.id)" :key="index">
+              <table class="window linear-table">
+                <tr  v-for="(camera, index) in getUsedCameras" :key="index">
                   <td style="width: 200px" >
                     <span style="margin-left: 5px">{{ camera.name }}</span>
-                    <button class="hidden-button swipe-sector" @click="deleteCameraFromRoom(camera)">
-                      <img :src="require('../assets/icons/arrow-right.png')" alt="">
-                    </button>
-                    <button class="hidden-button show-close-sector">
-                      <img :src="require('../assets/icons/eye-closed.png')" alt="">
-                    </button>
+                    <table>
+                      <tr v-for="(sector, index) in camera.sectors" :key="index">
+                        <td>
+                          <span style="margin-left: 20px">{{ sector.name }}</span>
+                          <button class="hidden-button swipe-sector" @click="removeSectorFromRoom(sector)">
+                            <img :src="require('../assets/icons/arrow-right.png')" alt="">
+                          </button>
+                          <button class="hidden-button show-close-sector" @click="chooseSector(sector)">
+                            <img :src="require('../assets/icons/eye-closed.png')" alt="">
+                          </button>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
             </div>
             <div class="col-6">
               <label>Существующие</label>
-              <table class="window" >
-                <tr v-for="(camera, index) in getCamerasWithoutRoomID" :key="index">
+              <table class="window linear-table" >
+                <tr v-for="(camera, index) in getUnusedCameras" :key="index">
                   <td style="width: 200px" >
                     <span style="margin-left: 5px">{{ camera.name }}</span>
-                    <tr v-for="(sector, index) in camera.sectors" :key="index">
-                      <td>
-                        <span style="margin-left: 5px">{{ sector.name }}</span>
-                        <button class="hidden-button swipe-sector" @click="addCameraToRoom(camera)">
-                          <img :src="require('../assets/icons/arrow-left.png')" alt="">
-                        </button>
-                        <button class="hidden-button show-close-sector">
-                          <img :src="require('../assets/icons/eye-closed.png')" alt="">
-                        </button>
-                      </td>
-                    </tr>
+                    <table>
+                      <tr v-for="(sector, index) in camera.sectors" :key="index">
+                        <td>
+                          <span style="margin-left: 20px">{{ sector.name }}</span>
+                          <button class="hidden-button swipe-sector" @click="setSectorToRoom(sector)">
+                            <img :src="require('../assets/icons/arrow-left.png')" alt="">
+                          </button>
+                          <button class="hidden-button show-close-sector" @click="chooseSector(sector)">
+                            <img :src="require('../assets/icons/eye-closed.png')" alt="">
+                          </button>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
@@ -90,13 +106,15 @@
         <div class="col-5">
           <div class="col-12 window">
             <p>Изображение</p>
+            <!--            <img src="http://localhost:5000/videoStream" style="width: 100%">-->
+            <img :src="require('../assets/images/img1.png')" style="width: 100%" alt="img1">
             <p>Информация сектора</p>
-            <p>Сектор</p>
+            <p>Сектор {{sector.name}}</p>
             <span>Техническая информация:</span>
             <ul>
               <li>Границы:</li>
               <li>Высота от пола:</li>
-              <li>Тип сектора: <span v-if="roomSelected"></span></li>
+              <li>Тип сектора: <span v-if="sectorSelected">{{getSectorTypeByID(sector.typeId).name}}</span></li>
             </ul>
             <p>Справка:</p>
           </div>
@@ -123,65 +141,211 @@ export default {
   data(){
     return {
       room: {
-        id: -1,
-        camID: [],
+        id: null,
+        classId: null,
         name: '',
-        class: ''
+        sportObjectId: '',
+        roomType: {
+          id: null,
+          name: ''
+        }
       },
-      count: 0,
-      roomSelected: false
+      sector: {
+        camId: null,
+        id: null,
+        name: '',
+        points: [],
+        roomId: null,
+        typeId: null,
+      },
+      roomSelected: false,
+      sectorSelected: false
     }
   },
   validations: {
     room: {
       name: {required},
-      class: {required}
+      classId: {required}
     }
   },
   computed: {
     ...mapGetters([
         'getRooms',
         'getRoomByID',
-        'getCameras',
-        'getCamerasByRoomID',
-        'getCamerasWithoutRoomID',
-        'getRoomCount'
+        'getUsedCameras',
+        'getUnusedCameras',
+        'getSectorByID',
+        'getSectorTypeByID',
+        'getSectorTypes'
     ]),
+  },
+  mounted() {
+    if (this.getRooms.length === 0){
+      this.getRoomsFromDB()
+    }
+    if (this.getSectorTypes.length === 0){
+      this.getSectorTypesFromDB()
+    }
   },
   methods: {
     save() {
       this.v$.room.$touch()
       if (!this.v$.room.$error) {
         console.log('Валидация прошла успешно')
-        this.room.id = this.getRoomCount
-        this.addRoomCount(this.getRoomCount+1)
-        let roomCopy = Object.assign({}, this.room)
-        this.addRoom(roomCopy)
-        this.v$.room.$reset()
+        fetch('http://localhost:5000/setRoom', {
+          method: 'POST',
+          cors: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8',
+          },
+          body: JSON.stringify({
+            "classId": this.room.classId,
+            "name": this.room.name,
+            "id": null,
+          })
+          })
+            .then(response => response.json())
+            .then((response) => {
+              console.log(response)
+              this.room.id = response.id
+              this.$store.commit('setRooms', Object.assign({}, this.room))
+              this.v$.room.$reset()
+            });
       }
       else console.log('Валидация не прошла')
+    },
+    getSectorTypesFromDB() {
+      fetch(`http://localhost:5000/getSectorTypes`, {
+        method: 'GET',
+        cors: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8',
+        },
+      })
+          .then(response => response.json())
+          .then((response) => {
+            console.log('sectorTypes ')
+            this.$store.state.sectorTypes = response
+            console.log(this.$store.state.sectorTypes)
+          });
+    },
+    getUnusedCameraSectorsByRoomIdFromDB() {
+      fetch(`http://localhost:5000/getUnusedCameraSectorsByRoomId?roomId=${this.room.id}`, {
+        method: 'GET',
+        cors: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8',
+        },
+      })
+          .then(response => response.json())
+          .then((response) => {
+            console.log('unused rooms ')
+            console.log(response)
+            this.$store.state.unusedCameras = response
+            console.log(this.getUnusedCameras)
+          });
+    },
+    getUsedCameraSectorsByRoomIdFromDB() {
+      fetch(`http://localhost:5000/getCameraSectorsByRoomId?roomId=${this.room.id}`, {
+        method: 'GET',
+        cors: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8',
+        },
+      })
+          .then(response => response.json())
+          .then((response) => {
+            console.log(response)
+            this.$store.state.usedCameras = response
+          });
+    },
+    getRoomsFromDB() {
+      fetch('http://localhost:5000/getRooms', {
+        method: 'GET',
+        cors: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8',
+        },
+      })
+          .then(response => response.json())
+          .then((response) => {
+            console.log(response)
+            this.$store.state.rooms = response
+          });
     },
     chooseRoom(room) {
       console.log(room.id)
       this.room = this.getRoomByID(room.id)
       this.roomSelected = true
+      this.reloadCameraSectors()
+      this.resetSector()
+    },
+    chooseSector(sector) {
+      console.log(sector)
+      console.log(sector.id)
+      this.sector = sector
+      this.sectorSelected = true
     },
     resetRoom(){
       let roomCopy = Object.assign({}, this.room)
       this.room = roomCopy
       this.room.name = ''
-      this.room.class = ''
+      this.room.classId = null
+      this.room.id = null
+      this.room.sportObjectId = ''
+      this.room.roomType = {
+        id: null,
+        name: ''
+      }
+      this.$store.state.unusedCameras = {}
+      this.$store.state.usedCameras = {}
+      this.resetSector()
     },
-    addCameraToRoom(camera){
-      console.log("camera-room-id" + camera.roomID)
-      camera.roomID = this.room.id
+    resetSector() {
+      this.sector.camId = null
+      this.sector.id = null
+      this.sector.name = ''
+      this.sector.points = []
+      this.sector.roomId = null
+      this.sector.typeId = null
+      this.sectorSelected = false
     },
-    deleteCameraFromRoom(camera){
-      camera.roomID = -1
+    reloadCameraSectors() {
+      this.getUsedCameraSectorsByRoomIdFromDB()
+      this.getUnusedCameraSectorsByRoomIdFromDB()
+    },
+    setSectorToRoom(sector){
+      fetch(`http://localhost:5000/setSectorToRoom?sectorId=${sector.id}&roomId=${this.room.id}`, {
+        method: 'GET',
+        cors: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8',
+        },
+      })
+          .then(response => response.json())
+          .then((response) => {
+            console.log(response)
+            this.reloadCameraSectors()
+          });
+    },
+    removeSectorFromRoom(sector){
+      fetch(`http://localhost:5000/removeSectorFromRoomLsit?sectorId=${sector.id}&roomId=${this.room.id}`, {
+        method: 'GET',
+        cors: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8',
+        },
+      })
+          .then(response => response.json())
+          .then((response) => {
+            console.log(response)
+            this.reloadCameraSectors()
+            // sector.roomId = 0 // испрааить позже
+          });
     },
     ...mapActions([
         'addRoom',
-        'addRoomCount'
+        'removeRoom'
     ])
   }
 }
@@ -215,15 +379,15 @@ export default {
   width: 25px;
   /*vertical-align: center;*/
 }
+.hidden-button:hover{
+  background-color: #dadada;
+  cursor: pointer;
+}
 .window{
   box-shadow: 0 3px 4px rgba(0,0,0,.25);
   border-radius: 10px ;
 }
 .camera:hover{
-  background-color: #dadada;
-  cursor: pointer;
-}
-.hidden-button:hover{
   background-color: #dadada;
   cursor: pointer;
 }
@@ -247,8 +411,9 @@ export default {
   border-radius: 5px ;
   border: 1px solid grey;
 }
-tr:nth-child(even) {
-  background: #dfe0ff;
+.linear-table{
+  background: linear-gradient(#dfe0ff 50%, #ffffff 50%);
+  background-size: 100% 52px;
 }
 
 </style>
