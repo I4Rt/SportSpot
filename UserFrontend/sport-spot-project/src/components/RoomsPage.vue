@@ -50,6 +50,7 @@
               style="position: absolute; top: 0; right: 0; margin-right: 15px; margin-top: 116px">
             Удалить
           </button>
+
           <label style="font-weight: 700">Сектора</label>
           <div class="row" v-if="roomSelected">
             <div class="col-6">
@@ -258,7 +259,6 @@ export default {
             this.$store.state.usedCameras = response
           });
     },
-
     getRoomsFromDB() {
       fetch('http://localhost:5000/getRooms', {
         method: 'GET',

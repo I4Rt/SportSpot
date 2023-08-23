@@ -88,6 +88,7 @@
           <label style="font-weight: 700">Сектора</label>
 
           <button style="position: absolute; right: 0; margin-right: 30px" @click="addSectorToCamera">Добавить</button>
+          <div v-if="getSectors.length === 0" id="preloaded" class="hidden"></div>
           <div class="" v-for="(cameraSector, index) in getSectorsByCameraID(this.camera.id)" :key="index">
             <input class="input-field-sector" type="text" v-model.trim="cameraSector.name" placeholder="Название">
             <select v-model="cameraSector.typeId">
@@ -108,16 +109,21 @@
         <div class="col-5">
           <div class="col-12 window">
             <p>Изображение</p>
+            <div style="width: 300px; height: 300px">
+<!--              :src="require('')"-->
+              <img id="putImage" :src="require('../' + imgPath)"  style="width: 100%; height: 100%"  alt="img1">
+              <canvas
+                  @click="drawLine($event.clientX, $event.clientY)"
+                  id="canvas"
+                  width="300" height="300"
+                  style="position: absolute; top: 0; left: 0; margin-top: 40px; margin-left: 14px"
+              >
+              </canvas>
+            </div>
 <!--            <img src="http://localhost:5000/videoStream" style="width: 100%">-->
-            <canvas
-                @click="drawLine($event.clientX, $event.clientY)"
-                id="canvas"
-                width="300" height="300">
-              <img id="putImage" :src="require('../assets/images/img1.png')" style="width: 150px; height: 150px" alt="img1">
-            </canvas>
             <br>
             <button @click="endDraw">Заполнить область</button>
-            <button @click="drawClear">Очистить всё</button>
+            <button @click="removeSectorPoints">Очистить всё</button>
             <p>Информация сектора</p>
             <p>Сектор {{sector.name}}</p>
             <span>Техническая информация:</span>
@@ -151,6 +157,7 @@ export default {
     return {
       ctx: null,
       drawClicks: 0,
+      imgPath: 'assets/images/background.png',
       camera: {
         id : null,
         roomID: null,
@@ -229,6 +236,9 @@ export default {
       })
           .then(response => response.json())
           .then((response) => {
+            console.log('preload')
+            // let preloaderEl = document.getElementById('preloaded')
+            // preloaderEl.classList.add('hidden');
             console.log('sectors ')
             console.log(response[0])
             this.$store.state.sectors = response
@@ -251,7 +261,7 @@ export default {
     },
     setSector(sector){
       console.log('sector ' + sector)
-      fetch('http://localhost:5000/setSector', {
+      let returnedSector = fetch('http://localhost:5000/setSector', {
         method: 'POST',
         cors: 'no-cors',
         headers: {
@@ -270,7 +280,9 @@ export default {
           .then((response) =>{
             console.log(response)
             sector.id = response.id
+            return sector
           })
+      return returnedSector
     },
     setCamera() {
       fetch('http://localhost:5000/setCamera', {
@@ -301,9 +313,7 @@ export default {
             console.log('noCheck')
             this.getSectors.forEach((sector) => {
               sector.camId = this.camera.id
-              // if (sector.id === null){
                 this.setSector(sector)
-              // }
             })
           });
     },
@@ -316,6 +326,8 @@ export default {
       else console.log('Валидация не прошла')
     },
     endDraw() {
+      this.ctx.lineTo(this.sector.points[0][0], this.sector.points[0][1])
+      this.ctx.stroke()
       this.ctx.fillStyle = "rgba(255, 230, 0, 0.25)"
       this.ctx.fill()
       this.drawClicks = 0
@@ -345,21 +357,28 @@ export default {
         console.log('getContext')
         this.ctx = canvas.getContext("2d")
         this.ctx.beginPath()
-        this.drawImage()
+        // this.drawImage()
       }
+    },
+    removeSectorPoints(){
+      this.ctx.clearRect(0, 0, 300, 300)
+      this.sector.points = []
+      // this.drawImage();
+      this.ctx.beginPath()
     },
     drawClear() {
       this.ctx.clearRect(0, 0, 300, 300)
       this.ctx.beginPath()
     },
     drawImage() {
-      let img = document.getElementById('putImage')
-      console.log(img)
-      this.ctx.drawImage(img, 0, 0, 779, 584, 0, 0, 300, 300)
+      this.imgPath='assets/images/img1.png'
+      // img
+      // console.log(img)
+      // this.ctx.drawImage(img, 0, 0, 779, 584, 0, 0, 300, 300)
     },
     drawSectorPoints() {
       console.log('drawSectorPoints')
-      this.drawImage()
+      // this.drawImage()
       let points = this.sector.points
       this.ctx.moveTo(points[0][0], points[0][1])
       this.ctx.arc(points[0][0], points[0][1], 2, 0, Math.PI * 2)
@@ -367,13 +386,16 @@ export default {
         this.ctx.lineTo(points[i][0], points[i][1])
         this.ctx.arc(points[i][0], points[i][1], 2, 0, Math.PI * 2)
       }
+      this.ctx.lineTo(points[0][0], points[0][1])
       this.ctx.strokeStyle = "rgba(255, 230, 0)"
       this.ctx.fillStyle = "rgba(255, 230, 0, 0.25)"
       this.ctx.lineWidth = 2
       this.ctx.stroke()
       this.ctx.fill()
+      //
     },
     chooseCamera(camera) {
+      this.drawImage()
       console.log(camera.id)
       this.camera = this.getCameraByID(camera.id)
       this.getSectorsByCameraIDFromDB()
@@ -381,15 +403,30 @@ export default {
       this.resetSector()
     },
     chooseSector(sector) {
-      if (sector.id !== this.sector.id){
+      if (this.sector.id === sector.id && sector.id !== null) {
+        console.log(this.sector.id + ' ' + sector.id + ' resetSec')
+        this.resetSector()
+      }
+      else if (sector.name === '' || sector.typeId === null) alert("Сначала введите название сектора и выберите его тип")
+      else if (sector.id === null) {
+        let p1 = this.setSector(sector)
+        p1.then(value => {
+          console.log(value.id)
+          this.showSector(value)
+        })
+      }
+      else this.showSector(sector)
+    },
+    showSector(sector) {
+      if (sector.id !== null) {
         this.sector = this.getSectorByID(sector.id)
         this.sectorSelected = true
-        if (this.sector.points.length !== 0) this.drawSectorPoints()
-        else this.drawClear()
+        this.drawClear()
         // this.drawImage()
+        if (this.sector.points.length !== 0) {
+          this.drawSectorPoints()
+        }
       }
-      else this.resetSector()
-      // this.drawClear()
     },
     resetCamera(){
       console.log('reset')
@@ -410,6 +447,7 @@ export default {
       this.drawClear()
     },
     resetSector() {
+      this.drawClear()
       let sectorCopy = Object.assign({}, this.sector)
       this.sector = sectorCopy
       this.sector.camId = null
@@ -438,6 +476,25 @@ export default {
 <style scoped>
 canvas {
   border: 1px solid black;
+  background: none;
+}
+#preloaded {
+  position: inherit;
+  left: 0;
+  top: 0;
+  z-index: 999;
+  width: 100%;
+  height: 30%;
+  overflow: visible;
+  background: #fbfbfb url('//cdnjs.cloudflare.com/ajax/libs/file-uploader/3.7.0/processing.gif') no-repeat center center;
+}
+.hidden{
+  visibility: hidden;
+  opacity: 0;
+}
+.visible{
+  visibility: visible;
+  opacity: 1;
 }
 .window{
   box-shadow: 0 3px 4px rgba(0,0,0,.25);

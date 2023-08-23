@@ -5,6 +5,7 @@ import { createStore } from 'vuex'
 export default createStore({
     state () {
         return {
+            tasks: [],
             cameras: [],
             rooms: [],
             sectors: [],
@@ -35,6 +36,9 @@ export default createStore({
         setSector (state, sector) {
             state.sectors.push(sector)
         },
+        setTask (state, task) {
+            state.rooms.push(task)
+        }
     },
     actions: {
         addCamera({commit}, newCamera) {
