@@ -1,4 +1,4 @@
-from flask import render_template, flash, redirect, url_for, make_response, Response
+from flask import jsonify, render_template, flash, redirect, url_for, make_response, Response
 from config import *
 from tools.jwtHolder import *
 from model.data.TestTable import *
@@ -16,24 +16,47 @@ from model.data.Task import Task
 from system.streaming.Stream import Stream
 from system.streaming.StreamInterface import StreamInterface
 
-import time
+# import time
 from datetime import datetime
 
 
 from system.DataHodler import *
 from random import randint
-import cv2
+# import cv2
 
 
 
 DataHolder.getInstance().setParam("cameraNumber", 60)
 DataHolder.getInstance().setParam("roomNumber", 15)
 
+@cross_origin
+@app.route('/register', methods=['get', 'post'])
+def register():
+    try:
+        name = request.json['name']
+        surname = request.json['surname']
+        login = request.json['login']
+        password = request.json['password']
+        
+    except Exception as e:
+        resp = make_response({'Answer': 'Invalid json'})
+        
+    passwordHash = bcrypt.generate_password_hash(password).decode('utf-8')
+    user = User(name, surname, login, passwordHash)
+    try:
+        user.save()
+        resp = make_response({'register': True})
+        resp.headers['Content-Type'] = "application/json"
+        return resp
+    except:
+        resp = make_response({'Answer': "Not identy login"})
+        resp.headers['Content-Type'] = "application/json"
+        return resp
+
 # auth
 @cross_origin()
 @app.route('/authorize', methods=['get', 'post',])
 def authorize():
-    #print(request.json)
     login = request.json['login']
     password = request.json['password']
     print(User.getByName(login))
@@ -42,22 +65,40 @@ def authorize():
         if bcrypt.check_password_hash(users[0].password, password):
             access_token = create_access_token(identity=users[0].id, fresh=True)
             refresh_token = create_refresh_token(users[0].id)
-            return {
-                'access_token': access_token,
-                'refresh_token': refresh_token
-            }
-    return {'answer': 'not valid data'}
+            resp = jsonify({'login': True})
+            set_access_cookies(resp, access_token)
+            set_refresh_cookies(resp, refresh_token)
+            return resp, 200
+    resp = jsonify({'login': False})
+    return resp, 200
 
-@cross_origin
+@cross_origin()
 @app.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
     identity = get_jwt_identity()
     if identity:
-        access_token = create_access_token(identity=identity)
-        return {'access_token': access_token}
-    return {"answer": "your token is too old or not valid"}
-    
+        access_token = create_access_token(identity=identity, fresh=True)
+        set_access_cookies(resp, access_token)
+        resp = jsonify({'refresh': True})
+        set_access_cookies(resp, access_token)
+        return resp, 200
+    return jsonify({'refresh': False}), 200
+
+@cross_origin()
+@app.route('/logout', methods=['POST'])
+def logout():
+    resp = jsonify({'logout': True})
+    unset_jwt_cookies(resp)
+    return resp, 200
+
+@cross_origin()
+@app.route('/testJWT', methods=['GET','POST'])
+@jwt_required()
+def testJWT():
+    identy = get_jwt_identity()
+    return jsonify({'hello': 'from {}'.format(identy)}), 200
+
     
 '''
 getCameras
@@ -184,6 +225,7 @@ def getTasks():
     resp = make_response(data)
     resp.headers['Content-Type'] = "application/json"
     return resp
+
 @cross_origin
 @jwt_required
 @app.route('/getRoomByID', methods=['get', 'post'])
@@ -239,9 +281,12 @@ def getUnusedCameraSectorsByRoomId():
         exist = []
         data = []
         for sec in unusedSectors:
-            camera = Camera.query.filter_by(id=sec.camId).first()
+            #print(sec)
+            camera = Camera.getByID(sec.camId)
             if camera != None:
+                #print("camera for sector is found")
                 if camera.id not in exist:
+                    # print(cam)
                     exist.append(camera.id)
                     camParams = camera.getParamsList()
                     camParams["sectors"] = []
@@ -249,9 +294,11 @@ def getUnusedCameraSectorsByRoomId():
                 sectorInfo = sec.getParamsList()
                 sectorInfo["points"] = sec.getPointList()
                 sectorInfo["sectorType"] = sec.getSectorType().getParamsList()["name"]
+                #print('Info: ' + str(sectorInfo))
                 for cam in data:
                     if cam['id'] == sec.camId:
                         cam["sectors"].append(sectorInfo)
+                #print(data)
             else:
                 sec.remove()
         resp = make_response({'camerasList': data})
@@ -303,34 +350,39 @@ def removeSectorFromRoomLsit():
 def setCamera():
     code = 200
     data = {'OperationStatus': 'Done'}
-    # try:
-    id = request.json['id']
-    name = request.json['name']
-    ip = request.json['ip']
-    chanel = request.json['chanel']
-    codec = request.json['codec']
-    login = request.json['login']
-    password = request.json['password']
-    fullRoute = request.json['fullRoute']
-    
+    try:
+        id = request.json['id']
+        name = request.json['name']
+        ip = request.json['ip']
+        port = request.json['port']
+        chanel = request.json['chanel']
+        codec = request.json['codec']
+        login = request.json['login']
+        password = request.json['password']
+        fullRoute = request.json['fullRoute']
+    except Exception as e:
+        return make_response({'answer': str(e)})
     camera = None
     if id == None:
-        camera = Camera(name,ip,chanel,codec,login,password, fullRoute)
+        camera = Camera(name,ip,port,chanel,codec,login,password, fullRoute)
     else:
         camera = Camera.getByID(id)
-        camera.name = name
-        camera.ip = ip
-        camera.chanel = chanel
-        camera.codec = codec
-        camera.login = login
-        camera.password = password
-        camera.fullRoute = fullRoute
-    camera.save()
+        if camera is not None:
+            camera.name = name
+            camera.ip = ip
+            camera.port = port
+            camera.chanel = chanel
+            camera.codec = codec
+            camera.login = login
+            camera.password = password
+            camera.fullRoute = fullRoute
+        else:
+            return make_response({'answer': 'No such id'})
+    try:
+        camera.save()
+    except Exception as e:
+        return make_response({'answer': 'Save error, check identy if values (full route may be)'})
     data = camera.getJson()
-    # except Exception as e:
-    #     print(e)
-    #     data = {"answer": 'error'}
-    #     code = 500
     resp = make_response(data)
     resp.headers['Content-Type'] = "application/json"
     resp.status_code = code
@@ -350,24 +402,26 @@ def setSector():
         points = request.json['points']
         if points == None:
             points = []
-        
-        
-        sector = None
-        if id == None:
-            sector = Sector(name,typeId,camId,roomId,points)
-        else:
-            sector = Sector.getByID(id)
+    except Exception as e:
+        return make_response({'answer': str(e)}) 
+    
+    sector = None
+    if id == None:
+        sector = Sector(name,typeId,camId,roomId,points)
+    else:
+        sector = Sector.getByID(id)
+        if sector is not None:
             sector.name = name
             sector.typeId = typeId
             sector.camId = camId
             sector.roomId = roomId
             sector.setPointList(points)
-        sector.save()
-        data = sector.getParamsList()
-        data["points"] = sector.getPointList()
-    except Exception as e:
-        data = {"answer": e}
-        code = 500
+        else:
+            return make_response({'answer': 'No such id'})
+    sector.save()
+    data = sector.getParamsList()
+    data["points"] = sector.getPointList()
+    
     resp = make_response(data)
     resp.headers['Content-Type'] = "application/json"
     resp.status_code = code
@@ -386,10 +440,11 @@ def setTask():
         end = datetime.strptime(request.json['end'], '%m/%d/%Y %H:%M:%S')
         roomId = request.json['roomId']
         targetCount = request.json['targetCount']
+        interval = request.json['targetCount']
         
         task = None
         if id == None:
-            task = Task(begin, end, roomId, name, targetCount, comment)
+            task = Task(begin, end, roomId, name, targetCount, comment, interval)
         else:
             task = Task.getByID(id)
             task.name = name
@@ -398,11 +453,13 @@ def setTask():
             task.end = end
             task.roomId = roomId
             task.targetCount = targetCount
+            if interval != None:
+                task.interval = interval
+        print(str(task.begin))
         task.save()
         data = task.getParamsList()
     except Exception as e:
-        data = {"answer": str(e)}
-        code = 500
+        return make_response({'answer': str(e)})
     resp = make_response(data)
     resp.headers['Content-Type'] = "application/json"
     resp.status_code = code
@@ -419,18 +476,22 @@ def setRoom():
         id = request.json['id']
         name = request.json['name']
         classId = request.json['classId']
-        room = None
-        if id == None:
-            room = Room(name,classId)
-        else:
-            room = Room.getByID(id)
+    except Exception as e:
+        return make_response({'answer': str(e)})
+    
+    room = None
+    if id == None:
+        room = Room(name,classId)
+    else:
+        room = Room.getByID(id)
+        if room is not None:
             room.name = name
             room.classId = classId
-        room.save()
-        data = room.getParamsList()
-    except Exception as e:
-        data = {"answer": e}
-        code = 500
+        else:
+            return make_response({'answer': 'No such id'})
+    room.save()
+    data = room.getParamsList()
+    
     resp = make_response(data)
     resp.headers['Content-Type'] = "application/json"
     resp.status_code = code
@@ -659,3 +720,9 @@ def refreshVideo():
     return make_response({'answer': StreamInterface.refreshStream(camera)})
     
     
+@cross_origin
+@app.route('/testTaskGetter')
+def testTaskGetter():
+    print(Task.getTasksToRun())
+    
+    return make_response({'answer': 'ok'})
