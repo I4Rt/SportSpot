@@ -52,18 +52,6 @@
     
     
 
-    function setList(data){
-      for (var i = 0; i < data["camerasList"].length; i++){
-        let camera = data["camerasList"][i];
-        //console.log(camera)
-        $('.list').append(`<div class="camera" id="cam-${i}"><div class="camName">${camera["name"]}</div></div>`)
-        for(j = 0; j < camera["sectors"].length; j++){
-          sector = camera["sectors"][j]
-          //console.log(sector)
-          $(`#cam-${i}`).append(`<div class='sector' id ='sector-${i}-${j}'><div class='sectorName'>${sector["name"]}</div><div id ='del-${i}-${j}' class='sectorButton'>X</div></div>`)
-        }
-      }
-    }
 
 
     let jwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6dHJ1ZSwiaWF0IjoxNjg4NTQ3ODI1LCJqdGkiOiIwZDQ1NzRhMC1lNTc0LTRiOGQtYWEzZS0xZjM3MTQyZjUwM2EiLCJ0eXBlIjoiYWNjZXNzIiwic3ViIjoxLCJuYmYiOjE2ODg1NDc4MjUsImV4cCI6MTY4ODU0ODcyNX0.NUUwZovyMJ9D8udfnErfT-gYexa4TLVgKMVKIGO9lgo'
@@ -74,11 +62,22 @@
       headers: {
         'Content-Type': 'application/json;charset=utf-8',
       },
-      body: JSON.stringify({"login": "uuu","password": "admin"})
+      body: JSON.stringify({"login": "login","password": "password"})
+    })
+    .then(response => response.text())
+    .then(text => {
+      fetch('http://127.0.0.1:5000/testJWT', {
+      method: 'POST',
+      credentials:"include",
+      cors: 'no-cors',
+      headers: {
+        'Content-Type': 'application/json;charset=utf-8',
+      },
     })
     .then(response => response.text())
     .then(text => {
       console.log(text)
+    })
     })
     
 

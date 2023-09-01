@@ -208,7 +208,7 @@ export default {
             .then((response) => {
               console.log(response)
               this.room.id = response.id
-              this.$store.commit('setRooms', Object.assign({}, this.room))
+              console.log(this.$store.commit('setRooms', Object.assign({}, this.room)))
               this.v$.room.$reset()
             });
       }

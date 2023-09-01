@@ -66,8 +66,8 @@ def authorize():
             access_token = create_access_token(identity=users[0].id, fresh=True)
             refresh_token = create_refresh_token(users[0].id)
             resp = jsonify({'login': True})
-            set_access_cookies(resp, access_token)
-            set_refresh_cookies(resp, refresh_token)
+            resp.set_cookie('access_token_cookie', access_token, secure=True,  samesite='None')
+            resp.set_cookie('refresh_token_cookie', refresh_token, secure=True, samesite='None')
             return resp, 200
     resp = jsonify({'login': False})
     return resp, 200
