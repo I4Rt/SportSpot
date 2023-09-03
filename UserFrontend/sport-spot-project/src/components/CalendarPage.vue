@@ -61,16 +61,16 @@
               Свободные
               <div class="row window camera col-12" @click="chooseRoom(room)" v-for="(room, index) in getRooms"
                    :key="index">
-                <span class="room-name">{{room.name}}</span>
+                <span class="name">{{room.name}}</span>
               </div>
             </div>
           </div>
           <div class="row" v-if="roomSelected">
             <div class="col-5">
               Расписание
-              <div class="window window-table">
+              <div class="window">
                 <table
-                    class="linear-table"
+                    class="linear-table window-table"
                     style="width: 100%"
                     @mousedown="onMousedown=true">
                   <tr
@@ -82,15 +82,15 @@
                       <td
                           :id="timesArray[2 * index]"
                           class="linear-table-td"
-                          @mouseenter = "paintTime(2 * index)"
-                          @mousedown = "indexSelected = 2 * index; onMousedown = true; paintTime(2 * index)">
+                          @mouseenter = "setIndices(2 * index)"
+                          @mousedown = "indexSelected = 2 * index; onMousedown = true; setIndices(2 * index)">
                         {{timesArray[2 * index]}}
                       </td>
                       <td
                           :id="timesArray[2 * index + 1]"
                           class="linear-table-td"
-                          @mouseenter="paintTime(2 * index + 1)"
-                          @mousedown = "indexSelected = 2 * index + 1; onMousedown = true; paintTime(2 * index + 1)">
+                          @mouseenter="setIndices(2 * index + 1)"
+                          @mousedown = "indexSelected = 2 * index + 1; onMousedown = true; setIndices(2 * index + 1)">
                         {{timesArray[2 * index + 1]}}
                       </td>
                     </template>
@@ -99,36 +99,74 @@
               </div>
             </div>
             <div class="col-7">
-              Мероприятие
+              <div class="grid-default">
+                Мероприятие
+                <button class="hidden-button content content-end" @click="resetTask">
+                  <img src="../assets/icons/add24.png" alt="">
+                </button>
+              </div>
               <form @submit.prevent="save" style="margin-top: 10px">
                 <div class="">
                   <label> Название: </label>
-                  <input class=" input-field" type="text" v-model.trim="task.name">
-<!--                  <p v-if="v$.camera.name.$dirty && v$.camera.name.required.$invalid" class="invalid-feedback">-->
-<!--                    Обязательное поле-->
-<!--                  </p>-->
+                  <input class=" input-field" type="text" v-model.trim="task.name"
+                         :class="v$.task.name.$error ? 'is-invalid' : ''">
+                  <p v-if="v$.task.name.$dirty && v$.task.name.required.$invalid " class="invalid-feedback">
+                    Обязательное поле
+                  </p>
                 </div>
                 <div class="">
                   <label> Количество участников: </label>
-                  <input class="input-field" type="text" v-model.trim="task.targetCount">
-<!--                  <p v-if="v$.camera.ip.$dirty && v$.camera.ip.required.$invalid" class="invalid-feedback">-->
-<!--                    Обязательное поле-->
-<!--                  </p>-->
+                  <input class="input-field" type="text" v-model.trim="task.targretCount"
+                         :class="v$.task.targretCount.$error ? 'is-invalid' : ''">
+                  <p v-if="v$.task.targretCount.$dirty && v$.task.targretCount.required.$invalid " class="invalid-feedback">
+                    Обязательное поле
+                  </p>
+                  <p v-if="v$.task.targretCount.$dirty && v$.task.targretCount.integer.$invalid " class="invalid-feedback">
+                    Значение должно быть числовым
+                  </p>
                 </div>
                 <div class="">
                   <label> Комментарий: </label>
                   <input class="input-field" type="text" v-model.trim="task.comment">
-<!--                  <p v-if="v$.camera.chanel.$dirty && v$.camera.chanel.required.$invalid" class="invalid-feedback">-->
-<!--                    Обязательное поле-->
-<!--                  </p>-->
-<!--                  <p v-if="v$.camera.chanel.$dirty && v$.camera.chanel.integer.$invalid " class="invalid-feedback">-->
-<!--                    Канал должен быть числом-->
-<!--                  </p>-->
                 </div>
-                <div style="width: 50px; margin-bottom: 10px">
+                <div style="width: 100%; margin-bottom: 10px">
                   <button type="submit" class="btn btn-success" >Сохранить</button>
                 </div>
               </form>
+              <button
+                  v-if="taskSelected"
+                  @click="clearTimesArray(this.task.timesArray)"
+                  class="btn btn-primary"
+                  style="position: absolute; top: 0; right: 0; margin-right: 15px; margin-top: 132px">
+                Выбрать время
+              </button>
+              Список мероприятий
+                <div class="row" v-for="(task, index) in this.getTasks" :key="index">
+                  <div class="window camera col-6" @click="chooseTask(task)">
+                    <span class="name">{{task.name}}</span>
+                  </div>
+                  <div class="col-2">
+                    <input class="hidden-button"
+                           type="color"
+                           @change="paintTimesArray(task.timesArray, task.color + alphaChannel)"
+                           v-model.trim="task.color"
+                           disabled>
+                  </div>
+                  <div class="col-2">
+                    <button class="hidden-button"
+                            @click="removeTask(task.id); resetTask(); clearTimesArray(task.timesArray)">
+                      <img src="../assets/icons/delete.png" alt="">
+                    </button>
+                  </div>
+<!--                  <div class="col-2">-->
+<!--                    <button-->
+<!--                        title="Установить время"-->
+<!--                        class="hidden-button"-->
+<!--                        @click="clearTimesArray(task.timesArray)">-->
+<!--                      <img src="../assets/icons/time.png" alt="">-->
+<!--                    </button>-->
+<!--                  </div>-->
+                </div>
             </div>
           </div>
         </div>
@@ -139,10 +177,18 @@
 </template>
 
 <script>
-import {mapGetters} from "vuex";
+import {mapGetters} from "vuex"
+import {mapActions} from 'vuex'
+import { useVuelidate } from '@vuelidate/core'
+import {integer, required} from "@vuelidate/validators";
 
 export default {
   name: "CalendarPage",
+  setup () {
+    return {
+      v$: useVuelidate()
+    }
+  },
   data() {
     return{
       task: {
@@ -150,22 +196,29 @@ export default {
         name: '',
         comment: '',
         roomId: null,
-        targetCount: null,
+        targretCount: null,
         begin: '',
-        end: ''
+        end: '',
+        color: this.randomHex().slice(0,7),
+        timesArray: ''
       },
+      // generatedColor: this.randomHex(),
+
       indexStart: null,
       indexEnd: null,
       indexSelected: null,
       onMousedown: false,
       timesArray: [],
+      busyTimesArray: [],
 
       roomSelected: false,
+      taskSelected: false,
       roomSelectedId: null,
 
       prevCalendarIndex: null,
       selectedDay: '',
       daysCount: 32,
+      alphaChannel: '',
       currentMonth: new Date().getMonth(),
       currentYear: new Date().getFullYear(),
       calendarMonths30: [3, 5, 8, 10],
@@ -177,9 +230,18 @@ export default {
       missedDays: null
     }
   },
+  validations: {
+    task: {
+      name: {required},
+      targretCount: {required, integer},
+      timesArray: {required},
+    }
+  },
   computed: {
     ...mapGetters([
-      'getRooms'
+        'getRooms',
+        'getTasks',
+        'getTaskByID'
     ])
   },
   mounted() {
@@ -190,29 +252,37 @@ export default {
   methods: {
     save(){
       console.log('save')
-      fetch('http://192.168.169.32:5000/setTask', {
-        method: 'POST',
-        cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-        body: JSON.stringify({
-          "id": null,
-          "name": this.task.name,
-          "comment": this.task.comment,
-          "roomId": this.roomSelectedId,
-          "targetCount": this.task.targetCount,
-          "begin": `${this.selectedDay} ${this.indexStart}:00`,
-          "end": `${this.selectedDay} ${this.indexEnd}:00`,
-        })
-      })
-          .then(response => response.json())
-          .then((response) => {
-            console.log(response)
-            this.task.id = response.id
-            this.$store.commit('setTask', Object.assign({}, this.room))
-            // this.v$.room.$reset()
-          });
+      this.v$.task.$touch()
+      if (new Date(this.selectedDay + ' ' + this.indexStart + ':00') < new Date()) alert("")
+      else if(this.task.timesArray.length >= 2){
+        if (!this.v$.task.$error) {
+          fetch('http://localhost:5000/setTask', {
+            method: 'POST',
+            cors: 'no-cors',
+            headers: {
+              'Content-Type': 'application/json;charset=utf-8',
+            },
+            body: JSON.stringify({
+              "id": this.task.id,
+              "name": this.task.name,
+              "comment": this.task.comment,
+              "roomId": this.roomSelectedId,
+              "targetCount": this.task.targretCount,
+              "begin": `${this.selectedDay} ${this.indexStart}:00`,
+              "end": `${this.selectedDay} ${this.indexEnd}:00`,
+            })
+          })
+              .then(response => response.json())
+              .then((response) => {
+                console.log(response)
+                this.task.id = response.id
+                if (this.getTaskByID(this.task.id) === undefined)
+                  this.$store.commit('setTask', Object.assign({}, this.task))
+                // this.v$.room.$reset()
+              });
+        }
+      }
+      else alert("Выберите диапазон времени более одного значения")
     },
     getRoomsFromDB() {
       fetch('http://localhost:5000/getRooms', {
@@ -227,6 +297,134 @@ export default {
             console.log(response)
             this.$store.state.rooms = response
           });
+    },
+    getTasksFromDB(){
+      fetch('http://localhost:5000/getTasks', {
+        method: 'POST',
+        cors: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8',
+        },
+        body: JSON.stringify({
+          "date": this.selectedDay
+        })
+      })
+          .then(response => response.json())
+          .then((response) => {
+            console.log(response)
+            this.$store.state.tasks = response
+            console.log(this.randomHex())
+            for (let task of this.getTasks){
+              let indexStart = this.getTimeIndex(task.begin)
+              let indexEnd = this.getTimeIndex(task.end)
+              task.timesArray = this.$data.timesArray.slice(indexStart, indexEnd+1)
+              // console.log('sliceArray ' + indexStart, indexEnd)
+              let color = this.randomHex()
+              task.color = color.slice(0, 7)
+              this.paintTimesArray(task.timesArray, color)
+              for (let time of task.timesArray){
+                this.busyTimesArray.push(time)
+              }
+            }
+          });
+    },
+    chooseTask(task) {
+      console.log('choose')
+      this.resetTask()
+      this.task = task
+      this.taskSelected = true
+    },
+    resetTask() {
+      let taskCopy = Object.assign({}, this.task)
+      this.task = taskCopy
+      this.task.id = null
+      this.task.name = ''
+      this.task.comment = ''
+      this.task.roomId = this.roomSelectedId
+      this.task.targretCount = null
+      this.task.begin = ''
+      this.task.end = ''
+      this.task.color = this.randomHex().slice(0,7)
+      this.task.timesArray = ''
+      this.taskSelected = false
+      this.v$.task.$reset()
+      this.paintTimesArray(this.task.timesArray, '#ffffff66')
+    },
+    getTimeIndex(time){
+      let getTime = new Date(time)
+      let date = `${getTime.getHours().toString().length === 1 ? "0" : ""}${getTime.getHours()}:${getTime.getMinutes().toString().length === 1 ? "0" : ""}${getTime.getMinutes()}`
+      // console.log('date ' + date)
+      return this.timesArray.indexOf(date)
+    },
+    randomHex(){
+      this.alphaChannel = Math.round(0.4 * 255).toString(16)
+      let color = Math.floor(Math.random()*16777215).toString(16)
+      color = color.length === 6 ? color : color + "0"
+      console.log('a: ' + this.alphaChannel + " " + color)
+      return `#${color}${this.alphaChannel}`
+    },
+    // randomRGBA(){
+    //   let o = Math.round, r = Math.random, s = 255
+    //   return 'rgba(' + o(r()*s) + ',' + o(r()*s) + ',' + o(r()*s) + ',0.25)'
+    // },
+    // rgbaToHex(color){
+    //   let splitColor = color.slice(5).split(",")
+    //   console.log(splitColor)
+    //   let r = parseInt(splitColor[0]).toString(16).padStart(2,'0')
+    //   let g = parseInt(splitColor[1]).toString(16).padStart(2,'0')
+    //   let b = parseInt(splitColor[2]).toString(16).padStart(2,'0')
+    //   let a = Math.round(parseFloat(splitColor[3]) * 255).toString(16).padStart(2,'0')
+    //   console.log(`#${r}${g}${b}${a}`)
+    //   return `#${r}${g}${b}${a}`
+    // },
+    setIndices(index){
+      let indexStart = null
+      let indexEnd = null
+      if (index < this.indexSelected) {
+        indexEnd = this.$data.indexSelected
+        indexStart = index
+      }
+      else {
+        indexStart = this.indexSelected
+        indexEnd = index
+      }
+      let sliceArray = this.$data.timesArray.slice(indexStart, indexEnd+1)
+      let includesBusyTime = false
+      for (let time of sliceArray) {
+        if (this.busyTimesArray.includes(time)) includesBusyTime = true
+      }
+      if (this.onMousedown === true && !includesBusyTime) this.paintTimesArray(sliceArray)
+    },
+    paintTimesArray(sliceArray, selectedColor){
+      console.log('newPaint')
+      let color = this.task.color + this.alphaChannel
+      // console.log(color)
+      if (arguments.length === 2) color = selectedColor
+      else this.task.color = color.slice(0,7)
+      for (let i of this.timesArray){
+        if (!this.busyTimesArray.includes(i)){
+          if (sliceArray.includes(i)){
+            // console.log('include ' + i)
+            document.getElementById(i).style.setProperty('--color', color)
+            document.getElementById(i).classList.add('linear-table-td-painted')
+            // document.getElementById(i).classList.add(`task-${}`)
+          }
+          else {
+            document.getElementById(i).classList.remove('linear-table-td-painted')
+          }
+          this.indexStart = sliceArray[0]
+          this.indexEnd = sliceArray[sliceArray.length-1]
+
+          this.task.timesArray = sliceArray
+        }
+      }
+    },
+    clearTimesArray(timesArray){
+      for (let i of timesArray){
+        if (this.busyTimesArray.includes(i))
+          this.busyTimesArray = this.busyTimesArray.filter((time) => time !== i)
+        document.getElementById(i).classList.remove('linear-table-td-painted')
+      }
     },
     chooseMonth(value){
       if (value === 'back'){
@@ -250,18 +448,27 @@ export default {
       if (day.toString().length !== 2) day = `0${day}`
       if (monthStr.toString().length !== 2) monthStr = `0${monthStr}`
       this.selectedDay = `${monthStr}/${day}/${this.currentYear}`
-      console.log(this.selectedDay)
 
       console.log(index + ' ' + this.prevCalendarIndex)
       document.getElementById(index).classList.add('calendar-number-selected')
-      if (this.prevCalendarIndex !== null) document.getElementById(this.prevCalendarIndex).classList.remove('calendar-number-selected')
+      if (this.prevCalendarIndex !== null)
+        if (document.getElementById(this.prevCalendarIndex).classList.length !== 0)
+          document.getElementById(this.prevCalendarIndex).classList.remove('calendar-number-selected')
       this.prevCalendarIndex = index
+
+      if (this.roomSelected){
+        this.resetTask()
+        this.busyTimesArray = []
+        for (let i of this.timesArray) document.getElementById(i).classList.remove('linear-table-td-painted')
+        this.getTasksFromDB()
+      }
     },
     chooseRoom(room){
       this.roomSelected = true
       this.roomSelectedId = room.id
       console.log(this.selectedDay)
       console.log(room)
+      this.getTasksFromDB()
     },
     getCurrentDay(){
       let curDay = new Date()
@@ -271,6 +478,7 @@ export default {
     },
     setCorrectMonth(){
       let curDay = new Date()
+      curDay.get
       curDay.setDate(1)
       curDay.setMonth(this.currentMonth)
       curDay.setFullYear(this.currentYear)
@@ -296,29 +504,9 @@ export default {
       this.timesArray.pop()
       // console.log(this.timesArray)
     },
-    paintTime(index){
-      console.log('paint')
-      let indexStart = null
-      let indexEnd = null
-      if (index < this.indexSelected) {
-        indexEnd = this.$data.indexSelected + 1
-        indexStart = index
-      }
-      else {
-        indexStart = this.indexSelected
-        indexEnd = index + 1
-      }
-      let sliceArray = this.$data.timesArray.slice(indexStart, indexEnd)
-      // console.log(`indexStart:${indexStart}; indexEnd:${indexEnd};`)
-      for (let i of this.timesArray){
-        if (this.onMousedown === true)
-          if (sliceArray.includes(i))
-            document.getElementById(i).classList.add('linear-table-td-painted')
-          else document.getElementById(i).classList.remove('linear-table-td-painted')
-      }
-      this.indexStart = sliceArray[0]
-      this.indexEnd = sliceArray[sliceArray.length-1]
-    }
+    ...mapActions([
+      'removeTask'
+    ])
   }
 }
 </script>
@@ -353,6 +541,11 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.grid-default{
+  display: grid;
+  grid-gap: 10px;
+  grid-template-columns: 1fr 1fr;
 }
 .calendar-month-el{
   display: grid;
@@ -411,7 +604,7 @@ export default {
 .hidden-button{
   background: inherit;
   border: none;
-  display: flex;
+  //display: flex;
   align-items: center;
   justify-content: center;
 }
@@ -428,7 +621,7 @@ export default {
     justify-content: start;
   }
 }
-.room-name{
+.name{
   font-size: 14px;
   font-weight: 500;
   margin: 7px;
@@ -438,7 +631,7 @@ export default {
   cursor: pointer;
 }
 .linear-table{
-  background: linear-gradient(#dfe0ff 50%, #ffffff 50%);
+  background: linear-gradient(rgba(223, 224, 255, 0.5) 50%, #ffffff 50%);
   background-size: 100% 37px;
   &-td{
     font-size: 11px;
@@ -446,7 +639,8 @@ export default {
       cursor: pointer;
     }
     &-painted {
-      background-color: rgba(255, 230, 0, 0.25);
+      background-color: var(--color) ;
+    //rgba(255, 230, 0, 0.25)
     }
   }
 }

@@ -8,10 +8,10 @@ class Stream:
     
     __camRoute:str|int = 0
     __streaming:cv2.VideoCapture | None = None
-    __timeLimit = 120
+    __timeLimit = 10
     __deleteTime = 5
     
-    def __init__(self, camera:Camera, timeLimit = 120):
+    def __init__(self, camera:Camera, timeLimit = 10):
         self.__timeLimit = timeLimit
         # BAD routing
         self.__camRoute = camera.getRoute()
