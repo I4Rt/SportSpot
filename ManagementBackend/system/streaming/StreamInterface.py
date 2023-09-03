@@ -7,7 +7,7 @@ class StreamInterface:
     @classmethod
     def getStream(cls, camera:Camera, timeLimit = 120):
         route = camera.getRoute()
-        print(StreamBase._getStreams())
+        print(f"route is {route}")
         for stream in StreamBase._getStreams():
             print(stream._checkFinished(), route, stream.getRoute())
             if not stream._checkFinished() and stream.getRoute() == route:
