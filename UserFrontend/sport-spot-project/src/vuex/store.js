@@ -15,20 +15,23 @@ export default createStore({
         }
     },
     mutations: {
-        setCameras (state, camera) {
-            state.cameras.push(camera)
-        },
         removeCamera (state, id) {
             state.cameras = state.cameras.filter((camera) => camera.id !== id)
         },
         removeRoom (state, id) {
             state.rooms = state.rooms.filter((room) => room.id !== id)
         },
+        removeTask (state, id) {
+            state.tasks = state.tasks.filter((task) => task.id !== id)
+        },
         removeSector (state, id) {
             state.sectors = state.sectors.filter((sector) => sector.id !== id)
         },
         updateCamera (state, oldCamera, newCamera) {
             oldCamera = newCamera
+        },
+        setCameras (state, camera) {
+            state.cameras.push(camera)
         },
         setRooms (state, room) {
             state.rooms.push(room)
@@ -37,7 +40,7 @@ export default createStore({
             state.sectors.push(sector)
         },
         setTask (state, task) {
-            state.rooms.push(task)
+            state.tasks.push(task)
         }
     },
     actions: {
@@ -72,6 +75,21 @@ export default createStore({
                 .then((response) => {
                     if (response.OperationStatus === "Done"){
                         commit('removeRoom', id)
+                    }
+                })
+        },
+        removeTask({commit}, id) {
+            fetch(`http://localhost:5000/removeTask?id=${id}`, {
+                method: 'GET',
+                cors: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json;charset=utf-8',
+                },
+            })
+                .then(response => response.json())
+                .then((response) => {
+                    if (response.OperationStatus === "Done"){
+                        commit('removeTask', id)
                     }
                 })
         },
@@ -137,7 +155,13 @@ export default createStore({
         },
         getUnusedCameras(state) {
             return state.unusedCameras.camerasList
-        }
+        },
+        getTasks(state) {
+            return state.tasks
+        },
+        getTaskByID: (state) => (id) => {
+            return state.tasks.find(task => task.id === id)
+        },
     },
 })
 

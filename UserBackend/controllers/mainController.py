@@ -78,8 +78,6 @@ def authorize():
             refresh_token = create_refresh_token(users[0].id)
             resp = jsonify({'login': True})
             resp.set_cookie('access_token_cookie', access_token, secure=True,  samesite='None')
-            #resp.headers.add('Set-Cookie','cross-site-cookie=bar; SameSite=None')
-            #set_access_cookies(resp, access_token)
             resp.set_cookie('refresh_token_cookie', refresh_token, secure=True, samesite='None')
             return resp, 200
     resp = jsonify({'login': False})

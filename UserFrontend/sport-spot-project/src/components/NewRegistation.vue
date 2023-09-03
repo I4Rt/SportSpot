@@ -1,32 +1,35 @@
 <template>
 <div class="container login">
-    <form @submit.prevent="checkForm">
+<!--    <form>-->
+      <form @submit.prevent="created">
         <div class="form-group">
-            <label for="login">Login: </label>
+            <label>Login: </label>
             <input type="text" v-model.trim="user.login" class="form-control"
              :class="v$.user.login.$error ? 'is-invalid' : ''">
              <p v-if="v$.user.login.$dirty && v$.user.login.required.$invalid" class="invalid-feedback">
                 Обязательное поле
             </p>
              <p v-if="v$.user.login.$dirty && v$.user.login.minLength.$invalid" class="invalid-feedback">
-                Поле должно содержать минимум 5 символов
+                Поле должно содержать минимум 3 символа
             </p>
         </div>
         <div class="form-group">
-            <label for="password">Password: </label>
+            <label >Password: </label>
             <input type="password" v-model.trim="user.password" class="form-control"
             :class="v$.user.password.$error ? 'is-invalid' : ''">
             <p v-if="v$.user.password.$dirty && v$.user.password.required.$invalid" class="invalid-feedback">
                 Обязательное поле
             </p>
              <p v-if="v$.user.password.$dirty && v$.user.password.minLength.$invalid" class="invalid-feedback">
-                Поле должно содержать минимум 5 символов
+                Поле должно содержать минимум 3 символа
             </p>
         </div >
         <div class="row justify-content-around form-group">
-            <button type="submit" class="btn btn-primary col-auto" >Войти</button>
-            <button class="btn btn-success col-auto" @click="request">Отправить запрос</button>
+            <button type="submit" class="btn btn-primary col-auto">Войти</button>
+
+<!--            <button class="btn btn-success col-auto" @click="request">Отправить запрос</button>-->
         </div>
+        <button @click="register" disabled>register</button>
         
     </form>
 </div>
@@ -52,7 +55,8 @@ import { required, minLength } from '@vuelidate/validators'
                     password: '',
                 },
                 accessToken: '',
-                autorized: false
+                autorized: false,
+                accessLogin: false,
 
             }
         },
@@ -64,35 +68,59 @@ import { required, minLength } from '@vuelidate/validators'
         },
         methods: {
             checkForm() {
+              // console.log('check')
                this.v$.user.$touch()
                 if (!this.v$.user.$error) {
                     console.log('Валидация прошла успешно')
+                  if (this.accessLogin === true){
+                    console.log('check')
                     this.autorized = true
                     this.$emit('sendLogin', this.autorized)
+                  }
+                    //
                 }
                 else console.log('Валидация не прошла')
             },
-
             created() {
                 console.log('post request')
-                    fetch('http://192.168.43.243:5000/authorize', {
+                    fetch('http://localhost:5000/authorize', {
                           method: 'POST',
+                          credentials: "include",
                           headers: {
-                            'Content-Type': 'application/json;charset=utf-8'
+                            'Content-Type': 'application/json;charset=utf-8',
                           },
                           body: JSON.stringify({'login': this.user.login, "password": this.user.password})
                         })
-                        .then(response => this.accessToken = response.text())
+                        .then(response => response.json())
                         .then((response) => {
                             console.log(response)
+                          if (response.login === true){
+                            this.accessLogin = true
+                            this.checkForm()
+                          }
                         });
-                        console.log(this.accessToken)
             },
+          register() {
+            fetch('http://localhost:5000/register', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json;charset=utf-8',
+              },
+              body: JSON.stringify({'name': "name",
+                "surname": 'surname',
+                "login" : 'login',
+                "password" : "password"})
+            })
+                .then((response) => {
+                  console.log(response.json())
+                });
+          },
             request() {
                 fetch('http://192.168.43.243:5000/getTestData', {
                           method: 'POST',
+                          credentials: "include",
                           headers: {
-                            'Authentication': 'Bearer {' + this.accessToken +'}',
+                            // 'Authentication': 'Bearer {' + this.accessToken +'}',
                             'Content-Type': 'application/json;charset=utf-8'
                           }
                         })
