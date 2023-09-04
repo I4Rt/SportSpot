@@ -23,7 +23,7 @@
 
         <div class="col-4 window">
           <label style="font-weight: 700; margin-top: 10px">Помещение</label>
-          <form @submit.prevent="save" style="margin-top: 10px">
+          <form @submit.prevent="selectFunction(save)" style="margin-top: 10px">
             <div class="">
               <label> Название: </label>
               <input class=" input-field" type="text" v-model.trim="room.name"
@@ -63,7 +63,7 @@
                       <tr v-for="(sector, index) in camera.sectors" :key="index">
                         <td>
                           <span style="margin-left: 20px">{{ sector.name }}</span>
-                          <button class="hidden-button swipe-sector" @click="removeSectorFromRoom(sector)">
+                          <button class="hidden-button swipe-sector" @click="selectFunction(removeSectorFromRoom,sector)">
                             <img :src="require('../assets/icons/arrow-right.png')" alt="">
                           </button>
                           <button class="hidden-button show-close-sector" @click="chooseSector(sector)">
@@ -86,7 +86,7 @@
                       <tr v-for="(sector, index) in camera.sectors" :key="index">
                         <td>
                           <span style="margin-left: 20px">{{ sector.name }}</span>
-                          <button class="hidden-button swipe-sector" @click="setSectorToRoom(sector)">
+                          <button class="hidden-button swipe-sector" @click="selectFunction(setSectorToRoom,sector)">
                             <img :src="require('../assets/icons/arrow-left.png')" alt="">
                           </button>
                           <button class="hidden-button show-close-sector" @click="chooseSector(sector)">
@@ -181,18 +181,20 @@ export default {
   },
   mounted() {
     if (this.getRooms.length === 0){
-      this.getRoomsFromDB()
+      this.selectFunction(this.getRoomsFromDB)
     }
     if (this.getSectorTypes.length === 0){
-      this.getSectorTypesFromDB()
+      this.selectFunction(this.getSectorTypesFromDB)
     }
   },
   methods: {
     save() {
       this.v$.room.$touch()
+      let returnResult
       if (!this.v$.room.$error) {
         console.log('Валидация прошла успешно')
-        fetch('http://localhost:5000/setRoom', {
+        returnResult = fetch('http://localhost:5000/setRoom', {
+          credentials: "include",
           method: 'POST',
           cors: 'no-cors',
           headers: {
@@ -210,12 +212,15 @@ export default {
               this.room.id = response.id
               console.log(this.$store.commit('setRooms', Object.assign({}, this.room)))
               this.v$.room.$reset()
+              return response
             });
       }
       else console.log('Валидация не прошла')
+      return returnResult
     },
     getSectorTypesFromDB() {
-      fetch(`http://localhost:5000/getSectorTypes`, {
+      return fetch(`http://localhost:5000/getSectorTypes`, {
+        credentials: "include",
         method: 'GET',
         cors: 'no-cors',
         headers: {
@@ -227,10 +232,12 @@ export default {
             console.log('sectorTypes ')
             this.$store.state.sectorTypes = response
             console.log(this.$store.state.sectorTypes)
+            return response
           });
     },
     getUnusedCameraSectorsByRoomIdFromDB() {
-      fetch(`http://localhost:5000/getUnusedCameraSectorsByRoomId?roomId=${this.room.id}`, {
+      return fetch(`http://localhost:5000/getUnusedCameraSectorsByRoomId?roomId=${this.room.id}`, {
+        credentials: "include",
         method: 'GET',
         cors: 'no-cors',
         headers: {
@@ -243,10 +250,12 @@ export default {
             console.log(response)
             this.$store.state.unusedCameras = response
             console.log(this.getUnusedCameras)
+            return response
           });
     },
     getUsedCameraSectorsByRoomIdFromDB() {
-      fetch(`http://localhost:5000/getCameraSectorsByRoomId?roomId=${this.room.id}`, {
+      return fetch(`http://localhost:5000/getCameraSectorsByRoomId?roomId=${this.room.id}`, {
+        credentials: "include",
         method: 'GET',
         cors: 'no-cors',
         headers: {
@@ -257,10 +266,12 @@ export default {
           .then((response) => {
             console.log(response)
             this.$store.state.usedCameras = response
+            return response
           });
     },
     getRoomsFromDB() {
-      fetch('http://localhost:5000/getRooms', {
+      return fetch('http://localhost:5000/getRooms', {
+        credentials: "include",
         method: 'GET',
         cors: 'no-cors',
         headers: {
@@ -271,6 +282,7 @@ export default {
           .then((response) => {
             console.log(response)
             this.$store.state.rooms = response
+            return response
           });
     },
     chooseRoom(room) {
@@ -311,11 +323,12 @@ export default {
       this.sectorSelected = false
     },
     reloadCameraSectors() {
-      this.getUsedCameraSectorsByRoomIdFromDB()
-      this.getUnusedCameraSectorsByRoomIdFromDB()
+      this.selectFunction(this.getUsedCameraSectorsByRoomIdFromDB)
+      this.selectFunction(this.getUnusedCameraSectorsByRoomIdFromDB)
     },
     setSectorToRoom(sector){
-      fetch(`http://localhost:5000/setSectorToRoom?sectorId=${sector.id}&roomId=${this.room.id}`, {
+      return fetch(`http://localhost:5000/setSectorToRoom?sectorId=${sector.id}&roomId=${this.room.id}`, {
+        credentials: "include",
         method: 'GET',
         cors: 'no-cors',
         headers: {
@@ -326,10 +339,12 @@ export default {
           .then((response) => {
             console.log(response)
             this.reloadCameraSectors()
+            return response
           });
     },
     removeSectorFromRoom(sector){
-      fetch(`http://localhost:5000/removeSectorFromRoomLsit?sectorId=${sector.id}&roomId=${this.room.id}`, {
+      return fetch(`http://localhost:5000/removeSectorFromRoomLsit?sectorId=${sector.id}&roomId=${this.room.id}`, {
+        credentials: "include",
         method: 'GET',
         cors: 'no-cors',
         headers: {
@@ -340,12 +355,29 @@ export default {
           .then((response) => {
             console.log(response)
             this.reloadCameraSectors()
-            // sector.roomId = 0 // испрааить позже
+            return response
           });
+    },
+    selectFunction(func, value){
+      let respFunc
+      if (arguments.length === 2) respFunc = func(value)
+      else respFunc = func()
+      let refresh
+      console.log('respFunc ' + respFunc)
+      if (respFunc === "Bad token") {
+        refresh = this.refreshToken()
+        if (refresh === "ok"){
+          console.log('refreshOk')
+          respFunc = func()
+        }
+        if (respFunc === "Bad token") alert('logout pls')
+      }
+      else return respFunc
     },
     ...mapActions([
         'addRoom',
-        'removeRoom'
+        'removeRoom',
+        'refreshToken'
     ])
   }
 }

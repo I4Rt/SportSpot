@@ -8,6 +8,10 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS, cross_origin
 from datetime import timedelta
 
+# from flask_wtf.csrf import CSRFProtect
+
+# csrf = CSRFProtect(app)
+
 # from OpenSSL import SSL
 # context = SSL.Context(SSL.PROTOCOL_TLSv1_2)
 # context.use_privatekey_file('server.key')
@@ -28,7 +32,8 @@ app.config['JWT_COOKIE_CSRF_PROTECT'] = False
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 
-# app.config["SESSION_COOKIE_SECURE"] = True
+
+app.config["SESSION_COOKIE_SECURE"] = False
 bcrypt = Bcrypt(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:qwerty@localhost:5432/sport_object_main'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True

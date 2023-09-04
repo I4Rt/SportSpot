@@ -90,7 +90,7 @@ def refresh():
     identity = get_jwt_identity()
     if identity:
         access_token = create_access_token(identity=identity, fresh=True)
-        set_access_cookies(resp, access_token)
+        # set_access_cookies(resp, access_token)
         resp = jsonify({'refresh': True})
         set_access_cookies(resp, access_token)
         return resp, 200

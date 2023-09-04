@@ -29,9 +29,8 @@
 
 <!--            <button class="btn btn-success col-auto" @click="request">Отправить запрос</button>-->
         </div>
-        <button @click="register" disabled>register</button>
-        
     </form>
+  <button @click="post">register</button>
 </div>
     
 </template>
@@ -77,7 +76,6 @@ import { required, minLength } from '@vuelidate/validators'
                     this.autorized = true
                     this.$emit('sendLogin', this.autorized)
                   }
-                    //
                 }
                 else console.log('Валидация не прошла')
             },
@@ -86,6 +84,7 @@ import { required, minLength } from '@vuelidate/validators'
                     fetch('http://localhost:5000/authorize', {
                           method: 'POST',
                           credentials: "include",
+                          cors: 'no-cors',
                           headers: {
                             'Content-Type': 'application/json;charset=utf-8',
                           },
@@ -94,12 +93,29 @@ import { required, minLength } from '@vuelidate/validators'
                         .then(response => response.json())
                         .then((response) => {
                             console.log(response)
+
                           if (response.login === true){
                             this.accessLogin = true
+                            // this.post()
                             this.checkForm()
                           }
                         });
             },
+          post(){
+            fetch('http://localhost:5000/getTasks', {
+              method: 'POST',
+              credentials:"include",
+              cors: 'no-cors',
+              headers: {
+                'Content-Type': 'application/json;charset=utf-8',
+              },
+              body:JSON.stringify({"date": "08/30/2023"})
+            })
+                .then(response => response.json())
+                .then(response => {
+                  console.log(response)
+                })
+          },
           register() {
             fetch('http://localhost:5000/register', {
               method: 'POST',
