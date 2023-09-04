@@ -140,7 +140,8 @@ class Task(db.Model, BaseData):
                  cls.id != selfId
             )
         ).all()
-    
+
+    @sessionly
     def __getResult(self):
         return db.session.query(Result).filter(Result.taskId == self.id).first()
     
@@ -182,4 +183,8 @@ class Task(db.Model, BaseData):
         return db.session.query(Camera).filter(
             Camera.id == self.roomId
         ).first()
-        
+    
+    @classmethod
+    @sessionly
+    def getById(cls, searchId:int) -> Task:
+        return db.session.query(Task).filter_by(id=searchId).first()

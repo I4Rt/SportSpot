@@ -9,14 +9,16 @@ class DataReciever(Thread):
         Thread.__init__(self)
         
     def run(self):
-        reciever = KafkaReciever.getInstance()
-        for msg in reciever.recieve():
-            print(str(msg.value))
-            #save
-            data = json.loads(msg.value)
-            task = Task.getByID(int(data["taskID"]))
-            if task is not None:
-                task.setCount(int(data["counter"]))
-            else:
-                print(f'recieved task does not exist')
-                
+        with app.app_context():
+            reciever = KafkaReciever.getInstance()
+            for msg in reciever.recieve():
+                print(str(msg.value))
+                #save
+                data = json.loads(msg.value)
+                task = Task.getByID(int(data["taskID"]))
+                if task is not None:
+                    task.setCount(int(data["counter"]))
+                    print(f'set counter {int(data["counter"])} to task {task}')
+                else:
+                    print(f'recieved task does not exist')
+                    
