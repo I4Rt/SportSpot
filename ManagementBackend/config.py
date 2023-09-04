@@ -39,7 +39,7 @@ jwt = JWTManager(app)
 #side
 app.config['kafkaServer'] = "localhost:9092"
 app.config['senderTopic'] = f'SO{int(app.config["SPORT_OBJECT_ID"])}_local'
-app.config['recieverTopic'] = f'SO{int(app.config["SPORT_OBJECT_ID"])}_recieve'
+app.config['recieverTopic'] = f'SO{int(app.config["SPORT_OBJECT_ID"])}_receive'
 
 
 

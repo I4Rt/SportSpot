@@ -25,7 +25,7 @@ class TaskProcessor(Thread, Jsonifyer):
     def run(self):
         
         with app.app_context():
-            #sender = KafkaSender.getInstance()
+            sender = KafkaSender.getInstance()
             self.task.setStatusInProgress()
             self.task.save(False)
             tzDateStr = str(self.task.end)
@@ -64,7 +64,6 @@ class TaskProcessor(Thread, Jsonifyer):
                             camData["generator"]  = framesIter
                         break
                     except Exception as e:
-                        print(f'FUCKED {e}')
                         connectCounter += 1
                 if connectCounter == self.__trys:
                     cameras.remove(camData)
@@ -99,8 +98,10 @@ class TaskProcessor(Thread, Jsonifyer):
                     #         print(f'    mode: {sec["mode"]}')
                     #         print()
                     #
-                    
-                    #sender.sendMessage(json.dumps(dataToSend))
+                    with open('senderData.json', 'w') as file:
+                        file.write(json.dumps(dataToSend))
+                    sendData = sender.sendMessage(json.dumps(dataToSend))
+                    print(sendData)
                     print(f'In thread #{get_native_id()}: task id {self.task.id}, analizer sent')
                     # add wait param to kafka reciever  
                 sleep(self.task.interval)

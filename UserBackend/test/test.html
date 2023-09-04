@@ -15,17 +15,7 @@
       headers: {
         'Content-Type': 'application/json;charset=utf-8',
       },
-      body: JSON.stringify({"login": "login","password": "password"})
-    })
-    .then(response => response.text())
-    .then(text => {
-      fetch('http://127.0.0.1:5000/testJWT', {
-      method: 'POST',
-      credentials:"include",
-      cors: 'no-cors',
-      headers: {
-        'Content-Type': 'application/json;charset=utf-8',
-      },
+      body: JSON.stringify({"login": "uuu","password": "admin"})
     })
     .then(response => response.text())
     .then(text => {
@@ -43,6 +33,5 @@
         console.log(text)
       })
     })
-  })
   </script>
 </html>

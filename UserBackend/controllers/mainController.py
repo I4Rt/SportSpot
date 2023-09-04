@@ -264,7 +264,7 @@ def getRooms():
         resp.headers['Content-Type'] = "application/json"
         return resp
     
-@cross_origin
+@cross_origin()
 @jwt_required()
 @app.route('/getTasks', methods=['get', 'post'])
 def getTasks():

@@ -14,10 +14,10 @@ if __name__ == "__main__":
     print('App is running')
     warnings.simplefilter('ignore')
     with app.app_context():
-        # KafkaSender.setInstance(app.config["senderTopic"], app.config["kafkaServer"])
-        # KafkaReciever.setInstance(app.config["recieverTopic"], app.config["kafkaServer"])
+        KafkaSender.setInstance(app.config["senderTopic"], app.config["kafkaServer"])
+        KafkaReciever.setInstance(app.config["recieverTopic"], app.config["kafkaServer"])
         
-        # DataReciever().start()
+        DataReciever().start()
         StreamBase.init()
         TaskRunner().start()
         
