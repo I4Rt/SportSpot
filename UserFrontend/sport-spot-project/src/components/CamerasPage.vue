@@ -115,7 +115,7 @@
               <img v-if="sectorSelected && sector.id === cameraSector.id" style="margin-bottom: 5px" :src="require('../assets/icons/eye-opened.png')" alt="">
               <img v-else style="margin-bottom: 5px" :src="require('../assets/icons/eye-closed.png')" alt="">
             </button>
-            <button class="hidden-button" @click="removeSector(cameraSector.id); drawClear()" style="margin-left: 10px">
+            <button class="hidden-button" @click="selectFunction(removeSector,cameraSector.id); drawClear()" style="margin-left: 10px">
               <img style="margin-bottom: 5px" :src="require('../assets/icons/delete.png')" alt="">
             </button>
           </div>
@@ -223,16 +223,18 @@ export default {
   },
   mounted() {
     if (this.getCameras.length === 0){
-      this.getCamerasFromDB()
+      this.selectFunction(this.getCamerasFromDB)
     }
     if (this.getSectorTypes.length === 0){
-      this.getSectorTypesFromDB()
+      this.selectFunction(this.getSectorTypesFromDB)
     }
     this.draw()
   },
   methods: {
     getSectorTypesFromDB() {
+      let returnResult
       fetch(`http://localhost:5000/getSectorTypes`, {
+        credentials: "include",
         method: 'GET',
         cors: 'no-cors',
         headers: {
@@ -241,13 +243,17 @@ export default {
       })
           .then(response => response.json())
           .then((response) => {
+            returnResult = response
             console.log('sectorTypes ')
             this.$store.state.sectorTypes = response
             console.log(this.$store.state.sectorTypes)
           });
+      return returnResult
     },
     getSectorsByCameraIDFromDB() {
+      let returnResult
       fetch(`http://localhost:5000/getSectorsByCameraID?id=${this.camera.id}`, {
+        credentials: "include",
         method: 'GET',
         cors: 'no-cors',
         headers: {
@@ -256,6 +262,7 @@ export default {
       })
           .then(response => response.json())
           .then((response) => {
+            returnResult = response
             console.log('preload')
             // let preloaderEl = document.getElementById('preloaded')
             // preloaderEl.classList.add('hidden');
@@ -264,9 +271,12 @@ export default {
             this.$store.state.sectors = response
             console.log(this.$store.state.sectors)
           });
+      return returnResult
     },
     getCamerasFromDB() {
+      let returnResult
       fetch('http://localhost:5000/getCameras', {
+        credentials: "include",
         // fetch('http://localhost:5000/testJWT', {
         method: 'GET',
         // credentials: "include",
@@ -279,13 +289,16 @@ export default {
       })
           .then(response => response.json())
           .then((response) => {
+            returnResult = response
             console.log(response)
             this.$store.state.cameras = response
           });
+      return  returnResult
     },
     setSector(sector){
       console.log('sector ' + sector)
-      let returnedSector = fetch('http://localhost:5000/setSector', {
+      return fetch('http://localhost:5000/setSector', {
+        credentials: "include",
         method: 'POST',
         cors: 'no-cors',
         headers: {
@@ -304,14 +317,17 @@ export default {
           .then((response) =>{
             console.log(response)
             sector.id = response.id
-            return sector
+            // sector.id === null ? console.log('nulz') : console.log('nenulz')
+            if (sector.id === null) return response
+            else return sector
           })
-      return returnedSector
+      // console.log('\nsectorDDDD ' + returnResult)
     },
     setCamera() {
-      fetch('http://localhost:5000/setCamera', {
+      return fetch('http://localhost:5000/setCamera', {
+        credentials: "include",
         method: 'POST',
-        cors: 'no-cors',
+        // cors: 'no-cors',
         headers: {
           'Content-Type': 'application/json;charset=utf-8',
         },
@@ -320,7 +336,7 @@ export default {
           "codec": this.camera.codec,
           "id": this.camera.id,
           "ip": this.camera.ip,
-          "port": this.camera.port, //change
+          "port": this.camera.port,
           "login": this.camera.login,
           "name": this.camera.name,
           "password": this.camera.password,
@@ -340,15 +356,16 @@ export default {
             console.log('noCheck')
             this.getSectors.forEach((sector) => {
               sector.camId = this.camera.id
-                this.setSector(sector)
+              this.selectFunction(this.setSector, sector)
             })
+            return response
           });
     },
     save() {
       this.v$.camera.$touch()
       if (!this.v$.camera.$error) {
         console.log('Валидация прошла успешно')
-        this.setCamera()
+        this.selectFunction(this.setCamera)
       }
       else console.log('Валидация не прошла')
     },
@@ -429,11 +446,13 @@ export default {
         }
         else{
           console.log('refresh')
-          this.refreshVideo()
+          this.selectFunction(this.refreshVideo)
         }
     },
     refreshVideo() {
+      let returnResult
       fetch(`http://localhost:5000/refreshVideo?camId=${this.camera.id}`, {
+        credentials: "include",
         method: 'GET',
         cors: 'no-cors',
         headers: {
@@ -442,13 +461,15 @@ export default {
       })
           .then(response => response.json())
           .then((response) => {
+            returnResult = response
             console.log(response)
           });
+      return returnResult
     },
     chooseCamera(camera) {
       console.log(camera.id)
       this.camera = this.getCameraByID(camera.id)
-      this.getSectorsByCameraIDFromDB()
+      this.selectFunction(this.getSectorsByCameraIDFromDB)
       this.cameraSelected = true
       this.drawImage()
       this.resetSector()
@@ -460,7 +481,7 @@ export default {
       }
       else if (sector.name === '' || sector.typeId === null) alert("Сначала введите название сектора и выберите его тип")
       else if (sector.id === null) {
-        let p1 = this.setSector(sector)
+        let p1 = this.selectFunction(this.setSector, sector)
         p1.then(value => {
           console.log(value.id)
           this.showSector(value)
@@ -516,10 +537,27 @@ export default {
       this.sector.camId = this.camera.id
       this.$store.commit('setSector', Object.assign({}, this.sector))
     },
+    selectFunction(func, value){
+      let respFunc
+      if (arguments.length === 2) respFunc = func(value)
+      else respFunc = func()
+      let refresh
+      console.log('respFunc ' + respFunc)
+      if (respFunc === "Bad token") {
+        refresh = this.refreshToken()
+        if (refresh === "ok"){
+          console.log('refreshOk')
+          respFunc = func()
+        }
+        if (respFunc === "Bad token") alert('logout pls')
+      }
+      else return respFunc
+    },
     ...mapActions([
         'addCamera',
         'removeCamera',
-        'removeSector'
+        'removeSector',
+        'refreshToken'
     ])
   }
 }

@@ -105,7 +105,7 @@
                   <img src="../assets/icons/add24.png" alt="">
                 </button>
               </div>
-              <form @submit.prevent="save" style="margin-top: 10px">
+              <form @submit.prevent="selectFunction(save)" style="margin-top: 10px">
                 <div class="">
                   <label> Название: </label>
                   <input class=" input-field" type="text" v-model.trim="task.name"
@@ -144,6 +144,7 @@
                 <div class="row" v-for="(task, index) in this.getTasks" :key="index">
                   <div class="window camera col-6" @click="chooseTask(task)">
                     <span class="name">{{task.name}}</span>
+                    <span class="name" style="margin-left: 10px">{{task.statistics}}/{{task.targetCount}}</span>
                   </div>
                   <div class="col-2">
                     <input class="hidden-button"
@@ -246,17 +247,19 @@ export default {
   },
   mounted() {
     this.setCorrectMonth()
-    this.getRoomsFromDB()
+    this.selectFunction(this.getRoomsFromDB)
     this.createTimesArray()
   },
   methods: {
     save(){
+      let returnResult
       console.log('save')
       this.v$.task.$touch()
       if (new Date(this.selectedDay + ' ' + this.indexStart + ':00') < new Date()) alert("")
       else if(this.task.timesArray.length >= 2){
         if (!this.v$.task.$error) {
           fetch('http://localhost:5000/setTask', {
+            credentials: "include",
             method: 'POST',
             cors: 'no-cors',
             headers: {
@@ -275,6 +278,7 @@ export default {
               .then(response => response.json())
               .then((response) => {
                 console.log(response)
+                returnResult = response
                 this.task.id = response.id
                 if (this.getTaskByID(this.task.id) === undefined)
                   this.$store.commit('setTask', Object.assign({}, this.task))
@@ -283,9 +287,12 @@ export default {
         }
       }
       else alert("Выберите диапазон времени более одного значения")
+      return returnResult
     },
     getRoomsFromDB() {
+      let returnResult
       fetch('http://localhost:5000/getRooms', {
+        credentials: "include",
         method: 'GET',
         cors: 'no-cors',
         headers: {
@@ -294,14 +301,19 @@ export default {
       })
           .then(response => response.json())
           .then((response) => {
-            console.log(response)
+            returnResult = response
+            console.log('resp ' + response)
             this.$store.state.rooms = response
           });
+      // console.log(returnResult)
+      return returnResult
     },
     getTasksFromDB(){
+      let returnResult
       fetch('http://localhost:5000/getTasks', {
+        credentials: "include",
         method: 'POST',
-        cors: 'no-cors',
+        // cors: 'no-cors',
         headers: {
           'Content-Type': 'application/json;charset=utf-8',
         },
@@ -311,6 +323,8 @@ export default {
       })
           .then(response => response.json())
           .then((response) => {
+            returnResult = response
+            console.log(this.selectedDay)
             console.log(response)
             this.$store.state.tasks = response
             console.log(this.randomHex())
@@ -327,6 +341,7 @@ export default {
               }
             }
           });
+      return returnResult
     },
     chooseTask(task) {
       console.log('choose')
@@ -363,20 +378,6 @@ export default {
       console.log('a: ' + this.alphaChannel + " " + color)
       return `#${color}${this.alphaChannel}`
     },
-    // randomRGBA(){
-    //   let o = Math.round, r = Math.random, s = 255
-    //   return 'rgba(' + o(r()*s) + ',' + o(r()*s) + ',' + o(r()*s) + ',0.25)'
-    // },
-    // rgbaToHex(color){
-    //   let splitColor = color.slice(5).split(",")
-    //   console.log(splitColor)
-    //   let r = parseInt(splitColor[0]).toString(16).padStart(2,'0')
-    //   let g = parseInt(splitColor[1]).toString(16).padStart(2,'0')
-    //   let b = parseInt(splitColor[2]).toString(16).padStart(2,'0')
-    //   let a = Math.round(parseFloat(splitColor[3]) * 255).toString(16).padStart(2,'0')
-    //   console.log(`#${r}${g}${b}${a}`)
-    //   return `#${r}${g}${b}${a}`
-    // },
     setIndices(index){
       let indexStart = null
       let indexEnd = null
@@ -460,7 +461,7 @@ export default {
         this.resetTask()
         this.busyTimesArray = []
         for (let i of this.timesArray) document.getElementById(i).classList.remove('linear-table-td-painted')
-        this.getTasksFromDB()
+        this.selectFunction(this.getTasksFromDB)
       }
     },
     chooseRoom(room){
@@ -468,7 +469,7 @@ export default {
       this.roomSelectedId = room.id
       console.log(this.selectedDay)
       console.log(room)
-      this.getTasksFromDB()
+      this.selectFunction(this.getTasksFromDB)
     },
     getCurrentDay(){
       let curDay = new Date()
@@ -504,8 +505,23 @@ export default {
       this.timesArray.pop()
       // console.log(this.timesArray)
     },
+    selectFunction(func){
+      let respFunc = func()
+      let refresh
+      console.log('respFunc ' + respFunc)
+      if (respFunc === "Bad token") {
+        refresh = this.refreshToken()
+        if (refresh === "ok"){
+          console.log('refreshOk')
+          respFunc = func()
+        }
+        if (respFunc === "Bad token") alert('logout pls')
+      }
+      else return "ok"
+    },
     ...mapActions([
-      'removeTask'
+        'removeTask',
+        'refreshToken'
     ])
   }
 }

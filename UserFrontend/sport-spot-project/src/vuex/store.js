@@ -1,5 +1,5 @@
 // import { createApp } from 'vue'
-import { createStore } from 'vuex'
+import {createStore} from 'vuex'
 // import axios from "axios";
 
 export default createStore({
@@ -47,9 +47,27 @@ export default createStore({
         addCamera({commit}, newCamera) {
             commit('setCameras', newCamera)
         },
+        refreshToken(){
+            let resp
+            fetch('http://localhost:5000/refresh', {
+                method: 'GET',
+                credentials:"include",
+                cors: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json;charset=utf-8',
+                },
+            })
+                .then(response => response.json())
+                .then(response => {
+                    console.log(response)
+                    resp = response
+                })
+            return resp
+        },
         async removeCamera({commit}, id) {
             console.log('remove')
             await fetch(`http://localhost:5000/removeCamera?id=${id}`, {
+                credentials: "include",
                 method: 'GET',
                 cors: 'no-cors',
                 headers: {
@@ -65,6 +83,7 @@ export default createStore({
         },
         removeRoom({commit}, id) {
             fetch(`http://localhost:5000/removeRoom?id=${id}`, {
+                credentials: "include",
                 method: 'GET',
                 cors: 'no-cors',
                 headers: {
@@ -80,6 +99,7 @@ export default createStore({
         },
         removeTask({commit}, id) {
             fetch(`http://localhost:5000/removeTask?id=${id}`, {
+                credentials: "include",
                 method: 'GET',
                 cors: 'no-cors',
                 headers: {
@@ -94,7 +114,8 @@ export default createStore({
                 })
         },
         removeSector({commit}, id) {
-            fetch(`http://localhost:5000/removeSector?id=${id}`, {
+            return fetch(`http://localhost:5000/removeSector?id=${id}`, {
+                credentials: "include",
                 method: 'GET',
                 cors: 'no-cors',
                 headers: {
@@ -103,9 +124,10 @@ export default createStore({
             })
                 .then(response => response.json())
                 .then((response) => {
-                    if (response.OperationStatus === "Done"){
+                    if (response.OperationStatus === "Done") {
                         commit('removeSector', id)
                     }
+                    return response
                 })
         },
         addRoom({commit}, newRoom) {
