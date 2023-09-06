@@ -41,7 +41,7 @@ class KafkaSender(KafkaBasics):
     
     def __init__(self, topic, server):
         KafkaBasics.__init__(self, topic, server)
-        self.__producer = KafkaProducer(bootstrap_servers=self._server)
+        self.__producer = KafkaProducer(bootstrap_servers=self._server, max_request_size=4862490)
         
     
     @classmethod
@@ -76,7 +76,8 @@ class KafkaSender(KafkaBasics):
                 data = future.get() 
                 print(data)
                 return data
-            except:
+            except Exception as e:
+                print(e)
                 return 3
         else:
             return 2
@@ -89,7 +90,7 @@ class KafkaReciever(KafkaBasics):
     
     def __init__(self, topic, server):
         KafkaBasics.__init__(self, topic, server)
-        cns = KafkaConsumer(bootstrap_servers=self._server)
+        cns = KafkaConsumer(bootstrap_servers=self._server, fetch_max_bytes=4862490)
         try:
             if not self._topicIsChecked:
                 self._createTopic()

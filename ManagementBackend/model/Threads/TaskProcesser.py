@@ -15,15 +15,16 @@ from time import sleep
 import copy
 from cv2 import imshow
 
+from tools.FrameGetter import *
+
 class TaskProcessor(Thread, Jsonifyer):
     __trys = 3
     
     def __init__(self, task:Task):
         Thread.__init__(self)
         self.task = copy.deepcopy(task)
-        
+
     def run(self):
-        
         with app.app_context():
             sender = KafkaSender.getInstance()
             self.task.setStatusInProgress()
@@ -39,7 +40,7 @@ class TaskProcessor(Thread, Jsonifyer):
                 raise Exception(f'In thread #{get_native_id()}: time is out, duration < 0')
             
             sectors = Room.getByID(self.task.roomId).getSectors()
-            print(f"sectprs {len(sectors)}")
+            # print(f"sectprs {len(sectors)}")
             cameras = []
             for sector in sectors:
                 camId = sector.camId
@@ -52,19 +53,20 @@ class TaskProcessor(Thread, Jsonifyer):
                     data = {"camId": camId, "generator": None, "sectors": [sector], "camera": sector.getCamera()}
                     cameras.append(data)
             
-            print(cameras)
+            # print(cameras)
             for camData in cameras:
                 connectCounter = 0
                 while connectCounter < self.__trys:
                     print('here')
-                    try:
-                        framesIter = StreamInterface.getStream(camData["camera"], duration)
-                        print(framesIter)
-                        if framesIter is not None:
-                            camData["generator"]  = framesIter
+                
+                    framesIter = FrameGetter.getStream(camData["camera"].getRoute(), duration)
+                    # print(framesIter)
+                    if framesIter is not None:
+                        camData["generator"]  = framesIter
                         break
-                    except Exception as e:
+                    else:
                         connectCounter += 1
+                print(connectCounter)
                 if connectCounter == self.__trys:
                     cameras.remove(camData)
                     
@@ -72,7 +74,7 @@ class TaskProcessor(Thread, Jsonifyer):
                     self.task.setStatusDone()
                     self.task.save(False)
                     raise Exception(f'In thread #{get_native_id()}: no cameras or unable to connect to them')
-            print(cameras)
+            # print(cameras)
             
             while date > datetime.now():   
                 dataToSend = {"taskID": self.task.id,
@@ -80,14 +82,14 @@ class TaskProcessor(Thread, Jsonifyer):
                 for camData in cameras:
                     frame = next(camData["generator"])
                     if frame is not None:
+                        output = cv2.resize(frame, (600, 400))
                         localData = {
-                            "img": FileUtil.convertImageToBytes(frame),
+                            "img": FileUtil.convertImageToBytes(output),
                             "sectors": [{"points": sector.getPointList(), 
                                          "mode": sector.typeId} 
                                         for sector in camData["sectors"]]
                         }
                         dataToSend["data"].append(localData)
-                        
                 if len(dataToSend["data"]) > 0:
                     # print("sending:")
                     #
@@ -105,10 +107,8 @@ class TaskProcessor(Thread, Jsonifyer):
                     print(f'In thread #{get_native_id()}: task id {self.task.id}, analizer sent')
                     # add wait param to kafka reciever  
                 sleep(self.task.interval)
-        
             self.task.setStatusDone()
             self.task.save(False)
             print(f'In thread #{get_native_id()}: the process is finished normaly')
-            return None
-        
+            return None     
         

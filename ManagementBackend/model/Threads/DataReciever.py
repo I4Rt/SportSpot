@@ -17,8 +17,9 @@ class DataReciever(Thread):
                 data = json.loads(msg.value)
                 task = Task.getByID(int(data["taskID"]))
                 if task is not None:
-                    task.setCount(int(data["counter"]))
-                    print(f'set counter {int(data["counter"])} to task {task}')
+                    if int(data["counter"]) > task.getCount():
+                        task.setCount(int(data["counter"]))
+                        print(f'set counter {int(data["counter"])} to task {task}')
                 else:
                     print(f'recieved task does not exist')
                     

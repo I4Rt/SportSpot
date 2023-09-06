@@ -13,8 +13,10 @@ from model.data.types.RoomType import RoomType
 from model.data.types.SectorType import SectorType
 from model.data.Task import Task
 
-from system.streaming.Stream import Stream
-from system.streaming.StreamInterface import StreamInterface
+# from system.streaming.Stream import Stream
+# from system.streaming.StreamInterface import StreamInterface
+
+from tools.FrameGetter import *
 
 # import time
 from datetime import datetime
@@ -863,7 +865,7 @@ def getVideo():
     if camera is None:
         return make_response({'answer': 'No such id'})
     
-    return Response(StreamInterface.getStream(camera),
+    return Response(FrameGetter.getStream(camera.getRoute(), 30),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
     
 @cross_origin
@@ -880,16 +882,10 @@ def refreshVideo():
         camera = Camera.getByID(camId)
         if camera is None:
             return make_response({'answer': 'No such id'})
-        return make_response({'answer': StreamInterface.refreshStream(camera)})
+        return make_response({'answer': FrameGetter.refreshStream(camera.getRoute(), 30)})
     else:
             resp = make_response({'Answer': "Bad token"})
             resp.headers['Content-Type'] = "application/json"
             return resp
     
     
-@cross_origin
-@jwt_required()
-@app.route('/testTaskGetter')
-def testTaskGetter():
-    print(Task.getTasksToRun())
-    return make_response({'answer': 'ok'})
