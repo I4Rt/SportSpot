@@ -864,13 +864,14 @@ def getVideo():
     camera = Camera.getByID(camId)
     if camera is None:
         return make_response({'answer': 'No such id'})
-    
+
     resp = Response(FrameGetter.getStream(camera.getRoute(), 30),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
     resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate" # HTTP 1.1.
     resp.headers["Pragma"] = "no-cache" # HTTP 1.0.
     resp.headers["Expires"] = "0" # 
     return resp
+
     
 @cross_origin
 @jwt_required()

@@ -11,7 +11,8 @@ export default createStore({
             sectors: [],
             sectorTypes: [],
             unusedCameras: {},
-            usedCameras: {}
+            usedCameras: {},
+            refreshInterval: null,
         }
     },
     mutations: {
@@ -41,6 +42,13 @@ export default createStore({
         },
         setTask (state, task) {
             state.tasks.push(task)
+        },
+        setRefreshInterval (state, interval) {
+          state.refreshInterval = interval
+        },
+        clearRefreshInterval (state) {
+            clearInterval(state.refreshInterval)
+            state.refreshInterval = null
         }
     },
     actions: {
@@ -136,6 +144,9 @@ export default createStore({
 
     },
     getters: {
+        getRefreshInterval(state){
+            return state.refreshInterval
+        },
         getCameras(state) {
             return state.cameras
         },

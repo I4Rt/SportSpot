@@ -116,12 +116,12 @@
                 </div>
                 <div class="">
                   <label> Количество участников: </label>
-                  <input class="input-field" type="text" v-model.trim="task.targretCount"
-                         :class="v$.task.targretCount.$error ? 'is-invalid' : ''">
-                  <p v-if="v$.task.targretCount.$dirty && v$.task.targretCount.required.$invalid " class="invalid-feedback">
+                  <input class="input-field" type="text" v-model.trim="task.targetCount"
+                         :class="v$.task.targetCount.$error ? 'is-invalid' : ''">
+                  <p v-if="v$.task.targetCount.$dirty && v$.task.targetCount.required.$invalid " class="invalid-feedback">
                     Обязательное поле
                   </p>
-                  <p v-if="v$.task.targretCount.$dirty && v$.task.targretCount.integer.$invalid " class="invalid-feedback">
+                  <p v-if="v$.task.targetCount.$dirty && v$.task.targetCount.integer.$invalid " class="invalid-feedback">
                     Значение должно быть числовым
                   </p>
                 </div>
@@ -197,7 +197,7 @@ export default {
         name: '',
         comment: '',
         roomId: null,
-        targretCount: null,
+        targetCount: null,
         begin: '',
         end: '',
         color: this.randomHex().slice(0,7),
@@ -234,7 +234,7 @@ export default {
   validations: {
     task: {
       name: {required},
-      targretCount: {required, integer},
+      targetCount: {required, integer},
       timesArray: {required},
     }
   },
@@ -242,10 +242,15 @@ export default {
     ...mapGetters([
         'getRooms',
         'getTasks',
-        'getTaskByID'
+        'getTaskByID',
+        'getRefreshInterval'
     ])
   },
   mounted() {
+    if (this.getRefreshInterval){
+      console.log('clean')
+      this.$store.commit('clearRefreshInterval')
+    }
     this.setCorrectMonth()
     this.selectFunction(this.getRoomsFromDB)
     this.createTimesArray()
@@ -270,7 +275,7 @@ export default {
               "name": this.task.name,
               "comment": this.task.comment,
               "roomId": this.roomSelectedId,
-              "targetCount": this.task.targretCount,
+              "targetCount": this.task.targetCount,
               "begin": `${this.selectedDay} ${this.indexStart}:00`,
               "end": `${this.selectedDay} ${this.indexEnd}:00`,
             })
@@ -356,7 +361,7 @@ export default {
       this.task.name = ''
       this.task.comment = ''
       this.task.roomId = this.roomSelectedId
-      this.task.targretCount = null
+      this.task.targetCount = null
       this.task.begin = ''
       this.task.end = ''
       this.task.color = this.randomHex().slice(0,7)

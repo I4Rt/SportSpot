@@ -124,19 +124,34 @@
         <div class="col-5">
           <div class="col-12 window">
             <p>Изображение</p>
-            <div style="width: 300px; height: 300px">
+            <div id="camDiv" style="width: 400px; height: 300px">
 <!--              :src="require('')"-->
 <!--              <img id="putImage" :src="require('../' + imgPath)"  style="width: 100%; height: 100%"  alt="img1">-->
-              <img v-if="cameraSelected" :src="imgPath" style="width: 100%; height: 100%" alt="">
-              <img v-else :src="require('@/assets/images/background.png')" alt="">
+              <img
+                  v-if="cameraSelected"
+                  id="camImg"
+                  :src="cameraSelected ? imgPath : '' "
+                  style="width: 100%; height: 100%"
+                  alt="">
+<!--              <iframe-->
+<!--                  id="iframe"-->
+<!--                  class="iframe"-->
+<!--                  -->
+<!--                  :src="imgPath"-->
+<!--                  v-show="cameraSelected"></iframe>-->
+<!--              require('@/assets/images/background.png')-->
+<!--              <img v-if="cameraSelected" id="camImg" src="" style="width: 100%; height: 100%" alt="">-->
+<!--              :src="cameraSelected ? imgPath : require('@/assets/images/background.png') "-->
+              <img v-if="!cameraSelected" :src="require('@/assets/images/background.png')" alt="">
               <canvas
                   @click="drawLine($event.clientX, $event.clientY)"
                   id="canvas"
-                  width="300" height="300"
+                  width="400" height="300"
                   style="position: absolute; top: 0; left: 0; margin-top: 40px; margin-left: 14px"
               >
               </canvas>
             </div>
+<!--            <a :href="'http://localhost:5000/getVideo?camId=' + this.camera.id">ссылка</a>-->
 
             <br>
             <button @click="endDraw">Заполнить область</button>
@@ -218,10 +233,12 @@ export default {
         'getSectorsByCameraID',
         'getSectors',
         'getSectorByID',
-        'getSectorTypeByID'
+        'getSectorTypeByID',
+        'getRefreshInterval'
     ])
   },
   mounted() {
+    console.log('mountedCameras')
     if (this.getCameras.length === 0){
       this.selectFunction(this.getCamerasFromDB)
     }
@@ -429,25 +446,53 @@ export default {
       this.ctx.fill()
       //
     },
+    fetchImage(){
+      fetch(`http://localhost:5000/getVideo?camId=${this.camera.id}`, {
+        method: 'GET'
+      })
+      .then(response => response.blob())
+      .then((response) => {
+        console.log('blob')
+        let imageUrl = URL.createObjectURL(response)
+        let imageEl = document.createElement("img")
+        imageEl.src = imageUrl
+        imageEl.id = "newCam"
+        console.log(imageEl)
+        let div = document.getElementById("camDiv")
+        // div.removeChild(document.getElementById("camImg"))
+        div.appendChild(imageEl)
+      })
+    },
     drawImage() {
       console.log('drawImage')
-      this.imgPath='http://localhost:5000/getVideo?camId=' + this.camera.id
-      let refreshInterval = setInterval(() => this.refreshCamera(refreshInterval), 5000)
 
-      // img
-      // console.log(img)
-      // this.ctx.drawImage(img, 0, 0, 779, 584, 0, 0, 300, 300)
-    },
-    refreshCamera(refreshInterval){
-        console.log('check ' + this.cameraSelected)
-        if (this.cameraSelected === false){
-          console.log('!cameraSelected')
-          clearInterval(refreshInterval)
-        }
-        else{
-          console.log('refresh')
-          this.selectFunction(this.refreshVideo)
-        }
+      // let img = new Image()
+      // img.onload = function (){
+      //   img.id = "camImg"
+      //   img.style = "width: 100%; height: 100%"
+      //   document.getElementById("camImg").src = img.src
+      //   // let div = document.getElementById("camDiv")
+      //   // div.removeChild(document.getElementById("camImg"))
+      //   // div.appendChild(img)
+      // }
+      // img.src = `http://localhost:5000/getVideo?camId=${this.camera.id}#t=` + new Date().getTime()
+      // this.imgPath = `http://localhost:5000/getVideo?camId=${this.camera.id}`
+      // this.fetchImage()
+      // let iframe = document.getElementById("iframe")
+      // console.log('iframe' + iframe)
+      // let canvas = document.getElementById('canvas')
+      // iframe.style.setProperty('--width', iframe.width)
+      // iframe.style.setProperty('--height', iframe.height)
+      // iframe.style.setProperty('--x', parseFloat(canvas.width.toString())/parseFloat(iframe.width.toString()))
+      // iframe.style.setProperty('--y', parseFloat(canvas.height.toString())/parseFloat(iframe.height.toString()))
+      this.imgPath = `http://localhost:5000/getVideo?camId=${this.camera.id}`
+      let interval = this.getRefreshInterval
+      if (interval){
+        console.log('clean')
+        this.$store.commit('clearRefreshInterval')
+      }
+      interval = setInterval(() => this.selectFunction(this.refreshVideo), 5000)
+      this.$store.commit('setRefreshInterval', interval)
     },
     refreshVideo() {
       let returnResult
@@ -463,10 +508,15 @@ export default {
           .then((response) => {
             returnResult = response
             console.log(response)
+            if (response.answer === "Stream is finished") {
+              // fetch(`http://localhost:5000/getVideo?camId=${this.camera.id}`)
+                  // .then(this.drawImage)
+            }
           });
       return returnResult
     },
     chooseCamera(camera) {
+      this.resetCamera()
       console.log(camera.id)
       this.camera = this.getCameraByID(camera.id)
       this.selectFunction(this.getSectorsByCameraIDFromDB)
@@ -500,6 +550,8 @@ export default {
       }
     },
     resetCamera(){
+      this.imgPath = '@/assets/images/background.png'
+      // document.getElementById("camImg").setAttribute("src", '@/assets/images/background.png')
       console.log('reset')
       this.$store.state.sectors = []
       let cameraCopy = Object.assign({}, this.camera)
@@ -518,6 +570,11 @@ export default {
       this.v$.camera.$reset()
       this.resetSector()
       this.drawClear()
+
+      if (this.getRefreshInterval){
+        console.log('clean')
+        this.$store.commit('clearRefreshInterval')
+      }
     },
     resetSector() {
       this.drawClear()
@@ -542,11 +599,11 @@ export default {
       if (arguments.length === 2) respFunc = func(value)
       else respFunc = func()
       let refresh
-      console.log('respFunc ' + respFunc)
+      // console.log('respFunc ' + respFunc)
       if (respFunc === "Bad token") {
         refresh = this.refreshToken()
         if (refresh === "ok"){
-          console.log('refreshOk')
+          // console.log('refreshOk')
           respFunc = func()
         }
         if (respFunc === "Bad token") alert('logout pls')

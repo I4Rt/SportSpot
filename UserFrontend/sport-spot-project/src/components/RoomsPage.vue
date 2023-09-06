@@ -176,10 +176,15 @@ export default {
         'getUnusedCameras',
         'getSectorByID',
         'getSectorTypeByID',
-        'getSectorTypes'
+        'getSectorTypes',
+        "getRefreshInterval"
     ]),
   },
   mounted() {
+    if (this.getRefreshInterval){
+      console.log('clean')
+      this.$store.commit('clearRefreshInterval')
+    }
     if (this.getRooms.length === 0){
       this.selectFunction(this.getRoomsFromDB)
     }
