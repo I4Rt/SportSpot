@@ -562,10 +562,11 @@ def setTask():
             roomId = request.json['roomId']
             targetCount = request.json['targetCount']
             interval = request.json['targetCount']
+            color = request.json['color']
             
             task = None
             if id == None:
-                task = Task(begin, end, roomId, name, targetCount, comment, interval)
+                task = Task(begin, end, roomId, name, targetCount, comment, interval, color)
             else:
                 task = Task.getByID(id)
                 task.name = name
@@ -574,6 +575,7 @@ def setTask():
                 task.end = end
                 task.roomId = roomId
                 task.targetCount = targetCount
+                task.color = color
                 if interval != None:
                     task.interval = interval
             print(str(task.begin))

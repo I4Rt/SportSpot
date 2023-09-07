@@ -24,12 +24,14 @@ class Task(db.Model, BaseData):
     interval = db.Column(db.Integer, default = 10)
     roomId = db.Column(db.Integer, nullable=False)
     __status = db.Column(db.Integer, default=0)
+    color = db.Column(db.Text)
     __table_args__ = (
         db.UniqueConstraint('roomId', 'begin', name='_room_unique_task'),
     )
     
     
-    def __init__(self, begin, end, roomId, name = 'Не названо', targetCount = 0, comment="", interval:int=None):
+    
+    def __init__(self, begin, end, roomId, name = 'Не названо', targetCount = 0, comment="", interval:int=None, color:str=None):
         self.begin = begin
         self.end = end
         self.roomId = roomId
@@ -41,7 +43,10 @@ class Task(db.Model, BaseData):
         else:
             self.interval = 30
         self.__status = 0
+        self.color = color
         
+    def setColor(self, color):
+        self.color = color
 
     def getStatus(self):
         return self.__status
