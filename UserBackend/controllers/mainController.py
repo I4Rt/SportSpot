@@ -364,12 +364,14 @@ def getUnusedCameraSectorsByRoomId():
             unusedSectors = Sector.getUnusedSectors(rId)
             exist = []
             data = []
+            print(f'i found {len(unusedSectors)} sectors')
             for sec in unusedSectors:
+                print(sec)
                 #print(sec)
                 camera = Camera.getByID(sec.camId)
                 if camera != None:
                     #print("camera for sector is found")
-                    if camera.id not in exist:
+                    if not (camera.id in exist):
                         # print(cam)
                         exist.append(camera.id)
                         camParams = camera.getParamsList()
@@ -385,6 +387,7 @@ def getUnusedCameraSectorsByRoomId():
                     #print(data)
                 else:
                     sec.remove()
+                print(exist)
             resp = make_response({'camerasList': data})
         except Exception:
             resp = make_response({'Answer': data})
