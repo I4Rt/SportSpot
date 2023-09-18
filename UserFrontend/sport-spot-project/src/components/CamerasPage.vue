@@ -23,7 +23,7 @@
         </div>
         <div class="col-4 window">
           <label style="font-weight: 700; margin-top: 10px">Изображение</label>
-          <form @submit.prevent="save" style="margin-top: 10px">
+          <form style="margin-top: 10px">
             <div class="">
               <label> Название: </label>
               <input class=" input-field" type="text" v-model.trim="camera.name"
@@ -90,34 +90,37 @@
               <label> Полный путь: </label>
               <input class="input-field" type="text" v-model.trim="camera.fullRoute">
             </div>
-            <div style="width: 50px; margin-bottom: 10px">
-                <button type="submit" class="btn btn-success" >Сохранить</button>
-              </div>
           </form>
-          <button
-              class="btn btn-primary"
-              @click="removeCamera(camera.id); resetCamera()"
-              style="position: absolute; top: 0; right: 0; margin-right: 15px; margin-top: 308px">
-            Удалить
-          </button>
+            <div id="buttons" class="grid-default" style="margin-bottom: 10px">
+                <button @click="save" class="btn btn-success" >Сохранить</button>
+                <button
+                    class="btn btn-primary"
+                    @click="removeCamera(camera.id); resetCamera()">
+                  Удалить
+                </button>
+            </div>
           <label style="font-weight: 700">Сектора</label>
 
           <button style="position: absolute; right: 0; margin-right: 30px" @click="addSectorToCamera">Добавить</button>
           <div v-if="getSectors.length === 0" id="preloaded" class="hidden"></div>
-          <div class="" v-for="(cameraSector, index) in getSectorsByCameraID(this.camera.id)" :key="index">
-            <input class="input-field-sector" type="text" v-model.trim="cameraSector.name" placeholder="Название">
-            <select v-model="cameraSector.typeId">
-              <option v-for="(sectorType, index) in getSectorTypes" :value="sectorType.id" :key="index">
-                {{sectorType.name}}
-              </option>
-            </select>
-            <button class="hidden-button" @click="chooseSector(cameraSector)" style="margin-left: 5px">
-              <img v-if="sectorSelected && sector.id === cameraSector.id" style="margin-bottom: 5px" :src="require('../assets/icons/eye-opened.png')" alt="">
-              <img v-else style="margin-bottom: 5px" :src="require('../assets/icons/eye-closed.png')" alt="">
-            </button>
-            <button class="hidden-button" @click="selectFunction(removeSector,cameraSector.id); drawClear()" style="margin-left: 10px">
-              <img style="margin-bottom: 5px" :src="require('../assets/icons/delete.png')" alt="">
-            </button>
+          <div v-for="(cameraSector, index) in getSectorsByCameraID(this.camera.id)" :key="index">
+            <div id="sectors" class="grid-default">
+                <input class="input-field-sector" type="text" v-model.trim="cameraSector.name" placeholder="Название">
+                <select v-model="cameraSector.typeId">
+                  <option v-for="(sectorType, index) in getSectorTypes" :value="sectorType.id" :key="index">
+                    {{sectorType.name}}
+                  </option>
+                </select>
+                <button class="hidden-button content content-center" @click="chooseSector(cameraSector)">
+                  <img v-if="sectorSelected && sector.id === cameraSector.id" style="margin-bottom: 5px" :src="require('../assets/icons/eye-opened.png')" alt="">
+                  <img v-else style="margin-bottom: 5px" :src="require('../assets/icons/eye-closed.png')" alt="">
+                </button>
+                <button
+                    class="hidden-button"
+                    @click="selectFunction(removeSector,cameraSector.id); drawClear()">
+                  <img style="margin-bottom: 5px" :src="require('../assets/icons/delete.png')" alt="">
+                </button>
+            </div>
           </div>
           <br>
         </div>
@@ -151,10 +154,8 @@
               >
               </canvas>
             </div>
-<!--            <a :href="'http://localhost:5000/getVideo?camId=' + this.camera.id">ссылка</a>-->
-
             <br>
-            <button @click="endDraw">Заполнить область</button>
+            <button @click="endDraw(); save()">Заполнить область</button>
             <button @click="removeSectorPoints">Очистить всё</button>
             <p>Информация сектора</p>
             <p>Сектор {{sector.name}}</p>
@@ -223,7 +224,11 @@ export default {
       codec: {required},
       login: { required },
       password: {required},
-    }
+    },
+    // sector: {
+    //   name: {required},
+    //   typeId: {required}
+    // }
   },
   computed: {
     ...mapGetters([
@@ -239,16 +244,14 @@ export default {
   },
   mounted() {
     console.log('mountedCameras')
-    if (this.getCameras.length === 0){
-      this.selectFunction(this.getCamerasFromDB)
-    }
+    this.selectFunction(this.getCamerasFromDB)
     if (this.getSectorTypes.length === 0){
       this.selectFunction(this.getSectorTypesFromDB)
     }
     this.draw()
   },
   methods: {
-    getSectorTypesFromDB() {
+    async getSectorTypesFromDB() {
       let returnResult
       fetch(`http://localhost:5000/getSectorTypes`, {
         credentials: "include",
@@ -294,14 +297,10 @@ export default {
       let returnResult
       fetch('http://localhost:5000/getCameras', {
         credentials: "include",
-        // fetch('http://localhost:5000/testJWT', {
         method: 'GET',
-        // credentials: "include",
         cors: 'no-cors',
         headers: {
           'Content-Type': 'application/json;charset=utf-8',
-          // 'Access-Control-Allow-Origin': 'http://192.168.169.32:5000',
-          // 'Access-Control-Allow-Credentials': 'true',
         },
       })
           .then(response => response.json())
@@ -340,7 +339,7 @@ export default {
           })
       // console.log('\nsectorDDDD ' + returnResult)
     },
-    setCamera() {
+    async setCamera() {
       return fetch('http://localhost:5000/setCamera', {
         credentials: "include",
         method: 'POST',
@@ -362,7 +361,9 @@ export default {
       })
           .then(response => response.json())
           .then((response) => {
+            console.log('setCameraResponse ' + response)
             console.log(response)
+
             this.camera.id = response.id
             let cameraCopy = Object.assign({}, this.camera)
             console.log('check')
@@ -421,12 +422,14 @@ export default {
       }
     },
     removeSectorPoints(){
-      this.ctx.clearRect(0, 0, 300, 300)
+      let canvas = document.getElementById("canvas")
+      this.ctx.clearRect(0, 0, canvas.width, canvas.height)
       this.sector.points = []
       this.ctx.beginPath()
     },
     drawClear() {
-      this.ctx.clearRect(0, 0, 300, 300)
+      let canvas = document.getElementById("canvas")
+      this.ctx.clearRect(0, 0, canvas.width, canvas.height)
       this.ctx.beginPath()
     },
     drawSectorPoints() {
@@ -485,6 +488,8 @@ export default {
       // iframe.style.setProperty('--height', iframe.height)
       // iframe.style.setProperty('--x', parseFloat(canvas.width.toString())/parseFloat(iframe.width.toString()))
       // iframe.style.setProperty('--y', parseFloat(canvas.height.toString())/parseFloat(iframe.height.toString()))
+
+
       this.imgPath = `http://localhost:5000/getVideo?camId=${this.camera.id}`
       let interval = this.getRefreshInterval
       if (interval){
@@ -507,7 +512,7 @@ export default {
           .then(response => response.json())
           .then((response) => {
             returnResult = response
-            console.log(response)
+            console.log('refreshId ' + response + ' ' + this.camera.id)
             if (response.answer === "Stream is finished") {
               // fetch(`http://localhost:5000/getVideo?camId=${this.camera.id}`)
                   // .then(this.drawImage)
@@ -596,10 +601,17 @@ export default {
     },
     selectFunction(func, value){
       let respFunc
-      if (arguments.length === 2) respFunc = func(value)
-      else respFunc = func()
+      let promise = new Promise((resolve) =>{
+        if (arguments.length === 2) func(value)
+        else func()
+        resolve()
+      })
+      console.log('promise')
+      console.log(promise)
       let refresh
       // console.log('respFunc ' + respFunc)
+      console.log('respFunc ' + respFunc)
+      console.log(respFunc)
       if (respFunc === "Bad token") {
         refresh = this.refreshToken()
         if (refresh === "ok"){
@@ -620,7 +632,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 canvas {
   border: 1px solid black;
   background: none;
@@ -710,5 +722,26 @@ canvas {
 .hidden-button:hover{
   background-color: #dadada;
   cursor: pointer;
+}
+.content{
+  display: flex;
+  align-items: center;
+&-center{
+   justify-content: center;
+ }
+&-end{
+   justify-content: end;
+ }
+&-start{
+   justify-content: start;
+ }
+}
+.grid-default{
+  display: grid;
+  grid-gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+#sectors{
+  grid-template-columns: repeat(4, 1fr)
 }
 </style>

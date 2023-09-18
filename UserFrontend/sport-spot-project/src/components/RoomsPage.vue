@@ -185,9 +185,7 @@ export default {
       console.log('clean')
       this.$store.commit('clearRefreshInterval')
     }
-    if (this.getRooms.length === 0){
-      this.selectFunction(this.getRoomsFromDB)
-    }
+    this.selectFunction(this.getRoomsFromDB)
     if (this.getSectorTypes.length === 0){
       this.selectFunction(this.getSectorTypesFromDB)
     }
