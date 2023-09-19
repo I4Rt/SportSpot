@@ -7,7 +7,9 @@
       </div>
         <div class="col-6">
           <label v-if="!roomSelected" class="field">Помещения</label>
-          <label v-if="roomSelected" class="field">Помещение 1 {{selectedDay}}</label>
+          <label v-if="roomSelected" class="field">
+            Помещение 1 {{`${this.selectedDay.substr(3, 2)}/${this.selectedDay.substr(0, 2)}/${this.selectedDay.substr(6, 4)}`}}
+          </label>
         </div>
       <div class="col-6 " >
         <div class="col-12 window window-onPage" style="display: flow-root">
@@ -22,7 +24,7 @@
                 </button>
                 <div class="content content-center"> {{calendarMonths[currentMonth]}} </div>
                 <div class="content content-start"> {{currentYear}} </div>
-                <button @click="getCurrentDay" class="hidden-button" title="К сегодняшнему дню">
+                <button @click="getCurrentDay" class="hidden-button" title="К текущему месяцу">
                   <img  :src="require('../assets/icons/today24px.png')" alt="">
                 </button>
               </div>
@@ -37,9 +39,6 @@
               <div class="calendar-number" v-for="(index) in missedDays" :key="index"></div>
               <div
                   @click="chooseDay(day, index)"
-                  :class="[new Date().getDate() === day &&
-                  currentMonth === new Date().getMonth() &&
-                  currentYear === new Date().getFullYear() ? 'calendar-number-current' : '']"
                   class="calendar-number"
                   v-for="(day, index) in days"
                   :key="index"
@@ -135,7 +134,7 @@
               </form>
               <button
                   v-if="taskSelected"
-                  @click="clearTimesArray(this.task.timesArray)"
+                  @click="clearTimesArray(this.task.timesArray); canChangeTimesArray = true"
                   class="btn btn-primary"
                   style="position: absolute; top: 0; right: 0; margin-right: 15px; margin-top: 132px">
                 Выбрать время
@@ -144,14 +143,13 @@
                 <div class="row" v-for="(task, index) in this.getTasks" :key="index">
                   <div class="window camera col-6" @click="chooseTask(task)">
                     <span class="name">{{task.name}}</span>
-                    <span class="name" style="margin-left: 10px">{{task.statistics}}/{{task.targetCount}}</span>
+                    <span class="name" style="margin-left: 10px">0/{{task.targetCount}}</span>
                   </div>
                   <div class="col-2">
                     <input class="hidden-button"
                            type="color"
-                           @change="paintTimesArray(task.timesArray, task.color + alphaChannel)"
-                           v-model.trim="task.color"
-                           disabled>
+                           @change="repaintTimesArray(task.timesArray, task.color + alphaChannel); save(task)"
+                           v-model.trim="task.color">
                   </div>
                   <div class="col-2">
                     <button class="hidden-button"
@@ -216,6 +214,8 @@ export default {
       taskSelected: false,
       roomSelectedId: null,
 
+      canChangeTimesArray: true,
+
       prevCalendarIndex: null,
       selectedDay: '',
       daysCount: 32,
@@ -251,15 +251,17 @@ export default {
       console.log('clean')
       this.$store.commit('clearRefreshInterval')
     }
-    this.setCorrectMonth()
+    this.setCurrentDay()
     this.selectFunction(this.getRoomsFromDB)
     this.createTimesArray()
   },
   methods: {
-    save(){
+    save(saveTask){
+      let task = this.task
+      if (arguments.length === 1) task = saveTask
+      else this.v$.task.$touch()
       let returnResult
       console.log('save')
-      this.v$.task.$touch()
       if (new Date(this.selectedDay + ' ' + this.indexStart + ':00') < new Date()) alert("")
       else if(this.task.timesArray.length >= 2){
         if (!this.v$.task.$error) {
@@ -271,13 +273,14 @@ export default {
               'Content-Type': 'application/json;charset=utf-8',
             },
             body: JSON.stringify({
-              "id": this.task.id,
-              "name": this.task.name,
-              "comment": this.task.comment,
+              "id": task.id,
+              "name": task.name,
+              "comment": task.comment,
               "roomId": this.roomSelectedId,
-              "targetCount": this.task.targetCount,
-              "begin": `${this.selectedDay} ${this.indexStart}:00`,
-              "end": `${this.selectedDay} ${this.indexEnd}:00`,
+              "targetCount": task.targetCount,
+              "begin": `${this.selectedDay} ${task.timesArray[0]}:00`,
+              "end": `${this.selectedDay} ${task.timesArray[task.timesArray.length-1]}:00`,
+              "color": task.color
             })
           })
               .then(response => response.json())
@@ -287,7 +290,16 @@ export default {
                 this.task.id = response.id
                 if (this.getTaskByID(this.task.id) === undefined)
                   this.$store.commit('setTask', Object.assign({}, this.task))
-                // this.v$.room.$reset()
+                this.repaintTimesArray(task.timesArray, task.color + this.alphaChannel).then((value => {
+                      console.log(value)
+                      this.resetTask()
+                    })
+                )
+                // this.resetTask().then((value) =>{
+                //       console.log(value)
+                //       this.paintTimesArray(task.timesArray)
+                //     }
+                // )
               });
         }
       }
@@ -338,9 +350,9 @@ export default {
               let indexEnd = this.getTimeIndex(task.end)
               task.timesArray = this.$data.timesArray.slice(indexStart, indexEnd+1)
               // console.log('sliceArray ' + indexStart, indexEnd)
-              let color = this.randomHex()
-              task.color = color.slice(0, 7)
-              this.paintTimesArray(task.timesArray, color)
+              // let color = this.randomHex()
+              // task.color = color.slice(0, 7)
+              this.paintTimesArray(task.timesArray, task.color + this.alphaChannel)
               for (let time of task.timesArray){
                 this.busyTimesArray.push(time)
               }
@@ -350,11 +362,13 @@ export default {
     },
     chooseTask(task) {
       console.log('choose')
-      this.resetTask()
+      // this.resetTask()
+      this.canChangeTimesArray = false
       this.task = task
       this.taskSelected = true
+      this.paintTimesArray(this.task.timesArray, this.task.color + this.alphaChannel)
     },
-    resetTask() {
+    async resetTask() {
       let taskCopy = Object.assign({}, this.task)
       this.task = taskCopy
       this.task.id = null
@@ -368,7 +382,11 @@ export default {
       this.task.timesArray = ''
       this.taskSelected = false
       this.v$.task.$reset()
+      this.indexEnd = ''
+      this.indexStart = ''
+      this.canChangeTimesArray = true
       this.paintTimesArray(this.task.timesArray, '#ffffff66')
+      return 0
     },
     getTimeIndex(time){
       let getTime = new Date(time)
@@ -384,6 +402,7 @@ export default {
       return `#${color}${this.alphaChannel}`
     },
     setIndices(index){
+      if (this.canChangeTimesArray === false) return 1
       let indexStart = null
       let indexEnd = null
       if (index < this.indexSelected) {
@@ -401,7 +420,20 @@ export default {
       }
       if (this.onMousedown === true && !includesBusyTime) this.paintTimesArray(sliceArray)
     },
-    paintTimesArray(sliceArray, selectedColor){
+    async repaintTimesArray(timesArray, color){
+      this.clearTimesArray(timesArray)
+      this.paintTimesArray(timesArray, color).then((value => {
+        console.log(value)
+            this.setBusyTimeArray(timesArray).then((value => {
+                  console.log(value)
+                  this.task.timesArray = []
+                })
+            )
+      })
+      )
+      return 'repaintTimesArray'
+    },
+    async paintTimesArray(sliceArray, selectedColor){
       console.log('newPaint')
       let color = this.task.color + this.alphaChannel
       // console.log(color)
@@ -424,6 +456,7 @@ export default {
           this.task.timesArray = sliceArray
         }
       }
+      return 'paintTimesArray'
     },
     clearTimesArray(timesArray){
       for (let i of timesArray){
@@ -431,6 +464,12 @@ export default {
           this.busyTimesArray = this.busyTimesArray.filter((time) => time !== i)
         document.getElementById(i).classList.remove('linear-table-td-painted')
       }
+    },
+    async setBusyTimeArray(timesArray){
+      for (let time of timesArray){
+        this.busyTimesArray.push(time)
+      }
+      return 'setBusyTimeArray'
     },
     chooseMonth(value){
       if (value === 'back'){
@@ -447,19 +486,33 @@ export default {
         }
         else this.currentMonth +=1
       }
-      this.setCorrectMonth()
+      this.setCurrentDay()
+
+      let day = this.selectedDay.substr(3, 2)
+      console.log(this.selectedDay)
+      this.prevCalendarIndex = null
+      if (this.selectedDay !== '') this.chooseDay(day, (parseInt(day) - 1).toString())
+
     },
     chooseDay(day, index){
+      if (index >= this.days.length){
+        index = (this.days[this.days.length-2])
+        day = index + 1
+      }
       let monthStr = this.currentMonth + 1
       if (day.toString().length !== 2) day = `0${day}`
       if (monthStr.toString().length !== 2) monthStr = `0${monthStr}`
       this.selectedDay = `${monthStr}/${day}/${this.currentYear}`
 
       console.log(index + ' ' + this.prevCalendarIndex)
+
       document.getElementById(index).classList.add('calendar-number-selected')
-      if (this.prevCalendarIndex !== null)
-        if (document.getElementById(this.prevCalendarIndex).classList.length !== 0)
+      if (this.prevCalendarIndex !== null && this.prevCalendarIndex !== index)
+        if (document.getElementById(this.prevCalendarIndex).classList.length !== 0){
+          console.log('remove')
           document.getElementById(this.prevCalendarIndex).classList.remove('calendar-number-selected')
+        }
+
       this.prevCalendarIndex = index
 
       if (this.roomSelected){
@@ -476,13 +529,28 @@ export default {
       console.log(room)
       this.selectFunction(this.getTasksFromDB)
     },
+    setCurrentDay(){
+      this.setCorrectMonth().then((value => {
+            console.log(value)
+            let date = new Date()
+            if (this.currentMonth === date.getMonth() && this.currentYear === date.getFullYear())
+              document.getElementById((date.getDate() - 1).toString()).classList.add('calendar-number-current')
+            else document.getElementById((date.getDate() - 1).toString()).classList.remove('calendar-number-current')
+          })
+      )
+    },
     getCurrentDay(){
       let curDay = new Date()
       this.currentMonth = curDay.getMonth()
       this.currentYear = curDay.getFullYear()
-      this.setCorrectMonth()
+      this.setCurrentDay()
+
+      let day = this.selectedDay.substr(3, 2)
+      console.log(this.selectedDay)
+      this.prevCalendarIndex = null
+      if (this.selectedDay !== '') this.chooseDay(day, (parseInt(day) - 1).toString())
     },
-    setCorrectMonth(){
+    async setCorrectMonth(){
       let curDay = new Date()
       curDay.get
       curDay.setDate(1)
@@ -497,6 +565,8 @@ export default {
       else if (this.currentYear%4 === 0) this.daysCount = 30
       else this.daysCount = 29
       this.days = [...Array(this.daysCount).keys()].slice(1)
+
+      return 'setCorrectMonth'
     },
     createTimesArray(){
       for (let i = 0; i < 25; i++){

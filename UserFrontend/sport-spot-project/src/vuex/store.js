@@ -13,6 +13,7 @@ export default createStore({
             unusedCameras: {},
             usedCameras: {},
             refreshInterval: null,
+            authorized: false
         }
     },
     mutations: {
@@ -195,6 +196,9 @@ export default createStore({
         getTaskByID: (state) => (id) => {
             return state.tasks.find(task => task.id === id)
         },
+        getAuthorized(state) {
+            return state.authorized
+        }
     },
 })
 
