@@ -397,7 +397,20 @@ def getUnusedCameraSectorsByRoomId():
         resp = make_response({'Answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
-    
+
+@cross_origin
+@jwt_required
+@app.route('/getRoomTypes', methods=['get'])
+def getRoomTypes():
+    verify_jwt_in_request()
+    identy = get_jwt_identity()
+    if identy:
+        return make_response({'types': [tp.getParamsList() for tp in RoomType.getAll()]})
+    else:
+        resp = make_response({'Answer': "Bad token"})
+        resp.headers['Content-Type'] = "application/json"
+        return resp
+
 # set/remove complex data
 @cross_origin
 @jwt_required()

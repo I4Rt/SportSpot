@@ -38,8 +38,8 @@ class TaskProcessor(Thread, Jsonifyer):
                 self.task.setStatusDone()
                 self.task.save(False)
                 raise Exception(f'In thread #{get_native_id()}: time is out, duration < 0')
-            
-            sectors = Room.getByID(self.task.roomId).getSectors()
+            room = Room.getByID(self.task.roomId)
+            sectors = room.getSectors()
             # print(f"sectprs {len(sectors)}")
             cameras = []
             for sector in sectors:
@@ -78,6 +78,7 @@ class TaskProcessor(Thread, Jsonifyer):
             
             while date > datetime.now():   
                 dataToSend = {"taskID": self.task.id,
+                              "agregationMode": room.classId, # CHECK
                               "data": []}
                 for camData in cameras:
                     frame = next(camData["generator"])
