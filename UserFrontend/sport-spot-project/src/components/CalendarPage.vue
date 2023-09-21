@@ -16,10 +16,10 @@
           <div  class="calendar window">
             <div class="calendar-month">
               <div class="calendar-month-el">
-                <button @click="chooseMonth('back')" class="hidden-button">
+                <button @click="chooseMonth('back')" class="hidden-button content content-center">
                   <img  :src="require('../assets/icons/back.png')" alt="">
                 </button>
-                <button @click="chooseMonth('next')" class="hidden-button" >
+                <button @click="chooseMonth('next')" class="hidden-button content content-center" >
                   <img  :src="require('../assets/icons/next.png')" alt="">
                 </button>
                 <div class="content content-center"> {{calendarMonths[currentMonth]}} </div>
@@ -507,10 +507,12 @@ export default {
       console.log(index + ' ' + this.prevCalendarIndex)
 
       document.getElementById(index).classList.add('calendar-number-selected')
+      document.getElementById(index).style.color = 'aliceblue'
       if (this.prevCalendarIndex !== null && this.prevCalendarIndex !== index)
         if (document.getElementById(this.prevCalendarIndex).classList.length !== 0){
           console.log('remove')
           document.getElementById(this.prevCalendarIndex).classList.remove('calendar-number-selected')
+          document.getElementById(this.prevCalendarIndex).style.color = ''
         }
 
       this.prevCalendarIndex = index
@@ -689,13 +691,11 @@ export default {
   &-current{
     color: #262626;
     font-weight: 700;
-    //background-color: #23b24e;
   }
 }
 .hidden-button{
   background: inherit;
   border: none;
-  //display: flex;
   align-items: center;
   justify-content: center;
 }

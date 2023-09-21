@@ -10,6 +10,7 @@ export default createStore({
             rooms: [],
             sectors: [],
             sectorTypes: [],
+            roomTypes: [],
             unusedCameras: {},
             usedCameras: {},
             refreshInterval: null,
@@ -32,14 +33,26 @@ export default createStore({
         updateCamera (state, oldCamera, newCamera) {
             oldCamera = newCamera
         },
-        setCameras (state, camera) {
+        setCamera (state, camera) {
             state.cameras.push(camera)
+        },
+        setCameras (state, cameras) {
+            state.cameras = cameras
         },
         setRooms (state, room) {
             state.rooms.push(room)
         },
         setSector (state, sector) {
             state.sectors.push(sector)
+        },
+        setSectors (state, sectors) {
+            state.sectors = sectors
+        },
+        setSectorTypes (state, sectorTypes) {
+            state.sectorTypes = sectorTypes
+        },
+        setRoomTypes (state, roomTypes) {
+            state.roomTypes = roomTypes
         },
         setTask (state, task) {
             state.tasks.push(task)
@@ -54,7 +67,7 @@ export default createStore({
     },
     actions: {
         addCamera({commit}, newCamera) {
-            commit('setCameras', newCamera)
+            commit('setCamera', newCamera)
         },
         refreshToken(){
             let resp
@@ -139,6 +152,100 @@ export default createStore({
                     return response
                 })
         },
+        async getSectorsByCameraIDFromDB({commit}, id) {
+            let returnResult
+            try {
+                returnResult = await fetch(`http://localhost:5000/getSectorsByCameraID?id=${id}`, {
+                    credentials: "include",
+                    method: 'GET',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
+                })
+                    .then(response => response.json())
+                    .then((response) => {
+                        console.log('sectors ')
+                        console.log(response)
+                        commit('setSectors', response)
+                        return Promise.resolve('ok')
+                    });
+            } catch (err) {
+                console.log(err)
+            }
+            return returnResult
+        },
+        async getSectorTypesFromDB({commit}) {
+            let returnResult
+            try{
+                returnResult = await fetch(`http://localhost:5000/getSectorTypes`, {
+                    credentials: "include",
+                    method: 'GET',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
+                })
+                    .then(response => response.json())
+                    .then((response) => {
+                        returnResult = response
+                        console.log('sectorTypes')
+                        commit('setSectorTypes', response)
+                        return response
+                        // console.log(this.$store.state.sectorTypes)
+                    });
+            } catch (err) {
+                console.log(err)
+            }
+            return returnResult
+        },
+        async getRoomTypesFromDB({commit}) {
+            let returnResult
+            try{
+                returnResult = await fetch(`http://localhost:5000/getRoomTypes`, {
+                    credentials: "include",
+                    method: 'GET',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
+                })
+                    .then(response => response.json())
+                    .then((response) => {
+                        returnResult = response
+                        console.log('roomTypes')
+                        commit('setRoomTypes', response.types)
+                        return response
+                    });
+            } catch (err) {
+                console.log(err)
+            }
+            return returnResult
+        },
+        async getCamerasFromDB({commit}) {
+            let returnResult
+            try{
+                returnResult = await fetch('http://localhost:5000/getCameras', {
+                    credentials: "include",
+                    method: 'GET',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
+                })
+                    .then(response => response.json())
+                    .then((response) => {
+                        returnResult = response
+                        console.log(response)
+                        commit('setCameras', response)
+                        return response
+                        // this.$store.state.cameras = response
+                    });
+            } catch (err) {
+                console.log(err)
+            }
+            return returnResult
+        },
         addRoom({commit}, newRoom) {
             commit('setRooms', newRoom)
         },
@@ -168,6 +275,9 @@ export default createStore({
         },
         getSectorTypeByID: (state) => (id) => {
             return state.sectorTypes.find(sectorType => sectorType.id === id)
+        },
+        getRoomTypes(state) {
+            return state.roomTypes
         },
         getRooms(state) {
             return state.rooms

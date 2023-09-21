@@ -13,6 +13,7 @@ class StreamBase:
     def _addStream(cls, stream:Stream):
         if cls.__initialized:
             cls.__streams.append(stream)
+            print('inited')
             return True
     
     

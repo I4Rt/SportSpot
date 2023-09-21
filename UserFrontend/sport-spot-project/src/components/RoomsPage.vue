@@ -34,8 +34,11 @@
             </div>
             <div class="">
               <label> Класс помещения: </label>
-              <input class="input-field" type="text" v-model.trim="room.classId"
-                     :class="v$.room.classId.$error ? 'is-invalid' : ''">
+              <select v-model="room.classId" class="input-field">
+                <option v-for="(roomType, index) in getRoomTypes" :value="roomType.id" :key="index">
+                  {{roomType.name}}
+                </option>
+              </select>
               <p v-if="v$.room.classId.$dirty && v$.room.classId.required.$invalid" class="invalid-feedback">
                 Обязательное поле
               </p>
@@ -60,14 +63,15 @@
                   <td style="width: 200px" >
                     <span style="margin-left: 5px">{{ camera.name }}</span>
                     <table>
-                      <tr v-for="(sector, index) in camera.sectors" :key="index">
+                      <tr v-for="(cameraSector, index) in camera.sectors" :key="index">
                         <td>
-                          <span style="margin-left: 20px">{{ sector.name }}</span>
-                          <button class="hidden-button swipe-sector" @click="selectFunction(removeSectorFromRoom,sector)">
+                          <span style="margin-left: 20px">{{ cameraSector.name }}</span>
+                          <button class="hidden-button swipe-sector" @click="selectFunction(removeSectorFromRoom,cameraSector)">
                             <img :src="require('../assets/icons/arrow-right.png')" alt="">
                           </button>
-                          <button class="hidden-button show-close-sector" @click="chooseSector(sector)">
-                            <img :src="require('../assets/icons/eye-closed.png')" alt="">
+                          <button class="hidden-button show-close-sector" @click="chooseSector(cameraSector)">
+                            <img v-if="sectorSelected && sector.id === cameraSector.id" style="margin-bottom: 5px" :src="require('../assets/icons/eye-opened.png')" alt="">
+                            <img v-else style="margin-bottom: 5px" :src="require('../assets/icons/eye-closed.png')" alt="">
                           </button>
                         </td>
                       </tr>
@@ -83,14 +87,22 @@
                   <td style="width: 200px" >
                     <span style="margin-left: 5px">{{ camera.name }}</span>
                     <table>
-                      <tr v-for="(sector, index) in camera.sectors" :key="index">
+                      <tr v-for="(cameraSector, index) in camera.sectors" :key="index">
                         <td>
-                          <span style="margin-left: 20px">{{ sector.name }}</span>
-                          <button class="hidden-button swipe-sector" @click="selectFunction(setSectorToRoom,sector)">
+                          <span style="margin-left: 20px">{{ cameraSector.name }}</span>
+                          <button class="hidden-button swipe-sector" @click="selectFunction(setSectorToRoom,cameraSector)">
                             <img :src="require('../assets/icons/arrow-left.png')" alt="">
                           </button>
-                          <button class="hidden-button show-close-sector" @click="chooseSector(sector)">
-                            <img :src="require('../assets/icons/eye-closed.png')" alt="">
+                          <button class="hidden-button show-close-sector" @click="chooseSector(cameraSector)">
+                            <img
+                                v-if="sectorSelected && sector.id === cameraSector.id"
+                                style="margin-bottom: 5px"
+                                :src="require('../assets/icons/eye-opened.png')"
+                                alt="">
+                            <img
+                                v-else style="margin-bottom: 5px"
+                                :src="require('../assets/icons/eye-closed.png')"
+                                alt="">
                           </button>
                         </td>
                       </tr>
@@ -104,20 +116,17 @@
           <br>
         </div>
         <div class="col-5">
-          <div class="col-12 window">
-            <p>Изображение</p>
-            <!--            <img src="http://localhost:5000/videoStream" style="width: 100%">-->
-            <img :src="require('../assets/images/img1.png')" style="width: 100%" alt="img1">
-            <p>Информация сектора</p>
-            <p>Сектор {{sector.name}}</p>
-            <span>Техническая информация:</span>
-            <ul>
-              <li>Границы:</li>
-              <li>Высота от пола:</li>
-              <li>Тип сектора: <span v-if="sectorSelected">{{getSectorTypeByID(sector.typeId).name}}</span></li>
-            </ul>
-            <p>Справка:</p>
-          </div>
+          <show-camera
+              :cameraID="sector.camId"
+              :sector="sector"
+              :selectFunction="selectFunction"
+              :sectorSelected=sectorSelected
+              :cameraSelected="sectorSelected"
+              :save="save"
+              @pushSectorPoints="(data) => this.sector.points.push(data)"
+              @removeSectorPoints="this.sector.points = []"
+              ref="showCamera"
+          ></show-camera>
         </div>
       </div>
     </div>
@@ -130,9 +139,13 @@ import {mapGetters} from 'vuex'
 import {mapActions} from 'vuex'
 import { useVuelidate } from '@vuelidate/core'
 import { required} from '@vuelidate/validators'
+import ShowCamera from "@/components/ShowCamera";
 
 export default {
   name: "RoomsPage",
+  components: {
+    ShowCamera
+  },
   setup () {
     return {
       v$: useVuelidate()
@@ -145,10 +158,10 @@ export default {
         classId: null,
         name: '',
         sportObjectId: '',
-        roomType: {
-          id: null,
-          name: ''
-        }
+        // roomType: {
+        //   id: null,
+        //   name: ''
+        // }
       },
       sector: {
         camId: null,
@@ -175,10 +188,12 @@ export default {
         'getUsedCameras',
         'getUnusedCameras',
         'getSectorByID',
-        'getSectorTypeByID',
         'getSectorTypes',
-        "getRefreshInterval"
-    ]),
+        'getSectorsByCameraID',
+        "getRefreshInterval",
+        'getRoomTypes'
+
+    ])
   },
   mounted() {
     if (this.getRefreshInterval){
@@ -186,9 +201,8 @@ export default {
       this.$store.commit('clearRefreshInterval')
     }
     this.selectFunction(this.getRoomsFromDB)
-    if (this.getSectorTypes.length === 0){
-      this.selectFunction(this.getSectorTypesFromDB)
-    }
+    this.selectFunction(this.getSectorTypesFromDB)
+    this.selectFunction(this.getRoomTypesFromDB)
   },
   methods: {
     save() {
@@ -206,40 +220,58 @@ export default {
           body: JSON.stringify({
             "classId": this.room.classId,
             "name": this.room.name,
-            "id": null,
+            "id": this.room.id,
           })
           })
             .then(response => response.json())
             .then((response) => {
               console.log(response)
               this.room.id = response.id
-              console.log(this.$store.commit('setRooms', Object.assign({}, this.room)))
+              if (this.getRoomByID(response.id) === undefined) {
+                this.addRoom(Object.assign({}, this.room))
+                console.log('yesCheck')
+              }
               this.v$.room.$reset()
+              if (this.sector.camId !== null) this.selectFunction(this.setSector, this.sector)
               return response
             });
       }
       else console.log('Валидация не прошла')
       return returnResult
     },
-    getSectorTypesFromDB() {
-      return fetch(`http://localhost:5000/getSectorTypes`, {
-        credentials: "include",
-        method: 'GET',
-        cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-      })
-          .then(response => response.json())
-          .then((response) => {
-            console.log('sectorTypes ')
-            this.$store.state.sectorTypes = response
-            console.log(this.$store.state.sectorTypes)
-            return response
-          });
+    async setSector(sector){
+      console.log('1 sector ' + sector)
+      let returnValue
+      try {
+        returnValue = await fetch('http://localhost:5000/setSector', {
+          credentials: "include",
+          method: 'POST',
+          cors: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8',
+          },
+          body: JSON.stringify({
+            "camId": sector.camId,
+            "id": sector.id,
+            "name": sector.name,
+            "points": sector.points,
+            "roomId": sector.roomId,
+            "typeId": sector.typeId
+          })
+        })
+            .then(response => response.json())
+            .then((response) =>{
+              sector.id = response.id
+              if (sector.id === null) return  response
+              else return sector
+            })
+      } catch (err) {
+        console.error(err)
+      }
+      return returnValue
     },
-    getUnusedCameraSectorsByRoomIdFromDB() {
-      return fetch(`http://localhost:5000/getUnusedCameraSectorsByRoomId?roomId=${this.room.id}`, {
+    async getUnusedCameraSectorsByRoomIdFromDB() {
+      return await fetch(`http://localhost:5000/getUnusedCameraSectorsByRoomId?roomId=${this.room.id}`, {
         credentials: "include",
         method: 'GET',
         cors: 'no-cors',
@@ -256,8 +288,8 @@ export default {
             return response
           });
     },
-    getUsedCameraSectorsByRoomIdFromDB() {
-      return fetch(`http://localhost:5000/getCameraSectorsByRoomId?roomId=${this.room.id}`, {
+    async getUsedCameraSectorsByRoomIdFromDB() {
+      return await fetch(`http://localhost:5000/getCameraSectorsByRoomId?roomId=${this.room.id}`, {
         credentials: "include",
         method: 'GET',
         cors: 'no-cors',
@@ -295,11 +327,34 @@ export default {
       this.reloadCameraSectors()
       this.resetSector()
     },
-    chooseSector(sector) {
-      console.log(sector)
-      console.log(sector.id)
-      this.sector = sector
+    async chooseSector(cameraSector) {
+      console.log('cameraSector')
+      console.log(cameraSector)
+        let camId = cameraSector.camId
+        this.selectFunction(this.getSectorsByCameraIDFromDB, camId).then(() => {
+          this.showSector(cameraSector)
+        })
+    },
+    showSector(cameraSector) {
+      let currentCamId = this.sector.camId
+      console.log(currentCamId)
+      this.sector = this.getSectorByID(cameraSector.id)
       this.sectorSelected = true
+      this.$refs.showCamera.drawClear()
+          let interval = setInterval(() => {
+            if (this.sector.id === cameraSector.id){
+              if (currentCamId !== cameraSector.camId){
+                this.$refs.showCamera.changeImgPath("data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=").then(
+                    () => {
+                      this.$refs.showCamera.drawImage()
+                    })
+              }
+              if (this.sector.points.length !== 0) {
+                this.$refs.showCamera.drawSectorPoints()
+              }
+              clearInterval(interval)
+            }
+          }, 100)
     },
     resetRoom(){
       let roomCopy = Object.assign({}, this.room)
@@ -308,10 +363,6 @@ export default {
       this.room.classId = null
       this.room.id = null
       this.room.sportObjectId = ''
-      this.room.roomType = {
-        id: null,
-        name: ''
-      }
       this.$store.state.unusedCameras = {}
       this.$store.state.usedCameras = {}
       this.resetSector()
@@ -324,6 +375,11 @@ export default {
       this.sector.roomId = null
       this.sector.typeId = null
       this.sectorSelected = false
+      this.$refs.showCamera.drawClear()
+      if (this.getRefreshInterval){
+        console.log('clean')
+        this.$store.commit('clearRefreshInterval')
+      }
     },
     reloadCameraSectors() {
       this.selectFunction(this.getUsedCameraSectorsByRoomIdFromDB)
@@ -361,26 +417,43 @@ export default {
             return response
           });
     },
-    selectFunction(func, value){
+    // async selectFunction(func, value){
+    //   let respFunc
+    //   let promise = new Promise((resolve) =>{
+    //     if (arguments.length === 2) func(value)
+    //     else func()
+    //     resolve()
+    //   })
+    //   console.log('promise')
+    //   console.log(promise)
+    //   let refresh
+    //   // console.log('respFunc ' + respFunc)
+    //   console.log('respFunc ' + respFunc)
+    //   console.log(respFunc)
+    //   if (respFunc === "Bad token") {
+    //     refresh = this.refreshToken()
+    //     if (refresh === "ok"){
+    //       // console.log('refreshOk')
+    //       respFunc = func()
+    //     }
+    //     if (respFunc === "Bad token") alert('logout pls')
+    //   }
+    //   else return respFunc
+    // },
+    async selectFunction(func, value){
       let respFunc
-      if (arguments.length === 2) respFunc = func(value)
-      else respFunc = func()
-      let refresh
-      console.log('respFunc ' + respFunc)
-      if (respFunc === "Bad token") {
-        refresh = this.refreshToken()
-        if (refresh === "ok"){
-          console.log('refreshOk')
-          respFunc = func()
-        }
-        if (respFunc === "Bad token") alert('logout pls')
-      }
-      else return respFunc
+      if (arguments.length === 2) respFunc = await func(value)
+      else respFunc = await func()
+      return respFunc
     },
     ...mapActions([
         'addRoom',
         'removeRoom',
-        'refreshToken'
+        'refreshToken',
+        'getSectorsByCameraIDFromDB',
+        'getRoomTypesFromDB',
+        'getSectorTypesFromDB',
+        'getCamerasFromDB'
     ])
   }
 }

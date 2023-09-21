@@ -1,7 +1,7 @@
 <template>
 <div class="container login">
       <form @submit.prevent="created">
-        <div class="form-group">
+        <div class="">
             <label>Login: </label>
             <input type="text" v-model.trim="user.login" class="form-control"
              :class="v$.user.login.$error ? 'is-invalid' : ''">
@@ -24,10 +24,14 @@
             </p>
         </div >
         <div class="row justify-content-around form-group">
-            <button type="submit" class="btn btn-primary col-auto">Войти</button>
+            <button type="submit" class="btn btn-success col-auto">Войти</button>
+          <button type="button" class="btn btn-primary col-auto"
+                  @click="this.$emit('registerUser')">
+            Зарегистрироваться
+          </button>
         </div>
     </form>
-  <button @click="this.$emit('registerUser')">register</button>
+
 </div>
     
 </template>
@@ -64,68 +68,38 @@ import { required, minLength } from '@vuelidate/validators'
         },
         methods: {
             checkForm() {
-              // console.log('check')
-               this.v$.user.$touch()
-                if (!this.v$.user.$error) {
-                    console.log('Валидация прошла успешно')
                   if (this.accessLogin === true){
                     console.log('check')
                     this.authorized = true
                     this.$emit('sendLogin', this.authorized)
                   }
-                }
-                else console.log('Валидация не прошла')
             },
             created() {
+              this.v$.user.$touch()
+              if (!this.v$.user.$error) {
                 console.log('post request')
-                    fetch('http://localhost:5000/authorize', {
-                          method: 'POST',
-                          credentials: "include",
-                          cors: 'no-cors',
-                          headers: {
-                            'Content-Type': 'application/json;charset=utf-8',
-                          },
-                          body: JSON.stringify({'login': this.user.login, "password": this.user.password})
-                        })
-                        .then(response => response.json())
-                        .then((response) => {
-                            console.log(response)
-
-                          if (response.login === true){
-                            this.accessLogin = true
-                            // this.post()
-                            this.checkForm()
-                          }
-                        });
-            },
-          post(){
-            fetch('http://localhost:5000/getTasks', {
-              method: 'POST',
-              credentials:"include",
-              cors: 'no-cors',
-              headers: {
-                'Content-Type': 'application/json;charset=utf-8',
-              },
-              body:JSON.stringify({"date": "08/30/2023"})
-            })
-                .then(response => response.json())
-                .then(response => {
-                  console.log(response)
+                fetch('http://localhost:5000/authorize', {
+                  method: 'POST',
+                  credentials: "include",
+                  cors: 'no-cors',
+                  headers: {
+                    'Content-Type': 'application/json;charset=utf-8',
+                  },
+                  body: JSON.stringify({'login': this.user.login, "password": this.user.password})
                 })
-          },
-            request() {
-                fetch('http://192.168.43.243:5000/getTestData', {
-                          method: 'POST',
-                          credentials: "include",
-                          headers: {
-                            // 'Authentication': 'Bearer {' + this.accessToken +'}',
-                            'Content-Type': 'application/json;charset=utf-8'
-                          }
-                        })
-                        .then(response => response.text())
-                        .then((response) => {
-                            console.log(response)
-                        });
+                    .then(response => response.json())
+                    .then((response) => {
+                      console.log(response)
+                      if (response.login === true) {
+                        this.accessLogin = true
+                        this.checkForm()
+                      }
+                      else if (response.login === false) {
+                        alert('Неверный логин или пароль')
+                      }
+                    });
+              }
+              else console.log('Валидация не прошла')
             }
         }
     }
