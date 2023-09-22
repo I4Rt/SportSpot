@@ -58,58 +58,74 @@
           <div class="row" v-if="roomSelected">
             <div class="col-6">
               <label>Назначенные</label>
-              <table class="window linear-table">
-                <tr  v-for="(camera, index) in getUsedCameras" :key="index">
-                  <td style="width: 200px" >
-                    <span style="margin-left: 5px">{{ camera.name }}</span>
-                    <table>
-                      <tr v-for="(cameraSector, index) in camera.sectors" :key="index">
-                        <td>
-                          <span style="margin-left: 20px">{{ cameraSector.name }}</span>
-                          <button class="hidden-button swipe-sector" @click="selectFunction(removeSectorFromRoom,cameraSector)">
-                            <img :src="require('../assets/icons/arrow-right.png')" alt="">
-                          </button>
-                          <button class="hidden-button show-close-sector" @click="chooseSector(cameraSector)">
-                            <img v-if="sectorSelected && sector.id === cameraSector.id" style="margin-bottom: 5px" :src="require('../assets/icons/eye-opened.png')" alt="">
-                            <img v-else style="margin-bottom: 5px" :src="require('../assets/icons/eye-closed.png')" alt="">
-                          </button>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
+              <div id="table-used" class="window linear-table">
+                <table >
+                  <tr  v-for="(camera, index) in getUsedCameras" :key="index">
+                    <td style="width: 200px" >
+                      <span style="margin-left: 5px">{{ camera.name }}</span>
+                      <table>
+                        <tr v-for="(cameraSector, index) in camera.sectors" :key="index" >
+                          <td style="padding: 0">
+                            <div class="grid-default" style="height: 26px">
+                              <div style="margin-left: 20px">
+                                <span >{{ cameraSector.name }}</span>
+                              </div>
+                              <div class="content content-end">
+                                <button class="hidden-button swipe-sector" @click="selectFunction(removeSectorFromRoom,cameraSector)">
+                                  <img :src="require('../assets/icons/arrow-right.png')" alt="">
+                                </button>
+                                <button class="hidden-button show-close-sector" @click="chooseSector(cameraSector)">
+                                  <img v-if="sectorSelected && sector.id === cameraSector.id" style="margin-bottom: 5px" :src="require('../assets/icons/eye-opened.png')" alt="">
+                                  <img v-else style="margin-bottom: 5px" :src="require('../assets/icons/eye-closed.png')" alt="">
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </div>
             </div>
             <div class="col-6">
               <label>Существующие</label>
-              <table class="window linear-table" >
-                <tr v-for="(camera, index) in getUnusedCameras" :key="index">
-                  <td style="width: 200px" >
-                    <span style="margin-left: 5px">{{ camera.name }}</span>
-                    <table>
-                      <tr v-for="(cameraSector, index) in camera.sectors" :key="index">
-                        <td>
-                          <span style="margin-left: 20px">{{ cameraSector.name }}</span>
-                          <button class="hidden-button swipe-sector" @click="selectFunction(setSectorToRoom,cameraSector)">
-                            <img :src="require('../assets/icons/arrow-left.png')" alt="">
-                          </button>
-                          <button class="hidden-button show-close-sector" @click="chooseSector(cameraSector)">
-                            <img
-                                v-if="sectorSelected && sector.id === cameraSector.id"
-                                style="margin-bottom: 5px"
-                                :src="require('../assets/icons/eye-opened.png')"
-                                alt="">
-                            <img
-                                v-else style="margin-bottom: 5px"
-                                :src="require('../assets/icons/eye-closed.png')"
-                                alt="">
-                          </button>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
+              <div id="table-unused" class="window linear-table">
+                <table >
+                  <tr v-for="(camera, index) in getUnusedCameras" :key="index">
+                    <td style="width: 200px" >
+                      <span style="margin-left: 5px">{{ camera.name }}</span>
+                      <table>
+                        <tr v-for="(cameraSector, index) in camera.sectors" :key="index" >
+                          <td style="padding: 0">
+                            <div id="td-height" class="grid-default" style="height: 26px">
+                              <div style="margin-left: 20px">
+                                <span >{{ cameraSector.name }}</span>
+                              </div>
+                              <div class="content content-end">
+                                <button class="hidden-button swipe-sector" @click="selectFunction(setSectorToRoom,cameraSector)">
+                                  <img :src="require('../assets/icons/arrow-left.png')" alt="">
+                                </button>
+                                <button class="hidden-button show-close-sector" @click="chooseSector(cameraSector)">
+                                  <img
+                                      v-if="sectorSelected && sector.id === cameraSector.id"
+                                      style="margin-bottom: 5px"
+                                      :src="require('../assets/icons/eye-opened.png')"
+                                      alt="">
+                                  <img
+                                      v-else style="margin-bottom: 5px"
+                                      :src="require('../assets/icons/eye-closed.png')"
+                                      alt="">
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </div>
             </div>
           </div>
           <p v-else style="font-size: 15px">Выберите помещение для отображение секторов</p>
@@ -383,7 +399,14 @@ export default {
     },
     reloadCameraSectors() {
       this.selectFunction(this.getUsedCameraSectorsByRoomIdFromDB)
-      this.selectFunction(this.getUnusedCameraSectorsByRoomIdFromDB)
+      this.selectFunction(this.getUnusedCameraSectorsByRoomIdFromDB).then(() => {
+        let tdHeight = document.getElementById("td-height").offsetHeight
+        let linearTable = document.getElementsByClassName('linear-table')
+        Array.from(linearTable).forEach((item) => {
+          item.style.setProperty('--td-height', `${tdHeight*2}px`)
+          item.style.setProperty('--table-height', `${tdHeight*12}px`)
+        })
+      })
     },
     setSectorToRoom(sector){
       return fetch(`http://localhost:5000/setSectorToRoom?sectorId=${sector.id}&roomId=${this.room.id}`, {
@@ -459,7 +482,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 #add{
   width: 110px;
   /*height: 35px;*/
@@ -470,17 +493,17 @@ export default {
   border-radius: 10px;
   font-size: 18px;
 }
-.swipe-sector{
-  position: absolute;
-  right: 0;
-  margin-right: 45px;
-  margin-bottom: 5px;
-}
-.show-close-sector{
-  position: absolute;
-  right: 0;
-  margin-right: 20px;
-}
+//.swipe-sector{
+//  position: absolute;
+//  right: 0;
+//  margin-right: 45px;
+//  margin-bottom: 5px;
+//}
+//.show-close-sector{
+//  position: absolute;
+//  right: 0;
+//  margin-right: 20px;
+//}
 .hidden-button{
   background: inherit;
   border: none;
@@ -520,8 +543,41 @@ export default {
   border: 1px solid grey;
 }
 .linear-table{
-  background: linear-gradient(#dfe0ff 50%, #ffffff 50%);
-  background-size: 100% 52px;
+  background: linear-gradient(#dfe0ff 50%, #ffffff 50%) local;
+  background-size: 100% var(--td-height);
+  height: var(--table-height);
+  overflow-y: auto;
 }
+.content{
+  display: flex;
+  align-items: center;
+&-center{
+   justify-content: center;
+ }
+&-end{
+   justify-content: end;
+ }
+&-start{
+   justify-content: start;
+ }
+}
+.grid-default{
+  display: grid;
+  grid-gap: 50px;
+  grid-template-columns: 50px 1fr;
+}
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+}
+::-webkit-scrollbar-thumb {
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+}
+//:root{
+//  --td-height: 52px;
+//  --table-height: 200px;
+//}
 
 </style>
