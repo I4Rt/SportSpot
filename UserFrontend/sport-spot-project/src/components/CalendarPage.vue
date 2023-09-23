@@ -182,6 +182,7 @@ import { useVuelidate } from '@vuelidate/core'
 import {integer, required} from "@vuelidate/validators";
 
 export default {
+  props: ['selectFunction'],
   name: "CalendarPage",
   setup () {
     return {
@@ -582,23 +583,8 @@ export default {
       this.timesArray.pop()
       // console.log(this.timesArray)
     },
-    selectFunction(func){
-      let respFunc = func()
-      let refresh
-      console.log('respFunc ' + respFunc)
-      if (respFunc === "Bad token") {
-        refresh = this.refreshToken()
-        if (refresh === "ok"){
-          console.log('refreshOk')
-          respFunc = func()
-        }
-        if (respFunc === "Bad token") alert('logout pls')
-      }
-      else return "ok"
-    },
     ...mapActions([
         'removeTask',
-        'refreshToken'
     ])
   }
 }

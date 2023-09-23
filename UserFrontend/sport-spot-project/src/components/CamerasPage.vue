@@ -152,6 +152,7 @@ import { required, integer} from '@vuelidate/validators'
 import ShowCamera from "@/components/ShowCamera";
 
 export default {
+  props: ['selectFunction'],
   name: "CamerasPage",
   components: {
     ShowCamera
@@ -262,24 +263,24 @@ export default {
           });
       return returnResult
     },
-    getCamerasFromDB() {
-      let returnResult
-      fetch('http://localhost:5000/getCameras', {
-        credentials: "include",
-        method: 'GET',
-        cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-      })
-          .then(response => response.json())
-          .then((response) => {
-            returnResult = response
-            console.log(response)
-            this.$store.state.cameras = response
-          });
-      return  returnResult
-    },
+    // getCamerasFromDB() {
+    //   let returnResult
+    //   fetch('http://localhost:5000/getCameras', {
+    //     credentials: "include",
+    //     method: 'GET',
+    //     cors: 'no-cors',
+    //     headers: {
+    //       'Content-Type': 'application/json;charset=utf-8',
+    //     },
+    //   })
+    //       .then(response => response.json())
+    //       .then((response) => {
+    //         returnResult = response
+    //         console.log(response)
+    //         this.$store.state.cameras = response
+    //       });
+    //   return  returnResult
+    // },
     async setSector(sector){
       console.log('1 sector ' + sector)
       let returnValue
@@ -452,17 +453,11 @@ export default {
       this.sector.camId = this.camera.id
       this.$store.commit('setSector', Object.assign({}, this.sector))
     },
-    async selectFunction(func, value){
-      let respFunc
-      if (arguments.length === 2) respFunc = await func(value)
-      else respFunc = await func()
-      return respFunc
-    },
     ...mapActions([
         'addCamera',
         'removeCamera',
         'removeSector',
-        'refreshToken'
+        'getCamerasFromDB'
     ])
   }
 }

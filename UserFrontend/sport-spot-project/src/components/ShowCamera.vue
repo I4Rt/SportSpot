@@ -19,10 +19,13 @@
     <button @click="endDraw(); save()">Заполнить область</button>
     <button @click="removeSectorPoints(); save()">Очистить всё</button>
     <p>Информация сектора</p>
-    <p>Сектор {{sector.name}}</p>
+    <span class="sector-name" :title="sector.name">Сектор {{sector.name}}</span>
+    <br>
     <span>Техническая информация:</span>
     <ul>
-      <li>Границы:</li>
+      <li>
+      <span class="sector-name" :title="sector.points">Границы:</span>
+      </li>
       <li>Высота от пола:</li>
       <li>Тип сектора: <span v-if="sectorSelected">{{getSectorTypeByID(sector.typeId).name}}</span></li>
     </ul>
@@ -160,5 +163,12 @@ export default {
 canvas {
   border: 1px solid black;
   background: none;
+}
+.sector-name {
+  display: inline-block;
+  width: 15em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 </style>
