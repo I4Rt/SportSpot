@@ -13,6 +13,8 @@ from model.data.types.RoomType import RoomType
 from model.data.types.SectorType import SectorType
 from model.data.Task import Task
 
+import os
+
 # from system.streaming.Stream import Stream
 # from system.streaming.StreamInterface import StreamInterface
 
@@ -99,7 +101,7 @@ def refresh():
     return jsonify({'refresh': False}), 200
 
 @cross_origin()
-@app.route('/logout', methods=['POST'])
+@app.route('/logout', methods=['GET'])
 def logout():
     resp = jsonify({'logout': True})
     unset_jwt_cookies(resp)
@@ -113,6 +115,17 @@ def testJWT():
     identy = get_jwt_identity()
     return jsonify({'hello': 'from {}'.format(identy)}), 200
 
+@cross_origin()
+@app.route('/getUserInfo')
+@jwt_required()
+def getUser():
+    verify_jwt_in_request()
+    identy = get_jwt_identity()
+    if identy:
+        user = User.getByID(identy)
+        return user.getParamsList(exceptions=['password', 'login']), 200
+    else:
+        return {'answer': 'No such user'}
     
 '''
 getCameras
@@ -912,3 +925,104 @@ def refreshVideo():
             return resp
     
     
+# file data selector
+@cross_origin
+@jwt_required()
+@app.route('/getByRoutes', methods=['post'])
+def getByRoutes():
+    verify_jwt_in_request()
+    identy = get_jwt_identity()
+    if identy:
+        try:
+            baseRoute = request.json['baseRoute']
+        except Exception:
+            return {"answer": 'Bad json'}, 200
+        curRoute = None
+        try:
+            curRoute = request.json['curRoute']
+        except Exception:
+            pass
+        fileName = None
+        
+        try:
+            fileName = request.json['fileName']
+        except Exception:
+            pass
+        
+        print(baseRoute)
+        curDir = os.path.normpath(baseRoute)
+        if curRoute:
+            curDir = os.path.join(curDir, curRoute)
+            
+        if not fileName:
+            #get files:
+            data = []
+            for elem in os.listdir(curDir):
+                tempRoute = os.path.join(curDir, elem)
+                if os.path.isdir(tempRoute):
+                    data.append({'name': elem, 'type':'dir'})
+                else:
+                    data.append({'name': elem, 'type':'file', 'createTime': datetime.fromtimestamp(os.path.getctime(tempRoute))})
+            
+            return {'folderData': data}, 200
+        else:
+            tempDir = os.path.join(curDir, fileName)
+            if not os.path.isdir(tempDir):
+                cap = cv2.VideoCapture(tempDir)
+                ret, frame = cap.read()
+                if ret:
+                    bytesData = FileUtil.convertImageToBytes85(frame, '.jpg')
+                    return {'name': fileName, 'route': tempDir, 'type':'file', 'createTime': datetime.fromtimestamp(os.path.getctime(tempDir)), 'image':bytesData}
+                return {'answer': 'can not open file'}
+            return {'answer': 'not a file'}
+            
+    else:
+        resp = make_response({'Answer': "Bad token"})
+        resp.headers['Content-Type'] = "application/json"
+        return resp
+    
+@cross_origin
+@jwt_required()
+@app.route('/getByRoutes', methods=['post'])
+def sendForAnalize():
+    verify_jwt_in_request()
+    identy = get_jwt_identity()
+    if identy:
+        try:
+            route = request.args.get('route')
+        except:
+            return make_response({'Answer': 'Bad Json'})
+        
+        try:
+            dir = os.path.normpath(route)
+            try:
+                id = request.json['id']
+                name = request.json['name']
+                comment = request.json['comment']
+                begin = datetime.strptime(request.json['begin'], '%m/%d/%Y %H:%M:%S')
+                end = datetime.strptime(request.json['end'], '%m/%d/%Y %H:%M:%S')
+                roomId = request.json['roomId']
+                targetCount = request.json['targetCount']
+                interval = request.json['targetCount']
+                color = request.json['color']
+                
+                task = None
+                if id == None:
+                    task = Task(begin, end, roomId, name, targetCount, comment, interval, color)
+                else:
+                    task = Task.getByID(id)
+                    task.name = name
+                    task.comment = comment
+                    task.begin = begin
+                    task.end = end
+                    task.roomId = roomId
+                    task.targetCount = targetCount
+                    task.color = color
+                    if interval != None:
+                        task.interval = interval
+                print(str(task.begin))
+                task.save(needCheck=False)
+            except Exception as e:
+                return {'Answer': 'taskCreationError'}, 200
+        except Exception as e:
+            return {'Answer': 'loading file error'}, 200

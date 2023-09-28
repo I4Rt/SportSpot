@@ -17,7 +17,3 @@ app.config['TIME'] = time()
 app.config['SIZE'] = 1000
 
 
-
-
-
-

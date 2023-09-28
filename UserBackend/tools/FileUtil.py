@@ -4,6 +4,7 @@ import cv2
 from numpy import frombuffer
 import json
 import base64
+import base128
 
 class FileUtil:
     def __init__(self):
@@ -22,6 +23,14 @@ class FileUtil:
         npImg = frombuffer(readImgBytes,'u1') 
         decImg = cv2.imdecode(npImg, 1)
         return decImg
+    
+    def convertImageToBytes85(img, imgType = '.png') -> str:
+        _, encriptedImg = 	cv2.imencode(imgType, img)
+        imgAsStr = encriptedImg.tostring()
+        imgByteStr = base64.b85encode(imgAsStr).decode("utf-8")
+        return imgByteStr
+    
+    
 
 if __name__ == "__main__":
     cap = cv2.VideoCapture(0)

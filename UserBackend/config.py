@@ -18,10 +18,17 @@ from datetime import timedelta
 # context.use_certificate_file('server.crt')
 
 
+
 app = Flask(__name__, template_folder='templates', static_folder='static', static_url_path = '')
+
+
+
 app.config['SPORT_OBJECT_ID'] = '001'
 app.config['TIME'] = time()
 app.config['SIZE'] = 1000
+
+app.config['kafkaServer'] = "localhost:9092"
+app.config['senderTopic'] = f'SO{int(app.config["SPORT_OBJECT_ID"])}_local'
 
 cors = CORS(app, supports_credentials=True, resources={r"*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
