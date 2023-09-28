@@ -1,7 +1,7 @@
 <template>
 <!--    Вы вошли-->
 <!--    <button class="btn btn-primary" @click="$emit('logout')">Выйти</button>-->
-  <nav-bar @showPage="viewPage"></nav-bar>
+  <nav-bar @showPage="viewPage" @onLogout="this.$emit('onLogout')"></nav-bar>
   <br>
   <calendar-page v-if="page === 'Calendar'"></calendar-page>
   <cameras-page v-if="page === 'Cameras'"></cameras-page>
@@ -23,20 +23,16 @@ export default{
     RoomsPage
   },
 
-  emits: ['logout'],
     data() {
         return{
           page: 'Calendar'
         }
     },
   methods: {
-    viewPage(data){
+    viewPage(data) {
       this.page = data
       console.log(this.page + data)
-    }
-    // showPage(data) {
-    //   this.page = data
-    // }
+    },
   }
 }
 </script>

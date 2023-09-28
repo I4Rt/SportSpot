@@ -1,5 +1,5 @@
 // import { createApp } from 'vue'
-import { createStore } from 'vuex'
+import {createStore} from 'vuex'
 // import axios from "axios";
 
 export default createStore({
@@ -10,19 +10,22 @@ export default createStore({
             rooms: [],
             sectors: [],
             sectorTypes: [],
+            roomTypes: [],
             unusedCameras: {},
-            usedCameras: {}
+            usedCameras: {},
+            refreshInterval: null,
+            authorized: false
         }
     },
     mutations: {
-        setCameras (state, camera) {
-            state.cameras.push(camera)
-        },
         removeCamera (state, id) {
             state.cameras = state.cameras.filter((camera) => camera.id !== id)
         },
         removeRoom (state, id) {
             state.rooms = state.rooms.filter((room) => room.id !== id)
+        },
+        removeTask (state, id) {
+            state.tasks = state.tasks.filter((task) => task.id !== id)
         },
         removeSector (state, id) {
             state.sectors = state.sectors.filter((sector) => sector.id !== id)
@@ -30,23 +33,63 @@ export default createStore({
         updateCamera (state, oldCamera, newCamera) {
             oldCamera = newCamera
         },
+        setCamera (state, camera) {
+            state.cameras.push(camera)
+        },
+        setCameras (state, cameras) {
+            state.cameras = cameras
+        },
         setRooms (state, room) {
             state.rooms.push(room)
         },
         setSector (state, sector) {
             state.sectors.push(sector)
         },
+        setSectors (state, sectors) {
+            state.sectors = sectors
+        },
+        setSectorTypes (state, sectorTypes) {
+            state.sectorTypes = sectorTypes
+        },
+        setRoomTypes (state, roomTypes) {
+            state.roomTypes = roomTypes
+        },
         setTask (state, task) {
-            state.rooms.push(task)
+            state.tasks.push(task)
+        },
+        setRefreshInterval (state, interval) {
+          state.refreshInterval = interval
+        },
+        clearRefreshInterval (state) {
+            clearInterval(state.refreshInterval)
+            state.refreshInterval = null
         }
     },
     actions: {
         addCamera({commit}, newCamera) {
-            commit('setCameras', newCamera)
+            commit('setCamera', newCamera)
+        },
+        refreshToken(){
+            let resp
+            fetch('http://localhost:5000/refresh', {
+                method: 'GET',
+                credentials:"include",
+                cors: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json;charset=utf-8',
+                },
+            })
+                .then(response => response.json())
+                .then(response => {
+                    console.log(response)
+                    resp = response
+                })
+            return resp
         },
         async removeCamera({commit}, id) {
             console.log('remove')
             await fetch(`http://localhost:5000/removeCamera?id=${id}`, {
+                credentials: "include",
                 method: 'GET',
                 cors: 'no-cors',
                 headers: {
@@ -62,6 +105,7 @@ export default createStore({
         },
         removeRoom({commit}, id) {
             fetch(`http://localhost:5000/removeRoom?id=${id}`, {
+                credentials: "include",
                 method: 'GET',
                 cors: 'no-cors',
                 headers: {
@@ -75,8 +119,9 @@ export default createStore({
                     }
                 })
         },
-        removeSector({commit}, id) {
-            fetch(`http://localhost:5000/removeSector?id=${id}`, {
+        removeTask({commit}, id) {
+            fetch(`http://localhost:5000/removeTask?id=${id}`, {
+                credentials: "include",
                 method: 'GET',
                 cors: 'no-cors',
                 headers: {
@@ -86,9 +131,120 @@ export default createStore({
                 .then(response => response.json())
                 .then((response) => {
                     if (response.OperationStatus === "Done"){
-                        commit('removeSector', id)
+                        commit('removeTask', id)
                     }
                 })
+        },
+        removeSector({commit}, id) {
+            return fetch(`http://localhost:5000/removeSector?id=${id}`, {
+                credentials: "include",
+                method: 'GET',
+                cors: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json;charset=utf-8',
+                },
+            })
+                .then(response => response.json())
+                .then((response) => {
+                    if (response.OperationStatus === "Done") {
+                        commit('removeSector', id)
+                    }
+                    return response
+                })
+        },
+        async getSectorsByCameraIDFromDB({commit}, id) {
+            let returnResult
+            try {
+                returnResult = await fetch(`http://localhost:5000/getSectorsByCameraID?id=${id}`, {
+                    credentials: "include",
+                    method: 'GET',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
+                })
+                    .then(response => response.json())
+                    .then((response) => {
+                        console.log('sectors ')
+                        console.log(response)
+                        commit('setSectors', response)
+                        return Promise.resolve('ok')
+                    });
+            } catch (err) {
+                console.log(err)
+            }
+            return returnResult
+        },
+        async getSectorTypesFromDB({commit}) {
+            let returnResult
+            try{
+                returnResult = await fetch(`http://localhost:5000/getSectorTypes`, {
+                    credentials: "include",
+                    method: 'GET',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
+                })
+                    .then(response => response.json())
+                    .then((response) => {
+                        returnResult = response
+                        console.log('sectorTypes')
+                        commit('setSectorTypes', response)
+                        return response
+                        // console.log(this.$store.state.sectorTypes)
+                    });
+            } catch (err) {
+                console.log(err)
+            }
+            return returnResult
+        },
+        async getRoomTypesFromDB({commit}) {
+            let returnResult
+            try{
+                returnResult = await fetch(`http://localhost:5000/getRoomTypes`, {
+                    credentials: "include",
+                    method: 'GET',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
+                })
+                    .then(response => response.json())
+                    .then((response) => {
+                        returnResult = response
+                        console.log('roomTypes')
+                        commit('setRoomTypes', response.types)
+                        return response
+                    });
+            } catch (err) {
+                console.log(err)
+            }
+            return returnResult
+        },
+        async getCamerasFromDB({commit}) {
+            let returnResult
+            try{
+                returnResult = await fetch('http://localhost:5000/getCameras', {
+                    credentials: "include",
+                    method: 'GET',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
+                })
+                    .then(response => response.json())
+                    .then((response) => {
+                        returnResult = response
+                        console.log(response)
+                        commit('setCameras', response)
+                        return response
+                        // this.$store.state.cameras = response
+                    });
+            } catch (err) {
+                console.log(err)
+            }
+            return returnResult
         },
         addRoom({commit}, newRoom) {
             commit('setRooms', newRoom)
@@ -96,6 +252,9 @@ export default createStore({
 
     },
     getters: {
+        getRefreshInterval(state){
+            return state.refreshInterval
+        },
         getCameras(state) {
             return state.cameras
         },
@@ -117,6 +276,9 @@ export default createStore({
         getSectorTypeByID: (state) => (id) => {
             return state.sectorTypes.find(sectorType => sectorType.id === id)
         },
+        getRoomTypes(state) {
+            return state.roomTypes
+        },
         getRooms(state) {
             return state.rooms
         },
@@ -137,6 +299,15 @@ export default createStore({
         },
         getUnusedCameras(state) {
             return state.unusedCameras.camerasList
+        },
+        getTasks(state) {
+            return state.tasks
+        },
+        getTaskByID: (state) => (id) => {
+            return state.tasks.find(task => task.id === id)
+        },
+        getAuthorized(state) {
+            return state.authorized
         }
     },
 })

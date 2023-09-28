@@ -23,7 +23,7 @@
         </div>
         <div class="col-4 window">
           <label style="font-weight: 700; margin-top: 10px">Изображение</label>
-          <form @submit.prevent="save" style="margin-top: 10px">
+          <form style="margin-top: 10px" @submit.prevent="save" class="needs-validation">
             <div class="">
               <label> Название: </label>
               <input class=" input-field" type="text" v-model.trim="camera.name"
@@ -41,6 +41,17 @@
               </p>
             </div>
             <div class="">
+              <label> Порт: </label>
+              <input class="input-field" type="text" v-model.trim="camera.port"
+                     :class="v$.camera.port.$error ? 'is-invalid' : ''">
+              <p v-if="v$.camera.port.$dirty && v$.camera.port.required.$invalid" class="invalid-feedback">
+                Обязательное поле
+              </p>
+              <p v-if="v$.camera.port.$dirty && v$.camera.port.integer.$invalid " class="invalid-feedback">
+                Значение должно быть числовым
+              </p>
+            </div>
+            <div class="">
               <label> Канал: </label>
               <input class="input-field" type="text" v-model.trim="camera.chanel"
                      :class="v$.camera.chanel.$error ? 'is-invalid' : ''">
@@ -48,7 +59,7 @@
                 Обязательное поле
               </p>
               <p v-if="v$.camera.chanel.$dirty && v$.camera.chanel.integer.$invalid " class="invalid-feedback">
-                Канал должен быть числом
+                Значение должно быть числовым
               </p>
             </div>
             <div class="">
@@ -75,65 +86,58 @@
                 Обязательное поле
               </p>
             </div>
-            <div style="width: 50px; margin-bottom: 10px">
-                <button type="submit" class="btn btn-success" >Сохранить</button>
-              </div>
+            <div class="">
+              <label> Полный путь: </label>
+              <input class="input-field" type="text" v-model.trim="camera.fullRoute">
+            </div>
+            <div id="buttons" class="grid-default" style="margin-bottom: 10px">
+              <button type="submit" class="btn btn-success" >Сохранить</button>
+              <button
+                  type="button"
+                  class="btn btn-primary"
+                  @click="removeCamera(camera.id); resetCamera()">
+                Удалить
+              </button>
+            </div>
           </form>
-          <button
-              class="btn btn-primary"
-              @click="removeCamera(camera.id); resetCamera()"
-              style="position: absolute; top: 0; right: 0; margin-right: 15px; margin-top: 244px">
-            Удалить
-          </button>
-          <label style="font-weight: 700">Сектора</label>
+
+          <label style="font-weight: 700">Секторы</label>
 
           <button style="position: absolute; right: 0; margin-right: 30px" @click="addSectorToCamera">Добавить</button>
           <div v-if="getSectors.length === 0" id="preloaded" class="hidden"></div>
-          <div class="" v-for="(cameraSector, index) in getSectorsByCameraID(this.camera.id)" :key="index">
-            <input class="input-field-sector" type="text" v-model.trim="cameraSector.name" placeholder="Название">
-            <select v-model="cameraSector.typeId">
-              <option v-for="(sectorType, index) in getSectorTypes" :value="sectorType.id" :key="index">
-                {{sectorType.name}}
-              </option>
-            </select>
-            <button class="hidden-button" @click="chooseSector(cameraSector)" style="margin-left: 5px">
-              <img v-if="sectorSelected && sector.id === cameraSector.id" style="margin-bottom: 5px" :src="require('../assets/icons/eye-opened.png')" alt="">
-              <img v-else style="margin-bottom: 5px" :src="require('../assets/icons/eye-closed.png')" alt="">
-            </button>
-            <button class="hidden-button" @click="removeSector(cameraSector.id); drawClear()" style="margin-left: 10px">
-              <img style="margin-bottom: 5px" :src="require('../assets/icons/delete.png')" alt="">
-            </button>
+          <div v-for="(cameraSector, index) in getSectorsByCameraID(this.camera.id)" :key="index">
+            <div class="grid-default sectors">
+                <input class="input-field-sector" type="text" v-model.trim="cameraSector.name" placeholder="Название">
+                <select v-model="cameraSector.typeId">
+                  <option v-for="(sectorType, index) in getSectorTypes" :value="sectorType.id" :key="index">
+                    {{sectorType.name}}
+                  </option>
+                </select>
+                <button class="hidden-button content content-center" @click="chooseSector(cameraSector)">
+                  <img v-if="sectorSelected && sector.id === cameraSector.id" style="margin-bottom: 5px" :src="require('../assets/icons/eye-opened.png')" alt="">
+                  <img v-else style="margin-bottom: 5px" :src="require('../assets/icons/eye-closed.png')" alt="">
+                </button>
+                <button
+                    class="hidden-button"
+                    @click="selectFunction(removeSector,cameraSector.id); $refs.showCamera.drawClear()">
+                  <img style="margin-bottom: 5px" :src="require('../assets/icons/delete.png')" alt="">
+                </button>
+            </div>
           </div>
           <br>
         </div>
         <div class="col-5">
-          <div class="col-12 window">
-            <p>Изображение</p>
-            <div style="width: 300px; height: 300px">
-<!--              :src="require('')"-->
-              <img id="putImage" :src="require('../' + imgPath)"  style="width: 100%; height: 100%"  alt="img1">
-              <canvas
-                  @click="drawLine($event.clientX, $event.clientY)"
-                  id="canvas"
-                  width="300" height="300"
-                  style="position: absolute; top: 0; left: 0; margin-top: 40px; margin-left: 14px"
-              >
-              </canvas>
-            </div>
-<!--            <img src="http://localhost:5000/videoStream" style="width: 100%">-->
-            <br>
-            <button @click="endDraw">Заполнить область</button>
-            <button @click="removeSectorPoints">Очистить всё</button>
-            <p>Информация сектора</p>
-            <p>Сектор {{sector.name}}</p>
-            <span>Техническая информация:</span>
-            <ul>
-              <li>Границы:</li>
-              <li>Высота от пола:</li>
-              <li>Тип сектора: <span v-if="sectorSelected">{{getSectorTypeByID(sector.typeId).name}}</span></li>
-            </ul>
-            <p>Справка:</p>
-          </div>
+          <show-camera
+          :cameraID="camera.id"
+          :sector="sector"
+          :selectFunction="selectFunction"
+          :sectorSelected=sectorSelected
+          :cameraSelected="cameraSelected"
+          :save="save"
+          @pushSectorPoints="(data) => this.sector.points.push(data)"
+          @removeSectorPoints="this.sector.points = []"
+          ref="showCamera"
+          ></show-camera>
         </div>
       </div>
     </div>
@@ -145,9 +149,14 @@ import {mapGetters} from 'vuex'
 import {mapActions} from 'vuex'
 import { useVuelidate } from '@vuelidate/core'
 import { required, integer} from '@vuelidate/validators'
+import ShowCamera from "@/components/ShowCamera";
 
 export default {
   name: "CamerasPage",
+  components: {
+    ShowCamera
+  },
+
   setup () {
     return {
       v$: useVuelidate()
@@ -155,18 +164,18 @@ export default {
   },
   data(){
     return {
-      ctx: null,
       drawClicks: 0,
-      imgPath: 'assets/images/background.png',
       camera: {
         id : null,
         roomID: null,
         name: '',
         ip: '',
+        port: '',
         chanel : '',
         codec : '',
         login : '',
         password : '',
+        fullRoute: '',
       },
       sector: {
         camId: null,
@@ -184,11 +193,12 @@ export default {
     camera: {
       name: {required},
       ip: {required},
+      port: {required, integer},
       chanel: {required, integer},
       codec: {required},
       login: { required },
       password: {required},
-    }
+    },
   },
   computed: {
     ...mapGetters([
@@ -198,21 +208,22 @@ export default {
         'getSectorsByCameraID',
         'getSectors',
         'getSectorByID',
-        'getSectorTypeByID'
+        'getSectorTypeByID',
+        'getRefreshInterval'
     ])
   },
   mounted() {
-    if (this.getCameras.length === 0){
-      this.getCamerasFromDB()
-    }
+    console.log('mountedCameras')
+    this.selectFunction(this.getCamerasFromDB)
     if (this.getSectorTypes.length === 0){
-      this.getSectorTypesFromDB()
+      this.selectFunction(this.getSectorTypesFromDB)
     }
-    this.draw()
   },
   methods: {
-    getSectorTypesFromDB() {
+    async getSectorTypesFromDB() {
+      let returnResult
       fetch(`http://localhost:5000/getSectorTypes`, {
+        credentials: "include",
         method: 'GET',
         cors: 'no-cors',
         headers: {
@@ -221,13 +232,17 @@ export default {
       })
           .then(response => response.json())
           .then((response) => {
+            returnResult = response
             console.log('sectorTypes ')
             this.$store.state.sectorTypes = response
             console.log(this.$store.state.sectorTypes)
           });
+      return returnResult
     },
     getSectorsByCameraIDFromDB() {
+      let returnResult
       fetch(`http://localhost:5000/getSectorsByCameraID?id=${this.camera.id}`, {
+        credentials: "include",
         method: 'GET',
         cors: 'no-cors',
         headers: {
@@ -236,7 +251,8 @@ export default {
       })
           .then(response => response.json())
           .then((response) => {
-            console.log('preload')
+            returnResult = response
+            // console.log('preload')
             // let preloaderEl = document.getElementById('preloaded')
             // preloaderEl.classList.add('hidden');
             console.log('sectors ')
@@ -244,9 +260,12 @@ export default {
             this.$store.state.sectors = response
             console.log(this.$store.state.sectors)
           });
+      return returnResult
     },
     getCamerasFromDB() {
+      let returnResult
       fetch('http://localhost:5000/getCameras', {
+        credentials: "include",
         method: 'GET',
         cors: 'no-cors',
         headers: {
@@ -255,39 +274,48 @@ export default {
       })
           .then(response => response.json())
           .then((response) => {
+            returnResult = response
             console.log(response)
             this.$store.state.cameras = response
           });
+      return  returnResult
     },
-    setSector(sector){
-      console.log('sector ' + sector)
-      let returnedSector = fetch('http://localhost:5000/setSector', {
-        method: 'POST',
-        cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-        body: JSON.stringify({
-          "camId": sector.camId,
-          "id": sector.id,
-          "name": sector.name,
-          "points": sector.points,
-          "roomId": sector.roomId,
-          "typeId": sector.typeId
-        })
-      })
-          .then(response => response.json())
-          .then((response) =>{
-            console.log(response)
-            sector.id = response.id
-            return sector
+    async setSector(sector){
+      console.log('1 sector ' + sector)
+      let returnValue
+      try {
+        returnValue = await fetch('http://localhost:5000/setSector', {
+          credentials: "include",
+          method: 'POST',
+          cors: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8',
+          },
+          body: JSON.stringify({
+            "camId": sector.camId,
+            "id": sector.id,
+            "name": sector.name,
+            "points": sector.points,
+            "roomId": sector.roomId,
+            "typeId": sector.typeId
           })
-      return returnedSector
+        })
+            .then(response => response.json())
+            .then((response) =>{
+              sector.id = response.id
+              if (sector.id === null) return  response
+              else return sector
+            })
+      } catch (err) {
+        console.error(err)
+      }
+      return returnValue
     },
-    setCamera() {
-      fetch('http://localhost:5000/setCamera', {
+    async setCamera() {
+      return fetch('http://localhost:5000/setCamera', {
+        credentials: "include",
         method: 'POST',
-        cors: 'no-cors',
+        // cors: 'no-cors',
         headers: {
           'Content-Type': 'application/json;charset=utf-8',
         },
@@ -296,13 +324,18 @@ export default {
           "codec": this.camera.codec,
           "id": this.camera.id,
           "ip": this.camera.ip,
+          "port": this.camera.port,
           "login": this.camera.login,
           "name": this.camera.name,
-          "password": this.camera.password
+          "password": this.camera.password,
+          "fullRoute": this.camera.fullRoute
         })
       })
           .then(response => response.json())
           .then((response) => {
+            console.log('setCameraResponse ' + response)
+            console.log(response)
+
             this.camera.id = response.id
             let cameraCopy = Object.assign({}, this.camera)
             console.log('check')
@@ -313,123 +346,71 @@ export default {
             console.log('noCheck')
             this.getSectors.forEach((sector) => {
               sector.camId = this.camera.id
-                this.setSector(sector)
+              this.selectFunction(this.setSector, sector)
             })
+            return response
           });
     },
     save() {
       this.v$.camera.$touch()
+      console.log('save')
       if (!this.v$.camera.$error) {
         console.log('Валидация прошла успешно')
-        this.setCamera()
+        this.selectFunction(this.setCamera)
       }
       else console.log('Валидация не прошла')
     },
-    endDraw() {
-      this.ctx.lineTo(this.sector.points[0][0], this.sector.points[0][1])
-      this.ctx.stroke()
-      this.ctx.fillStyle = "rgba(255, 230, 0, 0.25)"
-      this.ctx.fill()
-      this.drawClicks = 0
-    },
-    drawLine(x, y){
-      if (this.sectorSelected){
-        let targetCoords = document.getElementById('canvas').getBoundingClientRect()
-        let newX = x - targetCoords.left
-        let newY = y - targetCoords.top
-        console.log(`x: ${x} y: ${y} newX: ${newX} newY: ${newY} left: ${targetCoords.left} right: ${targetCoords.top}`)
-        if (this.drawClicks === 0) {
-          this.ctx.moveTo(newX, newY)
-        }
-        else this.ctx.lineTo(newX, newY)
-        this.sector.points.push([newX, newY])
-        this.ctx.arc(newX, newY, 2, 0, Math.PI * 2)
-        this.ctx.strokeStyle = "rgba(255, 230, 0)"
-        this.ctx.lineWidth = 2
-        this.ctx.stroke()
-        this.drawClicks ++
-      }
-      else alert("Выберите сектор")
-    },
-    draw() {
-      let canvas = document.getElementById('canvas')
-      if (canvas.getContext) {
-        console.log('getContext')
-        this.ctx = canvas.getContext("2d")
-        this.ctx.beginPath()
-        // this.drawImage()
-      }
-    },
-    removeSectorPoints(){
-      this.ctx.clearRect(0, 0, 300, 300)
-      this.sector.points = []
-      // this.drawImage();
-      this.ctx.beginPath()
-    },
-    drawClear() {
-      this.ctx.clearRect(0, 0, 300, 300)
-      this.ctx.beginPath()
-    },
-    drawImage() {
-      this.imgPath='assets/images/img1.png'
-      // img
-      // console.log(img)
-      // this.ctx.drawImage(img, 0, 0, 779, 584, 0, 0, 300, 300)
-    },
-    drawSectorPoints() {
-      console.log('drawSectorPoints')
-      // this.drawImage()
-      let points = this.sector.points
-      this.ctx.moveTo(points[0][0], points[0][1])
-      this.ctx.arc(points[0][0], points[0][1], 2, 0, Math.PI * 2)
-      for (let i = 1; i < points.length; i++){
-        this.ctx.lineTo(points[i][0], points[i][1])
-        this.ctx.arc(points[i][0], points[i][1], 2, 0, Math.PI * 2)
-      }
-      this.ctx.lineTo(points[0][0], points[0][1])
-      this.ctx.strokeStyle = "rgba(255, 230, 0)"
-      this.ctx.fillStyle = "rgba(255, 230, 0, 0.25)"
-      this.ctx.lineWidth = 2
-      this.ctx.stroke()
-      this.ctx.fill()
-      //
-    },
     chooseCamera(camera) {
-      this.drawImage()
+      this.resetCamera()
       console.log(camera.id)
       this.camera = this.getCameraByID(camera.id)
-      this.getSectorsByCameraIDFromDB()
       this.cameraSelected = true
+      console.log(this.camera.id)
+      this.selectFunction(this.getSectorsByCameraIDFromDB)
+
+      //ожидание корректного ID камеры
+      let interval = setInterval(() => {
+        console.log('id' + camera.id + ' ' + this.camera.id)
+        if (this.camera.id === camera.id){
+          this.$refs.showCamera.drawImage()
+          clearInterval(interval)
+        }
+      }, 100)
       this.resetSector()
     },
-    chooseSector(sector) {
-      if (this.sector.id === sector.id && sector.id !== null) {
-        console.log(this.sector.id + ' ' + sector.id + ' resetSec')
+    chooseSector(cameraSector) {
+      if (this.sector.id === cameraSector.id && cameraSector.id !== null) {
+        console.log(this.sector.id + ' ' + cameraSector.id + ' resetSec')
         this.resetSector()
       }
-      else if (sector.name === '' || sector.typeId === null) alert("Сначала введите название сектора и выберите его тип")
-      else if (sector.id === null) {
-        let p1 = this.setSector(sector)
-        p1.then(value => {
-          console.log(value.id)
-          this.showSector(value)
+      else if (cameraSector.name === '' || cameraSector.typeId === null) alert("Сначала введите название сектора и выберите его тип")
+      else if (cameraSector.id === null) {
+        let p1 = this.selectFunction(this.setSector, cameraSector)
+        p1.then(() => {
+          console.log('4 value')
+          console.log(cameraSector)
+          this.showSector(cameraSector)
         })
       }
-      else this.showSector(sector)
+      else this.showSector(cameraSector)
     },
     showSector(sector) {
+      console.log('5 show')
       if (sector.id !== null) {
         this.sector = this.getSectorByID(sector.id)
         this.sectorSelected = true
-        this.drawClear()
-        // this.drawImage()
+        this.$refs.showCamera.drawClear()
         if (this.sector.points.length !== 0) {
-          this.drawSectorPoints()
+
+          console.log(this.sector)
+          this.$refs.showCamera.drawSectorPoints()
         }
       }
     },
     resetCamera(){
+      // this.$refs.showCamera.changeImgPath('@/assets/images/background.png')
       console.log('reset')
+      this.cameraSelected = false
       this.$store.state.sectors = []
       let cameraCopy = Object.assign({}, this.camera)
       this.camera = cameraCopy
@@ -438,16 +419,23 @@ export default {
       this.camera.name = ''
       this.camera.ip = ''
       this.camera.codec = ''
+      this.camera.port = ''
       this.camera.chanel = ''
       this.camera.login = ''
       this.camera.password = ''
-      this.cameraSelected = false
+      this.camera.fullRoute = ''
+      this.$refs.showCamera.changeImgPath("data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=")
       this.v$.camera.$reset()
       this.resetSector()
-      this.drawClear()
+      this.$refs.showCamera.drawClear()
+
+      if (this.getRefreshInterval){
+        console.log('clean')
+        this.$store.commit('clearRefreshInterval')
+      }
     },
     resetSector() {
-      this.drawClear()
+      this.$refs.showCamera.drawClear()
       let sectorCopy = Object.assign({}, this.sector)
       this.sector = sectorCopy
       this.sector.camId = null
@@ -464,20 +452,23 @@ export default {
       this.sector.camId = this.camera.id
       this.$store.commit('setSector', Object.assign({}, this.sector))
     },
+    async selectFunction(func, value){
+      let respFunc
+      if (arguments.length === 2) respFunc = await func(value)
+      else respFunc = await func()
+      return respFunc
+    },
     ...mapActions([
         'addCamera',
         'removeCamera',
-        'removeSector'
+        'removeSector',
+        'refreshToken'
     ])
   }
 }
 </script>
 
-<style scoped>
-canvas {
-  border: 1px solid black;
-  background: none;
-}
+<style scoped lang="scss">
 #preloaded {
   position: inherit;
   left: 0;
@@ -557,11 +548,32 @@ canvas {
 .hidden-button{
   background: inherit;
   border: none;
-  width: 25px;
+  //width: auto;
   /*vertical-align: center;*/
 }
 .hidden-button:hover{
   background-color: #dadada;
   cursor: pointer;
+}
+.content{
+  display: flex;
+  align-items: center;
+&-center{
+   justify-content: center;
+ }
+&-end{
+   justify-content: end;
+ }
+&-start{
+   justify-content: start;
+ }
+}
+.grid-default{
+  display: grid;
+  grid-gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+.sectors{
+  grid-template-columns: repeat(4, 1fr)
 }
 </style>

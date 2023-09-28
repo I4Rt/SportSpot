@@ -65,7 +65,7 @@ class Sector(db.Model, BaseData):
         self.__points = json.dumps(points)
         
     def getCamera(self):
-        return modules.Camera.Camera.query.filter_by(id = self.camId)
+        return modules.Camera.Camera.query.filter_by(id = self.camId).first()
     
     
     def getSectorType(self):

@@ -26,9 +26,25 @@
        </button>
      </div>
      <div class="col-6">
-       <div class="row justify-content-end">
-         <div class="col-3">
-           Пользователь
+       <div class="row justify-content-end" style="height: 100%">
+         <div class="col-3 dropdown" style="display: flex">
+             <div class="btn nav-bar-btn-off" style="margin: auto">
+               Пользователь
+               <div class="dropdown-menu">
+                 <button @click="this.$emit('onLogout')" class="dropdown-item">Выйти</button>
+               </div>
+             </div>
+<!--           <div class="dropdown" :class="dropdownClass" @mouseover="dropdownClass = 'show'"-->
+<!--                @mouseleave="dropdownClass = ''">-->
+<!--             <div class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" >-->
+<!--               Dropdown button-->
+<!--             </div>-->
+<!--             <div class="dropdown-menu" :class="dropdownClass" aria-labelledby="dropdownMenuButton">-->
+<!--               <a class="dropdown-item" href="#">Action</a>-->
+<!--               <a class="dropdown-item" href="#">Another action</a>-->
+<!--               <a class="dropdown-item" href="#">Something else here</a>-->
+<!--             </div>-->
+<!--           </div>-->
          </div>
        </div>
      </div>
@@ -37,19 +53,25 @@
 </template>
 
 <script>
+
 export default {
   name: "NavBar",
   data(){
     return{
       page: 'Calendar',
-      isActive : false
+      isActive : false,
+      dropdownClass : '',
+      authorized : this.getAuthorized
     }
   },
   methods: {
     showPage(data){
       this.page = data
       this.$emit('showPage', data)
-    }
+    },
+    // onLogout(){
+    //   this.$store.state.authorized = false
+    // }
   }
 }
 </script>
@@ -65,6 +87,21 @@ export default {
   font-size: 12px;
   font-weight: 700;
 }
+.btn:hover{
+  background-color: #a1a1a1;
+}
+
+.dropdown:hover .dropdown-menu{
+  display: block;
+}
+.dropdown-menu{
+  display: none;
+  margin: 0;
+}
+.dropdown-item:hover{
+  background-color: #dadada;
+}
+
 .nav-bar-btn-on{
   background-color: #29239f;
   color: aliceblue;

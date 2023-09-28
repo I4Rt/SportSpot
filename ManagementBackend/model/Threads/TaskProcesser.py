@@ -4,6 +4,9 @@ from model.data.Result import *
 from threading import Thread, get_native_id
 from model.QueueTaskHolder import *
 
+from system.kafka.KafkaSingleton import KafkaSender
+from tools.FileUtil import *
+
 from system.streaming.StreamInterface import StreamInterface
 
 from tools.Jsonifyer import Jsonifyer
@@ -12,16 +15,18 @@ from time import sleep
 import copy
 from cv2 import imshow
 
+from tools.FrameGetter import *
+
 class TaskProcessor(Thread, Jsonifyer):
     __trys = 3
     
     def __init__(self, task:Task):
         Thread.__init__(self)
         self.task = copy.deepcopy(task)
-        
+
     def run(self):
-        
         with app.app_context():
+            sender = KafkaSender.getInstance()
             self.task.setStatusInProgress()
             self.task.save(False)
             tzDateStr = str(self.task.end)
@@ -30,43 +35,81 @@ class TaskProcessor(Thread, Jsonifyer):
             duration = date - datetime.now()
             duration = int(duration.total_seconds()) - self.task.interval
             if duration <= 0:
+                self.task.setStatusDone()
+                self.task.save(False)
                 raise Exception(f'In thread #{get_native_id()}: time is out, duration < 0')
+            room = Room.getByID(self.task.roomId)
+            sectors = room.getSectors()
+            # print(f"sectprs {len(sectors)}")
+            cameras = []
+            for sector in sectors:
+                camId = sector.camId
+                isSet = False
+                for camData in cameras:
+                    if camData["camId"] == camId:
+                        camData["sectors"].append(sector)
+                        isSet = True
+                if not isSet:
+                    data = {"camId": camId, "generator": None, "sectors": [sector], "camera": sector.getCamera()}
+                    cameras.append(data)
             
-            cams = Room.getByID(self.task.roomId).getCameras() # incapsulate it
-            if len(cams) != 0:
-                iterators = []
-                for cam in cams:
-                    connectCounter = 0
-                    while connectCounter < self.__trys:
-                        try:
-                            
-                            framesIter = StreamInterface.getStream(cam, duration)
-                            if framesIter is not None:
-                                iterators.append(framesIter)
-                            break
-                        except:
-                            connectCounter += 1
-                if len(iterators) == 0:
+            # print(cameras)
+            for camData in cameras:
+                connectCounter = 0
+                while connectCounter < self.__trys:
+                    print('here')
+                
+                    framesIter = FrameGetter.getStream(camData["camera"].getRoute(), duration)
+                    # print(framesIter)
+                    if framesIter is not None:
+                        camData["generator"]  = framesIter
+                        break
+                    else:
+                        connectCounter += 1
+                print(connectCounter)
+                if connectCounter == self.__trys:
+                    cameras.remove(camData)
+                    
+            if len(cameras) == 0:
                     self.task.setStatusDone()
                     self.task.save(False)
-                    raise Exception(f'In thread #{get_native_id()}: during the work got three errors')
-                while date > datetime.now():    
-                    for iter in iterators:
-                        frame = next(iter)
-                        # print('frame:', frame)
-                        # if frame is not None:
-                        #     analize frame
-                        print(f'In thread #{get_native_id()}: task id {self.task.id}, analizer sent')
-                        # add wait param to kafka reciever
-                        sleep(self.task.interval)
+                    raise Exception(f'In thread #{get_native_id()}: no cameras or unable to connect to them')
+            # print(cameras)
             
-                print('loop finished')
-                self.task.setStatusDone()
-                self.task.save(False)
-                print(f'In thread #{get_native_id()}: the process is finished normaly')
-                return None
-            else:
-                self.task.setStatusDone()
-                self.task.save(False)
-                raise Exception(f'In thread #{get_native_id()}: no cameras')
+            while date > datetime.now():   
+                dataToSend = {"taskID": self.task.id,
+                              "agregationMode": room.classId, # CHECK
+                              "data": []}
+                for camData in cameras:
+                    frame = next(camData["generator"])
+                    if frame is not None:
+                        output = cv2.resize(frame, (600, 400))
+                        localData = {
+                            "img": FileUtil.convertImageToBytes(output),
+                            "sectors": [{"points": sector.getPointList(), 
+                                         "mode": sector.typeId} 
+                                        for sector in camData["sectors"]]
+                        }
+                        dataToSend["data"].append(localData)
+                if len(dataToSend["data"]) > 0:
+                    # print("sending:")
+                    #
+                    # for data in dataToSend["data"]:
+                    #     print(f'img: {data["img"][:10]}')
+                    #     for sec in data["sectors"]:
+                    #         print(f'    points: {sec["points"]}')
+                    #         print(f'    mode: {sec["mode"]}')
+                    #         print()
+                    #
+                    with open('senderData.json', 'w') as file:
+                        file.write(json.dumps(dataToSend))
+                    sendData = sender.sendMessage(json.dumps(dataToSend))
+                    print(sendData)
+                    print(f'In thread #{get_native_id()}: task id {self.task.id}, analizer sent')
+                    # add wait param to kafka reciever  
+                sleep(self.task.interval)
+            self.task.setStatusDone()
+            self.task.save(False)
+            print(f'In thread #{get_native_id()}: the process is finished normaly')
+            return None     
         

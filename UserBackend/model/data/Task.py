@@ -18,13 +18,16 @@ class Task(db.Model, BaseData):
     end = db.Column(db.DateTime(timezone=True))
     interval = db.Column(db.Integer, default = 10)
     roomId = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
+    color = db.Column(db.Text, default=None)
     __status = db.Column(db.Integer, default=0)
+    
     __table_args__ = (
         db.UniqueConstraint('roomId', 'begin', name='_room_unique_task'),
     )
     
     
-    def __init__(self, begin, end, roomId, name = 'Не названо', targetCount = 0, comment="", interval:int=None):
+    
+    def __init__(self, begin, end, roomId, name = 'Не названо', targetCount = 0, comment="", interval:int=None, color:str=None):
         self.begin = begin
         self.end = end
         self.roomId = roomId
@@ -36,7 +39,11 @@ class Task(db.Model, BaseData):
         else:
             self.interval = 30
         self.__status = 0
-
+        self.color = color
+        
+    def setColor(self, color):
+        self.color = color
+        
     def getStatus(self):
         return self.__status
         
@@ -49,28 +56,30 @@ class Task(db.Model, BaseData):
         
     
     
-    # время не должно быть меньше текущего
+    # время не должно быть меньше текущего если условие задано
     # время не должно содержаться в существующем отрезке
     # начало должно быть меньше конца
-    def _isValid(self):
+    def _isValid(self, checkFuture=True):
         if self.begin < self.end:
-            if datetime.strptime(str(self.begin), '%Y-%m-%d %H:%M:%S') > datetime.now():
-                if self.id != None:
+            if self.id != None:
+                cond1 = datetime.strptime(str(self.begin), '%Y-%m-%d %H:%M:%S') > datetime.now()
+                if (cond1 and checkFuture) or (not cond1 and not checkFuture):
                     existCoveredTasks = Task.getCoveredTasksByRoomId(self.id, self.roomId, self.begin, self.end)
                     if len(existCoveredTasks) == 0:
                         return True
-                return True
+                return False # past/future check or cover tasks
+            return True # because is already checked
         return False
     
-    def save(self):
-        if not self._isValid():
+    def save(self, needCheckFuture=True):
+        if not self._isValid(needCheckFuture):
             raise (Exception('The task is not valid (is covered or the beginning is in the past or greater then the end)'))
-        else:
-            db.session.add(self)
-            if self.__getResult() == None:
-                result = Result(self.id)
-                db.session.add(result)
-            db.session.commit()
+        
+        db.session.add(self)
+        if self.__getResult() == None:
+            result = Result(self.id)
+            db.session.add(result)
+        db.session.commit()
     
     def delete(self):
         result = self.__getResult()

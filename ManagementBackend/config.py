@@ -37,9 +37,9 @@ jwt = JWTManager(app)
 
 
 #side
-app.config['id'] = 'yarigina-local-'
-app.config['groop'] = app.config['id'] + 'recieve-task-groop'
-app.config['topic'] = app.config['id'] + 'recieve-task-topic'
+app.config['kafkaServer'] = "localhost:9092"
+app.config['senderTopic'] = f'SO{int(app.config["SPORT_OBJECT_ID"])}_local'
+app.config['recieverTopic'] = f'SO{int(app.config["SPORT_OBJECT_ID"])}_receive'
 
 
 
