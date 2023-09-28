@@ -18,11 +18,16 @@
     <br>
     <button @click="endDraw(); save()">Заполнить область</button>
     <button @click="removeSectorPoints(); save()">Очистить всё</button>
-    <p>Информация сектора</p>
-    <p>Сектор {{sector.name}}</p>
+    <br>
+    <span>Информация сектора</span>
+    <br>
+    <span class="short-name" :title="sector.name">Сектор {{sector.name}}</span>
+    <br>
     <span>Техническая информация:</span>
     <ul>
-      <li>Границы:</li>
+      <li>
+      <span class="short-name" :title="sector.points">Границы:</span>
+      </li>
       <li>Высота от пола:</li>
       <li>Тип сектора: <span v-if="sectorSelected">{{getSectorTypeByID(sector.typeId).name}}</span></li>
     </ul>
@@ -53,8 +58,9 @@ export default {
     this.draw()
   },
   methods: {
-    drawImage() {
-      this.changeImgPath(`http://localhost:5000/getVideo?camId=${this.cameraID}`)
+    async drawImage() {
+      let changeResp = await this.changeImgPath(`http://localhost:5000/getVideo?camId=${this.cameraID}`)
+      console.log(changeResp)
       let interval = this.getRefreshInterval
       if (interval){
         console.log('clean')
@@ -160,5 +166,12 @@ export default {
 canvas {
   border: 1px solid black;
   background: none;
+}
+.short-name {
+  display: inline-block;
+  width: 15em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 </style>

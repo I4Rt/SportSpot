@@ -100,7 +100,7 @@
                           <td style="padding: 0">
                             <div id="td-height" class="grid-default" style="height: 26px">
                               <div style="margin-left: 20px">
-                                <span >{{ cameraSector.name }}</span>
+                                <span class="sector-name" :title="cameraSector.name">{{ cameraSector.name }}</span>
                               </div>
                               <div class="content content-end">
                                 <button class="hidden-button swipe-sector" @click="selectFunction(setSectorToRoom,cameraSector)">
@@ -158,6 +158,7 @@ import { required} from '@vuelidate/validators'
 import ShowCamera from "@/components/ShowCamera";
 
 export default {
+  props: ['selectFunction'],
   name: "RoomsPage",
   components: {
     ShowCamera
@@ -219,6 +220,7 @@ export default {
     this.selectFunction(this.getRoomsFromDB)
     this.selectFunction(this.getSectorTypesFromDB)
     this.selectFunction(this.getRoomTypesFromDB)
+    this.resetRoom()
   },
   methods: {
     save() {
@@ -352,25 +354,27 @@ export default {
         })
     },
     showSector(cameraSector) {
-      let currentCamId = this.sector.camId
-      console.log(currentCamId)
-      this.sector = this.getSectorByID(cameraSector.id)
-      this.sectorSelected = true
-      this.$refs.showCamera.drawClear()
-          let interval = setInterval(() => {
-            if (this.sector.id === cameraSector.id){
-              if (currentCamId !== cameraSector.camId){
-                this.$refs.showCamera.changeImgPath("data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=").then(
-                    () => {
-                      this.$refs.showCamera.drawImage()
-                    })
-              }
-              if (this.sector.points.length !== 0) {
-                this.$refs.showCamera.drawSectorPoints()
-              }
-              clearInterval(interval)
+      if (this.sector.id === cameraSector.id) this.resetSector()
+      else{
+        let lastCamId = this.sector.camId
+        this.sector = this.getSectorByID(cameraSector.id)
+        this.sectorSelected = true
+        this.$refs.showCamera.drawClear()
+        let interval = setInterval(() => {
+          if (this.sector.id === cameraSector.id){
+            if (lastCamId !== cameraSector.camId){
+              this.$refs.showCamera.changeImgPath("data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=").then(
+                  () => {
+                    this.$refs.showCamera.drawImage()
+                  })
             }
-          }, 100)
+            if (this.sector.points.length !== 0) {
+              this.$refs.showCamera.drawSectorPoints()
+            }
+            clearInterval(interval)
+          }
+        }, 100)
+      }
     },
     resetRoom(){
       let roomCopy = Object.assign({}, this.room)
@@ -440,39 +444,9 @@ export default {
             return response
           });
     },
-    // async selectFunction(func, value){
-    //   let respFunc
-    //   let promise = new Promise((resolve) =>{
-    //     if (arguments.length === 2) func(value)
-    //     else func()
-    //     resolve()
-    //   })
-    //   console.log('promise')
-    //   console.log(promise)
-    //   let refresh
-    //   // console.log('respFunc ' + respFunc)
-    //   console.log('respFunc ' + respFunc)
-    //   console.log(respFunc)
-    //   if (respFunc === "Bad token") {
-    //     refresh = this.refreshToken()
-    //     if (refresh === "ok"){
-    //       // console.log('refreshOk')
-    //       respFunc = func()
-    //     }
-    //     if (respFunc === "Bad token") alert('logout pls')
-    //   }
-    //   else return respFunc
-    // },
-    async selectFunction(func, value){
-      let respFunc
-      if (arguments.length === 2) respFunc = await func(value)
-      else respFunc = await func()
-      return respFunc
-    },
     ...mapActions([
         'addRoom',
         'removeRoom',
-        'refreshToken',
         'getSectorsByCameraIDFromDB',
         'getRoomTypesFromDB',
         'getSectorTypesFromDB',
@@ -571,9 +545,18 @@ export default {
 }
 ::-webkit-scrollbar-track {
   box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+  border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb {
   box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+  border-radius: 10px;
+}
+.sector-name {
+  display: inline-block;
+  width: 4em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 //:root{
 //  --td-height: 52px;

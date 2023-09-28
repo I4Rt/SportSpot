@@ -14,12 +14,18 @@
         <div class="col-5">
           <label class="field">Просмотр</label>
         </div>
-        <div class="col-3" >
-          <div class="row window camera col-12" @click="chooseCamera(camera)" v-for="(camera, index) in getCameras"
-               :key="index">
-              <span class="cam-name">{{camera.name}}</span>
-              <span class="cam-ip">{{camera.ip}}</span>
+        <div class="col-3" style="text-align: center">
+          <template v-if="getCameras.length === 0">
+            <img :src="require('../assets/gifs/black-spinner.svg')" style="width: 100px; height: 100px" alt="">
+          </template>
+          <template v-else>
+            <div class="row window camera col-12"
+                @click="chooseCamera(camera)"
+                v-for="(camera, index) in getCameras" :key="index">
+            <span class="cam-name">{{camera.name}}</span>
+            <span class="cam-ip">{{camera.ip}}</span>
           </div>
+          </template>
         </div>
         <div class="col-4 window">
           <label style="font-weight: 700; margin-top: 10px">Изображение</label>
@@ -100,29 +106,33 @@
               </button>
             </div>
           </form>
-
           <label style="font-weight: 700">Секторы</label>
-
           <button style="position: absolute; right: 0; margin-right: 30px" @click="addSectorToCamera">Добавить</button>
-          <div v-if="getSectors.length === 0" id="preloaded" class="hidden"></div>
-          <div v-for="(cameraSector, index) in getSectorsByCameraID(this.camera.id)" :key="index">
-            <div class="grid-default sectors">
-                <input class="input-field-sector" type="text" v-model.trim="cameraSector.name" placeholder="Название">
-                <select v-model="cameraSector.typeId">
-                  <option v-for="(sectorType, index) in getSectorTypes" :value="sectorType.id" :key="index">
-                    {{sectorType.name}}
-                  </option>
-                </select>
-                <button class="hidden-button content content-center" @click="chooseSector(cameraSector)">
-                  <img v-if="sectorSelected && sector.id === cameraSector.id" style="margin-bottom: 5px" :src="require('../assets/icons/eye-opened.png')" alt="">
-                  <img v-else style="margin-bottom: 5px" :src="require('../assets/icons/eye-closed.png')" alt="">
-                </button>
-                <button
-                    class="hidden-button"
-                    @click="selectFunction(removeSector,cameraSector.id); $refs.showCamera.drawClear()">
-                  <img style="margin-bottom: 5px" :src="require('../assets/icons/delete.png')" alt="">
-                </button>
-            </div>
+          <div style="text-align: center">
+            <template v-if="cameraSelected && getSectorsByCameraID(this.camera.id).length === 0">
+              <img :src="require('../assets/gifs/black-spinner.svg')" style="width: 100px; height: 100px" alt="">
+            </template>
+            <template v-else>
+              <div v-for="(cameraSector, index) in getSectorsByCameraID(this.camera.id)" :key="index">
+                <div class="grid-default sectors">
+                  <input class="input-field-sector" type="text" v-model.trim="cameraSector.name" placeholder="Название">
+                  <select v-model="cameraSector.typeId">
+                    <option v-for="(sectorType, index) in getSectorTypes" :value="sectorType.id" :key="index">
+                      {{sectorType.name}}
+                    </option>
+                  </select>
+                  <button class="hidden-button content content-center" @click="chooseSector(cameraSector)">
+                    <img v-if="sectorSelected && sector.id === cameraSector.id" style="margin-bottom: 5px" :src="require('../assets/icons/eye-opened.png')" alt="">
+                    <img v-else style="margin-bottom: 5px" :src="require('../assets/icons/eye-closed.png')" alt="">
+                  </button>
+                  <button
+                      class="hidden-button"
+                      @click="selectFunction(removeSector,cameraSector.id); $refs.showCamera.drawClear()">
+                    <img style="margin-bottom: 5px" :src="require('../assets/icons/delete.png')" alt="">
+                  </button>
+                </div>
+              </div>
+            </template>
           </div>
           <br>
         </div>
@@ -152,6 +162,7 @@ import { required, integer} from '@vuelidate/validators'
 import ShowCamera from "@/components/ShowCamera";
 
 export default {
+  props: ['selectFunction'],
   name: "CamerasPage",
   components: {
     ShowCamera
@@ -261,24 +272,6 @@ export default {
             console.log(this.$store.state.sectors)
           });
       return returnResult
-    },
-    getCamerasFromDB() {
-      let returnResult
-      fetch('http://localhost:5000/getCameras', {
-        credentials: "include",
-        method: 'GET',
-        cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-      })
-          .then(response => response.json())
-          .then((response) => {
-            returnResult = response
-            console.log(response)
-            this.$store.state.cameras = response
-          });
-      return  returnResult
     },
     async setSector(sector){
       console.log('1 sector ' + sector)
@@ -452,17 +445,11 @@ export default {
       this.sector.camId = this.camera.id
       this.$store.commit('setSector', Object.assign({}, this.sector))
     },
-    async selectFunction(func, value){
-      let respFunc
-      if (arguments.length === 2) respFunc = await func(value)
-      else respFunc = await func()
-      return respFunc
-    },
     ...mapActions([
         'addCamera',
         'removeCamera',
         'removeSector',
-        'refreshToken'
+        'getCamerasFromDB'
     ])
   }
 }
