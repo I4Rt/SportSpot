@@ -35,7 +35,8 @@ class StreamInterface:
     @classmethod
     def refreshStream(cls, route:str, newTime: float | int):
         for stream in StreamBase._getStreams():
-            if not stream._checkFinished() and stream.getRoute() == route:
+            print('compare', stream.getRoute(), type(stream.getRoute()), route, type(route))
+            if not stream._checkFinished() and str(stream.getRoute()) == route:
                 stream._resetTime(newTime)
                 return True
         return False

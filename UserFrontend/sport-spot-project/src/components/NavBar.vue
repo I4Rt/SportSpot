@@ -26,16 +26,14 @@
        </button>
      </div>
      <div class="col-6">
-       <div class="row justify-content-end">
-         <div class="col-3">
-           <div class="dropdown">
-             <div class="btn btn-secondary">
+       <div class="row justify-content-end" style="height: 100%">
+         <div class="col-3 dropdown" style="display: flex">
+             <div class="btn nav-bar-btn-off" style="margin: auto">
                Пользователь
                <div class="dropdown-menu">
                  <button @click="this.$emit('onLogout')" class="dropdown-item">Выйти</button>
                </div>
              </div>
-           </div>
 <!--           <div class="dropdown" :class="dropdownClass" @mouseover="dropdownClass = 'show'"-->
 <!--                @mouseleave="dropdownClass = ''">-->
 <!--             <div class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" >-->

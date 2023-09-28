@@ -379,11 +379,11 @@ def getUnusedCameraSectorsByRoomId():
             data = []
             print(f'i found {len(unusedSectors)} sectors')
             for sec in unusedSectors:
-                print(sec)
+                # print(sec)
                 #print(sec)
                 camera = Camera.getByID(sec.camId)
                 if camera != None:
-                    #print("camera for sector is found")
+                    # print("camera for sector is found")
                     if not (camera.id in exist):
                         # print(cam)
                         exist.append(camera.id)
@@ -397,13 +397,15 @@ def getUnusedCameraSectorsByRoomId():
                     for cam in data:
                         if cam['id'] == sec.camId:
                             cam["sectors"].append(sectorInfo)
-                    #print(data)
-                else:
-                    sec.remove()
-                print(exist)
+                    # print(data)
+                # else:
+                    # sec.remove()
+                    # print(camera)
+                # print(exist)
             resp = make_response({'camerasList': data})
-        except Exception:
+        except Exception as e:
             resp = make_response({'Answer': data})
+            print(e)
         resp.headers['Content-Type'] = "application/json"
         return resp
     else:

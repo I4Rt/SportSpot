@@ -40,7 +40,11 @@
         </p>
       </div >
       <div class="row justify-content-around form-group">
-        <button type="submit" class="btn btn-primary col-auto">Зарегистрироваться</button>
+        <button type="submit" class="btn btn-success col-auto">Зарегистрироваться</button>
+        <button type="button" class="btn btn-primary col-auto"
+                @click="this.$emit('registrationCompleted')">
+          Назад
+        </button>
       </div>
     </form>
   </div>
@@ -78,22 +82,26 @@ export default {
   },
   methods: {
     register() {
-      fetch('http://localhost:5000/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-        body: JSON.stringify({
-          'name': this.user.name,
-          "surname": this.user.surname,
-          "login" : this.user.login,
-          "password" : this.user.password})
-      })
-          .then((response) => {
-            console.log(response.json())
-            this.$emit('registrationCompleted')
-          });
-    },
+      this.v$.user.$touch()
+      if (!this.v$.user.$error) {
+        fetch('http://localhost:5000/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8',
+          },
+          body: JSON.stringify({
+            'name': this.user.name,
+            "surname": this.user.surname,
+            "login": this.user.login,
+            "password": this.user.password
+          })
+        })
+            .then((response) => {
+              console.log(response.json())
+              this.$emit('registrationCompleted')
+            });
+      }
+    }
   }
 
 }
