@@ -49,7 +49,8 @@ export default{
       let respFunc
       if (arguments.length === 2) respFunc = await func(value)
       else respFunc = await func()
-      console.log(respFunc)
+      console.log('selectFunction')
+      // console.log(respFunc)
       try{
         if (respFunc.msg === 'Token has expired'){
           console.log('refresh')

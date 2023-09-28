@@ -1,15 +1,25 @@
 <template>
-  <div>
+  <explorer-page
+      v-if="openExplorer"
+      @openExplorerChange="openExplorer = false">
+  </explorer-page>
     <div class="container" @mouseup="onMousedown=false">
       <div class="row justify-content-around">
       <div class="col-6">
         <label class="field">Календарь</label>
       </div>
         <div class="col-6">
-          <label v-if="!roomSelected" class="field">Помещения</label>
-          <label v-if="roomSelected" class="field">
-            Помещение 1 {{`${this.selectedDay.substr(3, 2)}/${this.selectedDay.substr(0, 2)}/${this.selectedDay.substr(6, 4)}`}}
-          </label>
+          <div class="grid-default">
+            <div class="content content-start">
+              <label v-if="!roomSelected" class="field">Помещения</label>
+              <label style="margin-left: 5px" v-if="roomSelected" class="field">
+                {{this.getRoomByID(roomSelectedId).name}} {{`${this.selectedDay.substr(3, 2)}/${this.selectedDay.substr(0, 2)}/${this.selectedDay.substr(6, 4)}`}}
+              </label>
+            </div>
+            <div class="content content-end">
+              <button class="btn btn-primary" style="margin-right: 5px; padding: 3px 8px" @click="roomSelected = false">Назад</button>
+            </div>
+          </div>
         </div>
       <div class="col-6 " >
         <div class="col-12 window window-onPage" style="display: flow-root">
@@ -45,18 +55,24 @@
                   :id="index">
                 {{day}}
               </div>
-<!--              <div class="calendar-number">1</div>-->
             </div>
+          </div>
+          <div style="margin-top: 5px" class="">
+            <input class="input-field input-field-file" type="text" placeholder="Путь до папки с архивными файлами">
+            <button @click="openExplorer = true" class="btn btn-success">Открыть</button>
           </div>
         </div>
       </div>
       <div class="col-6" >
         <div class="col-12 window window-onPage">
-          <div v-if="selectedDay.length !== 0" class="row">
-            <div v-if="!roomSelected" class="col-6">
+          <div style="text-align: center" v-if="selectedDay.length === 0">
+            <img :src="require('../assets/gifs/black-spinner.svg')" style="width: 100px; height: 100px" alt="">
+          </div>
+          <div v-else-if="!roomSelected" class="row">
+            <div class="col-6">
               Занятые
             </div>
-            <div v-if="!roomSelected" class="col-6">
+            <div class="col-6">
               Свободные
               <div class="row window camera col-12" @click="chooseRoom(room)" v-for="(room, index) in getRooms"
                    :key="index">
@@ -64,7 +80,7 @@
               </div>
             </div>
           </div>
-          <div class="row" v-if="roomSelected">
+          <div class="row" v-else>
             <div class="col-5">
               Расписание
               <div class="window">
@@ -140,7 +156,10 @@
                 Выбрать время
               </button>
               Список мероприятий
-                <div class="row" v-for="(task, index) in this.getTasks" :key="index">
+                <div style="text-align: center" v-if="!tasksLoaded">
+                  <img :src="require('../assets/gifs/black-spinner.svg')" style="width: 100px; height: 100px" alt="">
+                </div>
+                <div v-else class="row" v-for="(task, index) in this.getTasks" :key="index">
                   <div class="window camera col-6" @click="chooseTask(task)">
                     <span class="name">{{task.name}}</span>
                     <span class="name" style="margin-left: 10px">0/{{task.targetCount}}</span>
@@ -172,7 +191,6 @@
       </div>
       </div>
     </div>
-  </div>
 </template>
 
 <script>
@@ -180,8 +198,12 @@ import {mapGetters} from "vuex"
 import {mapActions} from 'vuex'
 import { useVuelidate } from '@vuelidate/core'
 import {integer, required} from "@vuelidate/validators";
+import explorerPage from "@/components/ExplorerPage";
 
 export default {
+  components: {
+    explorerPage
+  },
   props: ['selectFunction'],
   name: "CalendarPage",
   setup () {
@@ -204,6 +226,10 @@ export default {
       },
       // generatedColor: this.randomHex(),
 
+      tasksLoaded: false,
+
+      openExplorer: false,
+
       indexStart: null,
       indexEnd: null,
       indexSelected: null,
@@ -220,7 +246,7 @@ export default {
       prevCalendarIndex: null,
       selectedDay: '',
       daysCount: 32,
-      alphaChannel: '',
+      alphaChannel: '66',
       currentMonth: new Date().getMonth(),
       currentYear: new Date().getFullYear(),
       calendarMonths30: [3, 5, 8, 10],
@@ -244,7 +270,8 @@ export default {
         'getRooms',
         'getTasks',
         'getTaskByID',
-        'getRefreshInterval'
+        'getRefreshInterval',
+        'getRoomByID'
     ])
   },
   mounted() {
@@ -253,7 +280,7 @@ export default {
       this.$store.commit('clearRefreshInterval')
     }
     this.setCurrentDay()
-    this.selectFunction(this.getRoomsFromDB)
+    // this.selectFunction(this.getRoomsFromDB)
     this.createTimesArray()
   },
   methods: {
@@ -296,69 +323,10 @@ export default {
                       this.resetTask()
                     })
                 )
-                // this.resetTask().then((value) =>{
-                //       console.log(value)
-                //       this.paintTimesArray(task.timesArray)
-                //     }
-                // )
               });
         }
       }
       else alert("Выберите диапазон времени более одного значения")
-      return returnResult
-    },
-    getRoomsFromDB() {
-      let returnResult
-      fetch('http://localhost:5000/getRooms', {
-        credentials: "include",
-        method: 'GET',
-        cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-      })
-          .then(response => response.json())
-          .then((response) => {
-            returnResult = response
-            console.log('resp ' + response)
-            this.$store.state.rooms = response
-          });
-      // console.log(returnResult)
-      return returnResult
-    },
-    getTasksFromDB(){
-      let returnResult
-      fetch('http://localhost:5000/getTasks', {
-        credentials: "include",
-        method: 'POST',
-        // cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-        body: JSON.stringify({
-          "date": this.selectedDay
-        })
-      })
-          .then(response => response.json())
-          .then((response) => {
-            returnResult = response
-            console.log(this.selectedDay)
-            console.log(response)
-            this.$store.state.tasks = response
-            console.log(this.randomHex())
-            for (let task of this.getTasks){
-              let indexStart = this.getTimeIndex(task.begin)
-              let indexEnd = this.getTimeIndex(task.end)
-              task.timesArray = this.$data.timesArray.slice(indexStart, indexEnd+1)
-              // console.log('sliceArray ' + indexStart, indexEnd)
-              // let color = this.randomHex()
-              // task.color = color.slice(0, 7)
-              this.paintTimesArray(task.timesArray, task.color + this.alphaChannel)
-              for (let time of task.timesArray){
-                this.busyTimesArray.push(time)
-              }
-            }
-          });
       return returnResult
     },
     chooseTask(task) {
@@ -389,6 +357,7 @@ export default {
       this.paintTimesArray(this.task.timesArray, '#ffffff66')
       return 0
     },
+
     getTimeIndex(time){
       let getTime = new Date(time)
       let date = `${getTime.getHours().toString().length === 1 ? "0" : ""}${getTime.getHours()}:${getTime.getMinutes().toString().length === 1 ? "0" : ""}${getTime.getMinutes()}`
@@ -396,7 +365,7 @@ export default {
       return this.timesArray.indexOf(date)
     },
     randomHex(){
-      this.alphaChannel = Math.round(0.4 * 255).toString(16)
+      // this.alphaChannel = Math.round(0.4 * 255).toString(16)
       let color = Math.floor(Math.random()*16777215).toString(16)
       color = color.length === 6 ? color : color + "0"
       console.log('a: ' + this.alphaChannel + " " + color)
@@ -522,7 +491,10 @@ export default {
         this.resetTask()
         this.busyTimesArray = []
         for (let i of this.timesArray) document.getElementById(i).classList.remove('linear-table-td-painted')
-        this.selectFunction(this.getTasksFromDB)
+        this.tasksLoaded = false
+        this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
+          this.paintTasks()
+        })
       }
     },
     chooseRoom(room){
@@ -530,14 +502,34 @@ export default {
       this.roomSelectedId = room.id
       console.log(this.selectedDay)
       console.log(room)
-      this.selectFunction(this.getTasksFromDB)
+      this.tasksLoaded = false
+      this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
+        this.paintTasks()
+      })
+    },
+    paintTasks() {
+      this.tasksLoaded = true
+      for (let task of this.getTasks){
+        let indexStart = this.getTimeIndex(task.begin)
+        let indexEnd = this.getTimeIndex(task.end)
+        task.timesArray = this.$data.timesArray.slice(indexStart, indexEnd+1)
+        this.paintTimesArray(task.timesArray, task.color + this.alphaChannel)
+        for (let time of task.timesArray){
+          this.busyTimesArray.push(time)
+        }
+      }
     },
     setCurrentDay(){
       this.setCorrectMonth().then((value => {
             console.log(value)
             let date = new Date()
-            if (this.currentMonth === date.getMonth() && this.currentYear === date.getFullYear())
+            if (this.currentMonth === date.getMonth() && this.currentYear === date.getFullYear()){
               document.getElementById((date.getDate() - 1).toString()).classList.add('calendar-number-current')
+              this.chooseDay(date.getDate(), date.getDate()-1)
+              this.selectFunction(this.getRoomsFromDB).then(() => {
+                this.chooseRoom(this.getRooms[0])
+              })
+            }
             else document.getElementById((date.getDate() - 1).toString()).classList.remove('calendar-number-current')
           })
       )
@@ -585,6 +577,8 @@ export default {
     },
     ...mapActions([
         'removeTask',
+        'getRoomsFromDB',
+        'getTasksFromDB'
     ])
   }
 }
@@ -736,5 +730,11 @@ export default {
   margin-right: 15px;
   border-radius: 5px ;
   border: 1px solid grey;
+  &-file {
+    margin-top: 10px;
+    width: 300px;
+    position: relative;
+  }
 }
+
 </style>

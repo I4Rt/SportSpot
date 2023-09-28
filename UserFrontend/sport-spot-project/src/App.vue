@@ -6,7 +6,7 @@
   <main-page
       :refreshToken="refreshToken"
       v-else-if="authorized"
-      @onLogout="authorized = false">
+      @onLogout="onLogout">
   </main-page>
   <!-- <my-component></my-component> -->
   <!-- <search-people></search-people>  -->
@@ -35,6 +35,20 @@ export default {
     this.checkRefresh()
   },
   methods: {
+    onLogout() {
+      this.authorized = false
+      fetch('http://localhost:5000/logout',{
+        method: 'POST',
+        credentials: 'include',
+        cors: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8',
+        },
+      }).then(response => response.json())
+          .then(response => {
+            console.log(response)
+          })
+    },
     onLogin(data) {
       this.authorized = data
     },

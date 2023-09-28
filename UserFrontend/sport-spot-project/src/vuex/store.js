@@ -39,7 +39,10 @@ export default createStore({
         setCameras (state, cameras) {
             state.cameras = cameras
         },
-        setRooms (state, room) {
+        setRooms (state, rooms) {
+            state.rooms = rooms
+        },
+        setRoom (state, room) {
             state.rooms.push(room)
         },
         setSector (state, sector) {
@@ -53,6 +56,9 @@ export default createStore({
         },
         setRoomTypes (state, roomTypes) {
             state.roomTypes = roomTypes
+        },
+        setTasks (state, tasks) {
+            state.tasks = tasks
         },
         setTask (state, task) {
             state.tasks.push(task)
@@ -205,6 +211,29 @@ export default createStore({
             }
             return returnResult
         },
+        async getRoomsFromDB({commit}) {
+            let returnResult
+            try{
+                returnResult = await fetch('http://localhost:5000/getRooms', {
+                    credentials: "include",
+                    method: 'GET',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
+                })
+                    .then(response => response.json())
+                    .then((response) => {
+                        returnResult = response
+                        console.log('getRoomsFromDB ' + response)
+                        commit('setRooms', response)
+                        return response
+                    });
+            } catch (err){
+                console.log(err)
+            }
+            return returnResult
+        },
         async getCamerasFromDB({commit}) {
             let returnResult
             try{
@@ -228,8 +257,36 @@ export default createStore({
             }
             return returnResult
         },
+        async getTasksFromDB({commit}, selectedDay){
+            let returnResult
+            try{
+                returnResult = await fetch('http://localhost:5000/getTasks', {
+                    credentials: "include",
+                    method: 'POST',
+                    // cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
+                    body: JSON.stringify({
+                        "date": selectedDay
+                    })
+                })
+                    .then(response => response.json())
+                    .then((response) => {
+                        returnResult = response
+                        // console.log(this.selectedDay)
+                        console.log('getTasksFromDB')
+                        commit('setTasks', response)
+                        return response
+                        // console.log(this.randomHex())
+                    });
+            } catch (err){
+                console.log(err)
+            }
+            return returnResult
+        },
         addRoom({commit}, newRoom) {
-            commit('setRooms', newRoom)
+            commit('setRoom', newRoom)
         },
     },
     getters: {
