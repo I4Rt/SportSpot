@@ -3,7 +3,11 @@
   <!-- <search-page></search-page> -->
   <authorization-page v-if="!authorized && !registration" @sendLogin="onLogin" @registerUser="registration = true"></authorization-page>
   <registration-page v-if="!authorized && registration" @registrationCompleted="registration = false"></registration-page>
-  <main-page v-else-if="authorized" @onLogout="authorized = false"></main-page>
+  <main-page
+      :refreshToken="refreshToken"
+      v-else-if="authorized"
+      @onLogout="onLogout">
+  </main-page>
   <!-- <my-component></my-component> -->
   <!-- <search-people></search-people>  -->
   <!-- <switch-displays-vue></switch-displays-vue> -->
@@ -13,14 +17,6 @@
 import MainPage from './components/MainPage.vue';
 import AuthorizationPage from "@/components/AuthorizationPage";
 import RegistrationPage from "@/components/RegistrationPage";
-
-
-
-// import bootstrap from 'bootstrap'
-// import SearchPage from './components/SearchPage.vue'
-// import SwitchDisplaysVue from './components/SwitchDisplays.vue'
-// import MyComponent from './components/MyComponent.vue'
-// import SearchPeople from './components/SearchPeople.vue'
 
 export default {
   name: 'App',
@@ -35,9 +31,51 @@ export default {
       registration: false
     }
   },
+  mounted() {
+    this.checkRefresh()
+  },
   methods: {
+    onLogout() {
+      this.authorized = false
+      fetch('http://localhost:5000/logout',{
+        method: 'POST',
+        credentials: 'include',
+        cors: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8',
+        },
+      }).then(response => response.json())
+          .then(response => {
+            console.log(response)
+          })
+    },
     onLogin(data) {
       this.authorized = data
+    },
+    async checkRefresh(){
+      console.log('checkRefresh')
+      let refreshResp = await this.refreshToken()
+      if (refreshResp.refresh === true) this.authorized = true
+    },
+    async refreshToken(){
+      let returnResult
+      try {
+        returnResult = await fetch('http://localhost:5000/refresh', {
+          method: 'POST',
+          credentials:"include",
+          cors: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8',
+          },
+        })
+            .then(response => response.json())
+            .then(response => {
+              return response
+            })
+      } catch (err) {
+        console.log(err)
+      }
+      return returnResult
     }
   }
 }
