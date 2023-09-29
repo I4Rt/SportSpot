@@ -13,6 +13,7 @@ from model.data.types.RoomType import RoomType
 from model.data.types.SectorType import SectorType
 from model.data.Task import Task
 
+from tools.TaskArchiveRunner import TaskArchiveRunner
 import os
 
 # from system.streaming.Stream import Stream
@@ -973,7 +974,7 @@ def getByRoutes():
                 cap = cv2.VideoCapture(tempDir)
                 ret, frame = cap.read()
                 if ret:
-                    bytesData = FileUtil.convertImageToBytes85(frame, '.jpg')
+                    bytesData = FileUtil.convertImageToBytes(frame, '.jpg')
                     return {'name': fileName, 'route': tempDir, 'type':'file', 'createTime': datetime.fromtimestamp(os.path.getctime(tempDir)), 'image':bytesData}
                 return {'answer': 'can not open file'}
             return {'answer': 'not a file'}
@@ -985,46 +986,46 @@ def getByRoutes():
     
 @cross_origin
 @jwt_required()
-@app.route('/getByRoutes', methods=['post'])
+@app.route('/sendForAnalize', methods=['post'])
 def sendForAnalize():
     verify_jwt_in_request()
     identy = get_jwt_identity()
     if identy:
-        try:
-            route = request.args.get('route')
-        except:
-            return make_response({'Answer': 'Bad Json'})
         
-        try:
+            route = request.json['route']
             dir = os.path.normpath(route)
+            
+            #test access
+            
+            name = request.json['name']
+            comment = request.json['comment']
+            begin = datetime.strptime(request.json['begin'], '%m/%d/%Y %H:%M:%S')
+            end = datetime.strptime(request.json['end'], '%m/%d/%Y %H:%M:%S')
+            roomId = request.json['roomId']
+            targetCount = request.json['targetCount']
+            interval = request.json['interval']
+            color = request.json['color']
+            
+            
+            task = Task(begin, end, roomId, name, targetCount, comment, interval, color)
+        
+            task.setStatusDone()
+            task.save(needCheckFuture=False)
+            
             try:
-                id = request.json['id']
-                name = request.json['name']
-                comment = request.json['comment']
-                begin = datetime.strptime(request.json['begin'], '%m/%d/%Y %H:%M:%S')
-                end = datetime.strptime(request.json['end'], '%m/%d/%Y %H:%M:%S')
-                roomId = request.json['roomId']
-                targetCount = request.json['targetCount']
-                interval = request.json['targetCount']
-                color = request.json['color']
+                if not os.path.isdir(dir):
+                    cap = cv2.VideoCapture(dir)
+                    ret, frame = cap.read()
+                    if ret:
+                        thread = TaskArchiveRunner(dir, interval, task.id)
+                        thread.start()
+                        return {'id': task.id, 'Answer': 'recogonition beguns'}, 200
+                    task.delete()
+                    return {'Answer': 'can not read from file'}, 200
+            except:
+                task.delete()
+                return {'Answer': 'can not open file with cv2'}, 200
                 
-                task = None
-                if id == None:
-                    task = Task(begin, end, roomId, name, targetCount, comment, interval, color)
-                else:
-                    task = Task.getByID(id)
-                    task.name = name
-                    task.comment = comment
-                    task.begin = begin
-                    task.end = end
-                    task.roomId = roomId
-                    task.targetCount = targetCount
-                    task.color = color
-                    if interval != None:
-                        task.interval = interval
-                print(str(task.begin))
-                task.save(needCheck=False)
-            except Exception as e:
-                return {'Answer': 'taskCreationError'}, 200
-        except Exception as e:
-            return {'Answer': 'loading file error'}, 200
+                
+            
+        

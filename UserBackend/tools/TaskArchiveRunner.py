@@ -4,21 +4,26 @@ from model.data.Task import *
 from model.data.Room import *
 from system.kafka.KafkaSingleton import *
 
+import requests
+
+import time
+
+
 from tools.FileUtil import *
 
 import cv2
-from time import time
+from time import time, sleep
 
 class TaskArchiveRunner(Thread):
     
     __closedStatus = []
     
-    def __init__(self, path, interval, task) -> None:
+    def __init__(self, path, interval, taskId) -> None:
         Thread.__init__(self)
         self.path = path
         self.cap = cv2.VideoCapture(path)
         self.interval = interval
-        self.taskId = task
+        self.taskId = taskId
         
     @classmethod
     def __insertIntoQuery(cls, data):
@@ -27,7 +32,7 @@ class TaskArchiveRunner(Thread):
     
      
     def run(self):
-        initTime = time.time()
+        
         with app.app_context():
         
             success = True
@@ -37,13 +42,14 @@ class TaskArchiveRunner(Thread):
             counter = 0
             
             while success:
-                if self.cap.get(cv2.cv.CV_CAP_PROP_POS_MSEC) > nextTime:
+                success, image = self.cap.read()
+                #print('here', success)
+                if success and self.cap.get(cv2.CAP_PROP_POS_MSEC) > nextTime:
                     nextTime += self.interval * 1000
-                    success, image = self.read()
                     output = cv2.resize(image, (600, 400))
                     #frames.append({'img': output, 'index': initTime + counter})
                     #counter += 1
-                    dataToSend = {"taskID": self.task.id,
+                    dataToSend = {"taskID": self.taskId,
                                     "agregationMode": 2, # CHECK максимальное
                                     "data": [{
                                                 "img": FileUtil.convertImageToBytes(output),
@@ -53,7 +59,12 @@ class TaskArchiveRunner(Thread):
                                             }
                                         ]
                                 }
-                    sendData = sender.sendMessage(json.dumps(dataToSend))
+                    print('sending')
+                    url = 'http://localhost:4998/appendDataToRoute'
+                    myobj = {'SOId': app.config['SPORT_OBJECT_ID'], 'data': dataToSend}
+                    data = requests.post(url, json = myobj)
+                    print('result',data.text)
+                    sleep(5)
                     
-            
+            TaskArchiveRunner.__insertIntoQuery(self.taskId)
             

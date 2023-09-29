@@ -62,7 +62,7 @@ class Task(db.Model, BaseData):
     def _isValid(self, checkFuture=True):
         if self.begin < self.end:
             if self.id != None:
-                cond1 = datetime.strptime(str(self.begin), '%Y-%m-%d %H:%M:%S') > datetime.now()
+                cond1 = datetime.strptime(str(self.begin)[:19], '%Y-%m-%d %H:%M:%S') > datetime.now()
                 if (cond1 and checkFuture) or (not cond1 and not checkFuture):
                     existCoveredTasks = Task.getCoveredTasksByRoomId(self.id, self.roomId, self.begin, self.end)
                     if len(existCoveredTasks) == 0:

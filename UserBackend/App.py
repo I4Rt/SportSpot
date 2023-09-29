@@ -11,7 +11,7 @@ from system.streaming.StreamBase import StreamBase
 if __name__ == "__main__":
     print('App is running')
     with app.app_context():
-        KafkaSender.setInstance(app.config["senderTopic"], app.config["kafkaServer"])
+        #KafkaSender.setInstance(app.config["senderTopic"], app.config["kafkaServer"])
         #StreamBase.init()
         db.create_all()
         app.run(host='0.0.0.0', debug=True)
