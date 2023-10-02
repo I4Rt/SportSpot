@@ -14,7 +14,7 @@ app.config['TIME'] = time()
 app.config['SIZE'] = 1000
 
 app.config['kafkaServer'] = "localhost:9092"
-app.config['senderTopic'] = f'SO{int(app.config["SPORT_OBJECT_ID"])}_local'
+# app.config['senderTopic'] = f'SO{int(app.config["SPORT_OBJECT_ID"])}_local'
 
 # app has been set and configured
 Session(app)

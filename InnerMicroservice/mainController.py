@@ -26,8 +26,9 @@ def testDecorator(foo):
 def appendDataToRoute():
     SOId = request.json['SOId']
     data = request.json['data'] # data
-    
-    sender = KafkaPublicSender.getKafkaSender(app.config["kafkaServer"], f'SO{int(SOId)}_local')
+    print(f'SO{int(SOId)}_local')
+    print(app.config["kafkaServer"])
+    sender = KafkaPublicSender.getKafkaSender(f'SO{int(SOId)}_local', app.config["kafkaServer"])
     result = sender.sendMessage(json.dumps(data))
     sender.closeConnection()
     

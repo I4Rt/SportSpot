@@ -36,7 +36,7 @@ from random import randint
 #         if identy:
 #             foo(*args,**kwargs)
 #         else:
-#             resp = make_response({'Answer': "Bad token"})
+#             resp = make_response({'answer': "Bad token"})
 #             resp.headers['Content-Type'] = "application/json"
 #             return resp
 #     return inner
@@ -55,7 +55,7 @@ def register():
         password = request.json['password']
         
     except Exception as e:
-        resp = make_response({'Answer': 'Invalid json'})
+        resp = make_response({'answer': 'Invalid json'})
         
     passwordHash = bcrypt.generate_password_hash(password).decode('utf-8')
     user = User(name, surname, login, passwordHash)
@@ -65,7 +65,7 @@ def register():
         resp.headers['Content-Type'] = "application/json"
         return resp
     except:
-        resp = make_response({'Answer': "Not identy login"})
+        resp = make_response({'answer': "Not identy login"})
         resp.headers['Content-Type'] = "application/json"
         return resp
 
@@ -171,7 +171,7 @@ def getCameras():
         resp.headers['Content-Type'] = "application/json"
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
     
@@ -191,7 +191,7 @@ def getCameraByID():
         resp.headers['Content-Type'] = "application/json"
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
     
@@ -215,7 +215,7 @@ def getSectorsByCameraID():
         resp.headers['Content-Type'] = "application/json"
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
 
@@ -237,7 +237,7 @@ def getSectorByID():
         resp.headers['Content-Type'] = "application/json"
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
 
@@ -254,7 +254,7 @@ def getSectorTypes():
             data.append(obj.getParamsList())
         return data
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
     
@@ -276,7 +276,7 @@ def getRooms():
         resp.headers['Content-Type'] = "application/json"
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
     
@@ -301,7 +301,7 @@ def getTasks():
         resp.headers['Content-Type'] = "application/json"
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
 
@@ -327,7 +327,7 @@ def getRoomByID():
         resp.headers['Content-Type'] = "application/json"
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
     
@@ -361,7 +361,7 @@ def getCameraSectorsByRoomId():
         resp.headers['Content-Type'] = "application/json"
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
 
@@ -405,12 +405,12 @@ def getUnusedCameraSectorsByRoomId():
                 # print(exist)
             resp = make_response({'camerasList': data})
         except Exception as e:
-            resp = make_response({'Answer': data})
+            resp = make_response({'answer': data})
             print(e)
         resp.headers['Content-Type'] = "application/json"
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
 
@@ -423,7 +423,7 @@ def getRoomTypes():
     if identy:
         return make_response({'types': [tp.getParamsList() for tp in RoomType.getAll()]})
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
 
@@ -449,7 +449,7 @@ def setSectorToRoom():
         resp.status_code = code
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
 
@@ -474,7 +474,7 @@ def removeSectorFromRoomLsit():
         resp.status_code = code
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
     
@@ -527,7 +527,7 @@ def setCamera():
         resp.status_code = code
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
 
@@ -572,7 +572,7 @@ def setSector():
         resp.status_code = code
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
     
@@ -620,7 +620,7 @@ def setTask():
         resp.status_code = code
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
 
@@ -657,7 +657,7 @@ def setRoom():
         resp.status_code = code
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
     
@@ -683,7 +683,7 @@ def removeSector():
         resp.status_code = code
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
 
@@ -708,7 +708,7 @@ def removeCamera():
         resp.status_code = code
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
 
@@ -733,7 +733,7 @@ def removeRoom():
         resp.status_code = code
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
     
@@ -757,7 +757,7 @@ def removeTask():
         resp.status_code = code
         return resp
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
     
@@ -923,7 +923,7 @@ def refreshVideo():
             return make_response({'answer': 'No such id'})
         return make_response({'answer': FrameGetter.refreshStream(camera.getRoute(), 30)})
     else:
-            resp = make_response({'Answer': "Bad token"})
+            resp = make_response({'answer': "Bad token"})
             resp.headers['Content-Type'] = "application/json"
             return resp
     
@@ -980,7 +980,7 @@ def getByRoutes():
             return {'answer': 'not a file'}
             
     else:
-        resp = make_response({'Answer': "Bad token"})
+        resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
     
@@ -991,7 +991,7 @@ def sendForAnalize():
     verify_jwt_in_request()
     identy = get_jwt_identity()
     if identy:
-        
+        try:
             route = request.json['route']
             dir = os.path.normpath(route)
             
@@ -1005,27 +1005,29 @@ def sendForAnalize():
             targetCount = request.json['targetCount']
             interval = request.json['interval']
             color = request.json['color']
-            
-            
+        except Exception as e:
+            return {'answer': 'Bad json', 'key': str(e)}, 200
+        try:
             task = Task(begin, end, roomId, name, targetCount, comment, interval, color)
         
             task.setStatusDone()
             task.save(needCheckFuture=False)
-            
-            try:
-                if not os.path.isdir(dir):
-                    cap = cv2.VideoCapture(dir)
-                    ret, frame = cap.read()
-                    if ret:
-                        thread = TaskArchiveRunner(dir, interval, task.id)
-                        thread.start()
-                        return {'id': task.id, 'Answer': 'recogonition beguns'}, 200
-                    task.delete()
-                    return {'Answer': 'can not read from file'}, 200
-            except:
+        except Exception as e:
+            return {'answer': 'Can not save data to DB'}, 200
+        try:
+            if not os.path.isdir(dir):
+                cap = cv2.VideoCapture(dir)
+                ret, frame = cap.read()
+                if ret:
+                    thread = TaskArchiveRunner(dir, interval, task.id)
+                    thread.start()
+                    return {'id': task.id, 'answer': 'recogonition beguns'}, 200
                 task.delete()
-                return {'Answer': 'can not open file with cv2'}, 200
-                
-                
+                return {'answer': 'can not read from file'}, 200
+        except:
+            task.delete()
+            return {'answer': 'can not open file with cv2'}, 200
+            
             
         
+    

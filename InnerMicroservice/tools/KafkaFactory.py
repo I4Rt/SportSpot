@@ -1,5 +1,6 @@
 from __future__ import annotations
 from kafka import KafkaProducer, KafkaConsumer
+from kafka.errors import TopicAlreadyExistsError
 from kafka.admin import KafkaAdminClient, NewTopic
 import time
 
@@ -13,15 +14,16 @@ class KafkaBasics:
         self._topic = topic
     
     def _createTopic(self):
+        print('server', self._server)
         admin_client = KafkaAdminClient(
-            bootstrap_servers=self._server, 
-            client_id=str(time.time())
+            bootstrap_servers=["localhost:9092"], 
+            
         )
         topic_list = []
         topic_list.append(NewTopic(name=self._topic, num_partitions=1, replication_factor=1))
         try:
             admin_client.create_topics(new_topics=topic_list, validate_only=False)
-        except:
+        except TopicAlreadyExistsError as e:
             pass
         self._topicIsChecked = True
         
@@ -40,12 +42,10 @@ class KafkaPublicSender(KafkaBasics):
     
     def __init__(self, topic, server):
         KafkaBasics.__init__(self, topic, server)
-        try:
-            self._createTopic()
-        except:
-            print('can not create topic')
-            pass
-        self.__producer = KafkaProducer(bootstrap_servers=self._server, api_version=(0,11,5), max_request_size=4862490)
+        
+        self._createTopic()
+        
+        self.__producer = KafkaProducer(bootstrap_servers=self._server, api_version=(2, 5, 0), max_request_size=4862490)
         
     
     @classmethod
@@ -67,7 +67,7 @@ class KafkaPublicSender(KafkaBasics):
             if not self._topicIsChecked:
                 self._createTopic()
         except:
-            pass
+            pass # can be bad configured
         if self.__producer is not None:
             try:
                 future = self.__producer.send(self._topic, bytes(message, 'utf-8'))
