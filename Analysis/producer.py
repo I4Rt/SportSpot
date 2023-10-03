@@ -20,13 +20,6 @@ class KafkaProducerPlus:
     def sendMessage(self, message):
         self.producer.send(self.topic, message)
 
-
-    # def sendImage(self, image):
-    #     _, encriptedImg = cv2.imencode(".jpg", image)
-    #     imgAsStr = encriptedImg.tobytes()
-    #     imgByteStr = base64.b64encode(imgAsStr).decode("utf-8")
-    #     self.producer.send(self.topic, {"image": imgByteStr})
-
     def sendImage(self, jsn):
         self.producer.send(self.topic, jsn)
 
@@ -36,16 +29,6 @@ class KafkaProducerPlus:
     def getServer(self):
         return self.server
 
-
-# fake = Faker()
-
-
-# def get_registered_user():
-#     return {"name": fake.name(),
-#             "address": fake.address(),
-#             "year": fake.year()}
-
-
 def json_serializer(data):
     return json.dumps(data).encode("utf-8")
 
@@ -53,18 +36,10 @@ def json_serializer(data):
 producer = KafkaProducerPlus(["localhost:9092"], topic="SO11_local",
                              value_serializer=json_serializer)
 
-img = cv2.imread("image.jpg")
-
-
 if __name__ == "__main__":
     while True:
-        # registered_user = get_registered_user()
-        # print(registered_user)
-        #producer.sendMessage(registered_user)
-#        with open("senderData.json") as f:
         with open("output.txt") as f:
             json_file = json.load(f)
 
-        print(json_file)
         producer.sendImage(json_file)
         time.sleep(4)
