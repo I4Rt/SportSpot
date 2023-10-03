@@ -193,3 +193,20 @@ class Task(db.Model, BaseData):
     @sessionly
     def getById(cls, searchId:int) -> Task:
         return db.session.query(Task).filter_by(id=searchId).first()
+    
+    @classmethod
+    def getLastInInterval(cls, minutes:int):
+        curTime = datetime.now()
+        prevTime = curTime - timedelta(minutes=minutes)
+        return db.session.query(Task).filter(
+            or_(
+                and_(
+                    prevTime >= cls.begin, 
+                    curTime < cls.begin
+                ),
+                and_(
+                    prevTime >= cls.end, 
+                    curTime <= cls.end
+                )
+            )
+        ).all()

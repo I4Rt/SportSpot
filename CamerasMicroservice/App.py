@@ -6,6 +6,8 @@ from system.streaming.StreamBase import StreamBase
 import warnings
 
 if __name__ == "__main__":
+    # cv2.CAP_PROP_OPEN_TIMEOUT_MSEC = 10000
+    # cv2.LIBAVFORMAT_INTERRUPT_OPEN_TIMEOUT_MS = 10000
     print('App is running')
     #warnings.simplefilter('ignore')
     with app.app_context():

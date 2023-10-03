@@ -44,13 +44,17 @@ def refreshVideo():
 @cross_origin
 @app.route('/initVideo')
 def initVideo():
+    print('got fetch')
     try:
+        b = time()
         route = request.args.get('route')
         duration = int(request.args.get('duration'))
         StreamInterface.initStream(route, duration)
     except Exception as e:
         print('Exception is ' + str(e))
+        print('work t', time() - b)
         return json.dumps({'init': False, 'answer':'Add params correctly'})
+    print('work t', time() - b)
     return json.dumps({'init': True})
     
 # @cross_origin

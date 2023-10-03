@@ -77,7 +77,7 @@ class TaskProcessor(Thread, Jsonifyer):
             # print(cameras)
             
             while date > datetime.now():   
-                dataToSend = {"taskID": self.task.id,
+                dataToSend = {"taskId": self.task.id,
                               "agregationMode": room.classId, # CHECK
                               "data": []}
                 for camData in cameras:
@@ -88,7 +88,8 @@ class TaskProcessor(Thread, Jsonifyer):
                             "img": FileUtil.convertImageToBytes(output),
                             "sectors": [{"points": sector.getPointList(), 
                                          "mode": sector.typeId} 
-                                        for sector in camData["sectors"]]
+                                        for sector in camData["sectors"]],
+                            "mode": camData['sectors'].typeId
                         }
                         dataToSend["data"].append(localData)
                 if len(dataToSend["data"]) > 0:

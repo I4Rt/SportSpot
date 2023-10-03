@@ -4,6 +4,8 @@ from model.data.Sector import Sector
 from model.data.Task import *
 from model.data.Result import *
 from model.Threads.TaskRunner import TaskRunner
+from model.Threads.SideTaskProcessor import SideTaskProcessor
+from model.Threads.AgregatedDataSender import AgregatedDataSender
 
 from system.streaming.StreamBase import StreamBase
 from system.kafka.KafkaSingleton import *
@@ -20,6 +22,10 @@ if __name__ == "__main__":
         DataReciever().start()
         StreamBase.init()
         TaskRunner().start()
+        
+        SideTaskProcessor().start()
+        AgregatedDataSender().start()
+        
         
         #db.create_all()
         # for i in Task.getAll():

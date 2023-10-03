@@ -3,6 +3,8 @@ from model.data.Result import *
 from threading import Thread
 from model.QueueTaskHolder import *
 from system.kafka.KafkaSingleton import *
+
+from system.SideDataHolder import *
 class DataReciever(Thread):
     
     def __init__(self) -> None:
@@ -15,11 +17,16 @@ class DataReciever(Thread):
                 print(str(msg.value))
                 #save
                 data = json.loads(msg.value)
-                task = Task.getByID(int(data["taskID"]))
-                if task is not None:
-                    if int(data["counter"]) > task.getCount():
-                        task.setCount(int(data["counter"]))
-                        print(f'set counter {int(data["counter"])} to task {task}')
+                if str(data["taskID"]).isdigit():
+                    task = Task.getByID(int(data["taskID"]))
+                    if task is not None:
+                        if int(data["counter"]) > task.getCount():
+                            task.setCount(int(data["counter"]))
+                            print(f'set counter {int(data["counter"])} to task {task}')
+                    else:
+                        print(f'recieved task does not exist')
                 else:
-                    print(f'recieved task does not exist')
-                    
+                    print('setting side task data')
+                    roomId = int( data["taskID"].split('_')[-1] )
+                    print(data)
+                    SideDataHolder.setResult(roomId, int(data["counter"]))

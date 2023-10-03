@@ -1,8 +1,15 @@
 from time import time, sleep
 import cv2
-import threading
+import threading, multiprocessing
 from tools.FileUtil import *
 import config
+import os
+import sys
+import signal
+
+def streamStop( eMsg):
+        raise Exception(eMsg)
+    
 class Stream:
     
     __camRoute:str|int = 0
@@ -36,14 +43,31 @@ class Stream:
     def getLastAskTime(self):
         return self.__lastAskTime
     
+    
+    
+    
+    
     def _connect(self):
+        b = time()
         try:
             if self.__streaming == None:
-                self.__streaming = cv2.VideoCapture(self.__camRoute)
-                print(self.__streaming)
-        except:
+                print('connecting', self.__camRoute)
+                print('ppid', os.getpid())
+                connectionThread = Stream.ThreadConnector(self.__camRoute)
+                connectionThread.start()
+                connectionThread.join(timeout=10)
+                if not connectionThread.result:
+                    connectionThread.stop()
+                    raise Exception(self.__camRoute, 'connection timeout exception')
+                self.__streaming = connectionThread.result
+                
+                print('time of initing videocapture is', time() - b)
+                print('getting stream resilt', self.__streaming)
+                
+        except Exception as e:
             self.__streaming = None
-            raise Exception('Can not capture the video')
+            print('time of initing videocapture is', time() - b)
+            raise Exception('Can not capture the video', type(e), e)
     
     def _release(self):
         if self.__streaming != None:
@@ -55,6 +79,7 @@ class Stream:
         self.__lastAskTime = time()
         getterThread = threading.Thread(target=self.__updateFrame, args=())
         getterThread.start()
+        
         for _ in range(10):
             sleep(0.4)
             if self.__isRan:
@@ -97,7 +122,7 @@ class Stream:
             self.__timeLimit = newTime
             self.__finished = False
             self.__lastAskTime = time()
-            print('reseting: adding ' + str(newTime) + 'more seconds')
+            print('reseting: adding ' + str(newTime) + ' more seconds')
         
     def _checkFinished(self):
         # print(self.__finished)
@@ -118,7 +143,31 @@ class Stream:
         return False
         
             
-    
+    class ThreadConnector(threading.Thread):
+        
+        def __init__(self, route):
+            threading.Thread.__init__(self)
+            self.route = route
+            self.result = None
+            self.pid = None
+        
+        def run(self):
+            print(threading.currentThread().ident)
+            self.pid = os.getpid( ) # returns parrent
+            try:
+                camera = cv2.VideoCapture()
+                camera.setExceptionMode(True)
+                camera.open(self.route)
+                self.result = camera
+            except:
+                pass
+                # print('WTF')
+        
+        def stop(self):
+            raise Exception('timeout')
+            # os.kill(self.pid, signal.SIGINT)
+        
+
         
             
     
