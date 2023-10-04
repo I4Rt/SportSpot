@@ -160,7 +160,14 @@ class Stream:
                 camera.open(self.route)
                 self.result = camera
             except:
-                pass
+                try:
+                    camera.close()
+                    try:
+                        self.result.close()
+                    except:
+                        pass
+                except:
+                    pass
                 # print('WTF')
         
         def stop(self):
