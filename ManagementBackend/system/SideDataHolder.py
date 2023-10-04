@@ -9,6 +9,7 @@ class SideDataHolder():
         
         
     def updateRoomList(self):
+        try:
             roomData = [r.id for r in Room.getAll()]
             for rId in self.rooms:
                 if not (rId in roomData):
@@ -16,6 +17,8 @@ class SideDataHolder():
             for rId in roomData:
                 if not ( rId in self.rooms ):
                     self.rooms[rId] = 0
+        except:
+            print('error in roomListUpdate')
                     
                     
     @classmethod

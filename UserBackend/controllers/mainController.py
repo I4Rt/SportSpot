@@ -753,7 +753,8 @@ def removeRoom():
             room = Room.getByID(request.args.get('id'))
             room.dropSectors()
             room.delete()
-        except Exception:
+        except Exception as e:
+            print(e)
             data = {"answer": 'No Such ID'}
             code = 500
         resp = make_response(data)
@@ -1041,6 +1042,7 @@ def sendForAnalize():
             task.setStatusDone()
             task.save(needCheckFuture=False)
         except Exception as e:
+            print(e)
             return {'answer': 'Can not save data to DB'}, 200
         try:
             if not os.path.isdir(dir):

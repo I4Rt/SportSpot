@@ -83,7 +83,7 @@ class TaskProcessor(Thread, Jsonifyer):
                 for camData in cameras:
                     frame = next(camData["generator"])
                     if frame is not None:
-                        output = cv2.resize(frame, (600, 400))
+                        output = frame # cv2.resize(frame, (600, 400))
                         localData = {
                             "img": FileUtil.convertImageToBytes(output),
                             "sectors": [{"points": sector.getPointList(), 

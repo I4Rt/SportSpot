@@ -46,7 +46,7 @@ class TaskArchiveRunner(Thread):
                 #print('here', success)
                 if success and self.cap.get(cv2.CAP_PROP_POS_MSEC) > nextTime:
                     nextTime += self.interval * 1000
-                    output = cv2.resize(image, (600, 400))
+                    output = image # cv2.resize(image, (600, 400))
                     #frames.append({'img': output, 'index': initTime + counter})
                     #counter += 1
                     dataToSend = {"taskID": self.taskId,

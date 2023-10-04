@@ -5,6 +5,8 @@ from model.data.BaseData import *
 
 import model.data as modules
 from model.data.types.RoomType import *
+from model.data.Task import *
+
 
 class Room(db.Model, BaseData):
     name = db.Column(db.String(150), unique=False)
@@ -42,6 +44,12 @@ class Room(db.Model, BaseData):
         db.session.query(modules.Sector.Sector).filter(
             modules.Sector.Sector.roomId == self.id
             ).update({modules.Sector.Sector.roomId:None})
+        
+    def delete(self):
+        Task.__table__.delete().where(Task.roomId == self.id)
+        # db.session.delete(db.session.query(Task).filter(Task.roomId == self.id).all())
+        db.session.delete(self)
+        db.session.commit()
         
     
         
