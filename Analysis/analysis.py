@@ -61,5 +61,5 @@ def recognition():
 if __name__ == "__main__":
     if not os.path.isdir('queue'):
         os.mkdir('queue')
-
+    
     app.run(host='0.0.0.0', debug=False)

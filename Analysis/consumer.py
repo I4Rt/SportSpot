@@ -52,7 +52,7 @@ def recognition(sectors, taskID):
             if checkIfInside(border, (box.xyxy[0][0].item(), box.xyxy[0][3].item())) and \
                     checkIfInside(border, (box.xyxy[0][2].item(), box.xyxy[0][3].item())):
                 counter += 1
-
+        print('mode', sector["mode"], 'counter', counter)
     producer.sendMessage({"taskID":  taskID, "counter": counter, "datetime": str(datetime.datetime.now())})
 
     return
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     if not os.path.isdir('queue'):
         os.mkdir('queue')
 
-    consumer  = KafkaConsumerPlus("SO11_local",
+    consumer  = KafkaConsumerPlus("SO1_local",
                                   "localhost:9092",
                                   "earliest",
                                   "consumer-group-a")
@@ -104,5 +104,5 @@ if __name__ == "__main__":
                     npImg = frombuffer(readImgBytes, 'u1')
                     decImg = cv2.imdecode(npImg, 1)
                     cv2.imwrite("queue/image_receive.jpg", decImg)
-                    recognition(key_data["sectors"], json.loads(msg.value)["taskID"])
-#                    print("Sending")
+                    recognition(key_data["sectors"], json.loads(msg.value)["taskId"])
+#                   print("Sending")

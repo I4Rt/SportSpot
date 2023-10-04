@@ -91,6 +91,7 @@ class TaskProcessor(Thread, Jsonifyer):
                                         for sector in camData["sectors"]],
                             "mode": camData['sectors'].typeId
                         }
+                        
                         dataToSend["data"].append(localData)
                 if len(dataToSend["data"]) > 0:
                     # print("sending:")

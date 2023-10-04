@@ -10,10 +10,10 @@ from time import time, sleep
 class SideTaskProcessor(Thread, Jsonifyer):
     __trys = 3
     
-    __duration = 5
-    __interval = 2
+    __duration = 1
+    __interval = 1
     
-    __rootTime = 5 * 10
+    __rootTime = 1 * 1
     
     __instance = None
     
@@ -80,7 +80,9 @@ class SideTaskProcessor(Thread, Jsonifyer):
                                     "sectors": [{"points": sector.getPointList(), 
                                                 "mode": sector.typeId} 
                                                 for sector in camData["sectors"]]
+                                    
                                 }
+                                print('mode is',  sector.typeId)
                                 dataToSend["data"].append(localData)
                         except Exception as e: 
                             print(type(e), e)

@@ -42,6 +42,8 @@ def soRegister():
     so.save()
     return {'SORegister': True, 'data':{'SOId': so.id}}, 200
 
+
+#{day:{time: [roomId:{plan:, real:},],},}
 @testDecorator
 @app.route('/management/appendData', methods=['post'])
 @cross_origin()
@@ -62,13 +64,21 @@ def appendData():
     for dayStamp in data:
         for timeStamp in data[dayStamp]:
             try:
-                date = datetime.strptime(dayStamp, '%d-%m-%Y').date()
-                timeInterval = datetime.strptime(timeStamp, '%H:%M:%S').time()
-                element = DataRow(soId, date, timeInterval, data[dayStamp][timeStamp]['plan'], data[dayStamp][timeStamp]['real'])
-                element.update()
-                counter += 1
-            except:
-                pass
+                print("day", dayStamp)
+                date = datetime.strptime(dayStamp, '%Y-%m-%d').date()
+                timeInterval = datetime.strptime(timeStamp, '%H-%M-%S').time()
+                print('rooms len is', len(data[dayStamp][timeStamp]))
+                for roomId in data[dayStamp][timeStamp]:
+                    try:
+                        elemData = data[dayStamp][timeStamp][roomId]
+                        element = DataRow(soId, int(roomId), date, timeInterval, elemData['plan'], elemData['real'])
+                        element.update()
+                        
+                        counter += 1
+                    except Exception as e:
+                        print('can not update data', e)
+            except Exception as e:
+                print('can not getDate', e)
             
     return {'appendData': True, 'data':{'updated': counter}}, 200
 
@@ -96,10 +106,14 @@ def getData():
         
         if str(elem.date.date()) in resultData[elem.sportObjectId]:
             print('here')
-            resultData[elem.sportObjectId][str(elem.date.date())][str(elem.timeInterval)] = {'plan': elem.plan, 'real': elem.real}
+            if str(elem.timeInterval) in resultData[elem.sportObjectId][str(elem.date.date())]:
+                resultData[elem.sportObjectId][str(elem.date.date())][str(elem.timeInterval)][str(elem.roomId)] = {'plan': elem.plan, 'real': elem.real}
+            else:
+                resultData[elem.sportObjectId][str(elem.date.date())][str(elem.timeInterval)] = {str(elem.roomId): {'plan': elem.plan, 'real': elem.real}}
+                
         else:
             print('here 2')
-            resultData[elem.sportObjectId][str(elem.date.date())] = { str(elem.timeInterval) : {'plan': elem.plan, 'real': elem.real} }
+            resultData[elem.sportObjectId][str(elem.date.date())] = { str(elem.timeInterval) : {str(elem.roomId): {'plan': elem.plan, 'real': elem.real}}}
         
     
     return {'appendData': True, 'data':{'statistics': resultData}}, 200

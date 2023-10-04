@@ -69,6 +69,33 @@ def register():
         resp.headers['Content-Type'] = "application/json"
         return resp
 
+
+@cross_origin
+@app.route('/setUserData', methods=['get', 'post'])
+def setUserData():
+    try:
+        id = request.json['id']
+        name = request.json['name']
+        surname = request.json['surname']
+        password = request.json['password']
+        
+    except Exception as e:
+        resp = make_response({'answer': 'Invalid json'})
+        
+    passwordHash = bcrypt.generate_password_hash(password).decode('utf-8')
+    user = User.getByID(int(id))
+    try:
+        user.name = name
+        user.surname = surname
+        user.password = passwordHash
+        user.save()
+        resp = make_response({'setUserData': True})
+        resp.headers['Content-Type'] = "application/json"
+        return resp
+    except:
+        resp = make_response({'answer': "Not identy login"})
+        resp.headers['Content-Type'] = "application/json"
+        return resp
 # auth
 @cross_origin()
 @app.route('/authorize', methods=['get', 'post',])
@@ -279,7 +306,8 @@ def getRooms():
         resp = make_response({'answer': "Bad token"})
         resp.headers['Content-Type'] = "application/json"
         return resp
-    
+
+
 @cross_origin()
 @jwt_required()
 @app.route('/getTasks', methods=['get', 'post'])
