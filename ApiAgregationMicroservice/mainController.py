@@ -9,9 +9,10 @@ from time import time, sleep
 from datetime import datetime
 actualRoomsInfo = None
 try:
-    with open('roomsData.txt', 'e') as file:
+    with open('roomsData.txt', 'r') as file:
         actualRoomsInfo = json.loads(file.read())
-except:
+except Exception as e:
+    print(e)
     actualRoomsInfo = {}
     with open('roomsData.txt', 'w') as file:
         file.write(json.dumps(actualRoomsInfo))
@@ -68,7 +69,7 @@ def appendData():
     data = request.json['data']
     soId = request.json['SOId']
     print(request.json['rooms'])
-    actualRoomsInfo[str(SportObject.getByID(int(soId)))] = request.json['rooms']
+    actualRoomsInfo[str(SportObject.getByID(int(soId)).outerId)] = request.json['rooms']
     
     with open('roomsData.txt', 'w') as file:
         file.write(json.dumps(actualRoomsInfo))
