@@ -85,22 +85,13 @@ class AgregatedDataSender(Thread, Jsonifyer):
                 resultToSend= {
                     sendDate: {timeInterval: result}
                 }
-                    
+
                 print(resultToSend)
                 try:
                     url = 'http://localhost:4999/management/appendData'
                     myobj = {'SOId': app.config['SPORT_OBJECT_ID'], 'data': resultToSend}
                     data = requests.post(url, json = myobj)
-                    print(data)
+                    # print(data)
                 except:
                     print ('connection error')
                 
-                    
-                    
-                    
-                    
-                    
-                
-                
-                
-                    

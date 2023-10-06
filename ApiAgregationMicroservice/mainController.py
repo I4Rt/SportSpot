@@ -21,6 +21,7 @@ def testDecorator(foo):
         except KeyError as jsone:
             return {request.path.split('/')[-1]: False, 'data': {'description': f'Json error, lost {str(jsone.args[0]).upper()} param', 'param': jsone.args[0]}}, 200
         except Exception as e:
+            print(e)
             return {request.path.split('/')[-1]: False, 'data': {'description': 'Unmatched error', "error": type(e).__name__}}, 200
     inner.__name__ = "inner" + str(index)
     index += 1
@@ -91,6 +92,15 @@ def appendData():
 @cross_origin()
 @testDecorator
 def getData():
+        
+        sideId = request.args.get("SOId")
+        id = None
+        if sideId:
+            so = SportObject.getBySideId(str(sideId))
+            if not so:
+                return {'getData': False, 'data':{'description': 'No such side id'}}, 200
+            id = so.id
+        
         begin = datetime.strptime(request.json['begin'], '%d-%m-%Y %H:%M:%S')
         end = datetime.strptime(request.json['end'], '%d-%m-%Y %H:%M:%S')
         
@@ -100,26 +110,27 @@ def getData():
         endDate = end.date()
         endTime = end.time()
         
-        data = DataRow.getInInterval(beginDate, beginTime, endDate, endTime)
+        data = DataRow.getInInterval(beginDate, beginTime, endDate, endTime, id)
         print(len(data))
         
         resultData = {}
         for elem in data:
-            if not (elem.sportObjectId in resultData):
-                resultData[elem.sportObjectId] = {}
+            sideObjId = elem.getSideSOId()
+            if not (sideObjId in resultData):
+                resultData[sideObjId] = {}
             # print(str(elem.date.date()), resultData[elem.sportObjectId])
             
-            if str(elem.date.date()) in resultData[elem.sportObjectId]:
-                print('here')
-                if str(elem.timeInterval) in resultData[elem.sportObjectId][str(elem.date.date())]:
-                    resultData[elem.sportObjectId][str(elem.date.date())][str(elem.timeInterval)][str(elem.roomId)] = {'plan': elem.plan, 'real': elem.real}
+            if str(elem.date.date()) in resultData[sideObjId]:
+                # print('here')
+                if str(elem.timeInterval) in resultData[sideObjId][str(elem.date.date())]:
+                    resultData[sideObjId][str(elem.date.date())][str(elem.timeInterval)][str(elem.roomId)] = {'plan': elem.plan, 'real': elem.real}
                 else:
-                    resultData[elem.sportObjectId][str(elem.date.date())][str(elem.timeInterval)] = {str(elem.roomId): {'plan': elem.plan, 'real': elem.real}}
+                    resultData[sideObjId][str(elem.date.date())][str(elem.timeInterval)] = {str(elem.roomId): {'plan': elem.plan, 'real': elem.real}}
                     
             else:
-                print('here 2')
-                resultData[elem.sportObjectId][str(elem.date.date())] = { str(elem.timeInterval) : {str(elem.roomId): {'plan': elem.plan, 'real': elem.real}}}
+                # print('here 2')
+                resultData[sideObjId][str(elem.date.date())] = { str(elem.timeInterval) : {str(elem.roomId): {'plan': elem.plan, 'real': elem.real}}}
             
         
-        return {'appendData': True, 'data':{'statistics': resultData}}, 200
+        return {'getData': True, 'data':{'statistics': resultData}}, 200
     

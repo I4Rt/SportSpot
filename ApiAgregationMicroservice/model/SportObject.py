@@ -16,6 +16,11 @@ class SportObject(db.Model, BaseData):
         self.name = name
         self.info = info
         self.outerId = outerId
+    
+    @classmethod
+    def getBySideId(cls, searchId) -> SportObject:
+        return cls.query.filter_by(outerId=searchId).first()
+    
         
         
         

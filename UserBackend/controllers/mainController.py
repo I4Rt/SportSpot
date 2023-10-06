@@ -320,6 +320,7 @@ def getTasks():
         except Exception as e:
             return make_response({'answer': str(e)})
         objectiveData = Task.getTasksAtDay(date)
+        print('got Tasks len is ', len(objectiveData))
         data = []
         for obj in objectiveData:
             dataList = obj.getParamsList()
@@ -627,19 +628,26 @@ def setTask():
             task = None
             if id == None:
                 task = Task(begin, end, roomId, name, targetCount, comment, interval, color)
+                task.save()
             else:
                 task = Task.getByID(id)
                 task.name = name
                 task.comment = comment
-                task.begin = begin
-                task.end = end
                 task.roomId = roomId
                 task.targetCount = targetCount
                 task.color = color
                 if interval != None:
                     task.interval = interval
-            print(str(task.begin))
-            task.save()
+                if task.begin != begin or task.end != end:
+                    print('was', task.begin, 'now is', begin)
+                    task.begin = begin
+                    task.end = end
+                    print('here')
+                    task.save()
+                else:
+                    task.save(False)
+            # print(str(task.begin))
+            
             data = task.getParamsList()
         except Exception as e:
             return make_response({'answer': str(e)})
@@ -1023,7 +1031,7 @@ def sendForAnalize():
         try:
             route = request.json['route']
             dir = os.path.normpath(route)
-            
+
             #test access
             
             name = request.json['name']
@@ -1039,9 +1047,14 @@ def sendForAnalize():
         try:
             task = Task(begin, end, roomId, name, targetCount, comment, interval, color)
         
-            task.setStatusDone()
-            task.save(needCheckFuture=False)
+            task._setStatusDone()
+            print('here before saving')
+            task.save(False)
         except Exception as e:
+            try:
+                task.delete()
+            except:
+                pass
             print(e)
             return {'answer': 'Can not save data to DB'}, 200
         try:
@@ -1058,6 +1071,3 @@ def sendForAnalize():
             task.delete()
             return {'answer': 'can not open file with cv2'}, 200
             
-            
-        
-    

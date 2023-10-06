@@ -21,6 +21,9 @@ class Stream:
         self.__timeLimit = timeLimit
         print('initing: adding ' + str(self.__timeLimit) + 'more seconds')
         # BAD routing
+        if type(route) == str:
+            if route.isdigit():
+                route = int(route)
         self.__camRoute = route
         self.__generator = None
         self.__finished = False

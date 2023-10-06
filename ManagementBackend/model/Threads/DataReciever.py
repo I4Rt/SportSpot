@@ -17,16 +17,19 @@ class DataReciever(Thread):
                 print(str(msg.value))
                 #save
                 data = json.loads(msg.value)
-                if str(data["taskID"]).isdigit():
-                    task = Task.getByID(int(data["taskID"]))
+                if str(data["taskId"]).isdigit():
+                    task = Task.getByID(int(data["taskId"]))
                     if task is not None:
                         if int(data["counter"]) > task.getCount():
                             task.setCount(int(data["counter"]))
                             print(f'set counter {int(data["counter"])} to task {task}')
                     else:
-                        print(f'recieved task does not exist')
+                        print(f'recieved task does not exist', int(data["taskId"]))
                 else:
-                    print('setting side task data')
-                    roomId = int( data["taskID"].split('_')[-1] )
-                    print(data)
-                    SideDataHolder.setResult(roomId, int(data["counter"]))
+                    print('setting side task data', list(data.keys()))
+                    try:
+                        roomId = int( data["taskId"].split('_')[-1] )
+                        print('good set is', data)
+                        SideDataHolder.setResult(roomId, int(data["counter"]))
+                    except:
+                        pass

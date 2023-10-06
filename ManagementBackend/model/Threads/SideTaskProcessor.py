@@ -11,9 +11,9 @@ class SideTaskProcessor(Thread, Jsonifyer):
     __trys = 3
     
     __duration = 1
-    __interval = 1
+    __interval = 30
     
-    __rootTime = 1 * 1
+    __rootTime = 1 * 60
     
     __instance = None
     
@@ -91,14 +91,17 @@ class SideTaskProcessor(Thread, Jsonifyer):
                     if len(dataToSend['data']) > 0:
                         try:
                             b = time()
+                            print('side data to send', dataToSend['taskId'])
                             sendData = self.sender.sendMessage(json.dumps(dataToSend))
-                            print(camData['camera'].getRoute(), 'sending t', time() - b)
-                            # print('test', dataToSend['taskId'])
+                            # with open('errorSending.txt', 'w') as file:
+                            #     file.write(json.dumps(dataToSend))
+                            # print(camData['camera'].getRoute(), 'sending t', time() - b)
+                            print('here2 message is ', sendData)
                             # print('side analize', sendData)
                         except requests.exceptions.ConnectionError:
                             print('can not send message: connection error')
                         except Exception as e:
-                            print( type(e) )
+                            print( 'here2 message is ', type(e) )
                     end = time()
                     print('time to process', end - begin)
                     maxedTime = max(maxedTime, end - begin)

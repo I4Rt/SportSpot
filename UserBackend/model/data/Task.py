@@ -54,6 +54,9 @@ class Task(db.Model, BaseData):
         self.__status = 2
         self.save()
         
+    def _setStatusDone(self):
+        self.__status = 2
+        
     
     
     # время не должно быть меньше текущего если условие задано
@@ -61,17 +64,23 @@ class Task(db.Model, BaseData):
     # начало должно быть меньше конца
     def _isValid(self, checkFuture=True):
         if self.begin < self.end:
-            if self.id != None:
+                
+            # if self.id != None:
                 cond1 = datetime.strptime(str(self.begin)[:19], '%Y-%m-%d %H:%M:%S') > datetime.now()
+                print('dt is ', datetime.strptime(str(self.begin)[:19], '%Y-%m-%d %H:%M:%S'))
+                print('cdt is ', datetime.now())
+                print('here', 'f is', checkFuture, 'c1 is', cond1)
                 if (cond1 and checkFuture) or (not cond1 and not checkFuture):
                     existCoveredTasks = Task.getCoveredTasksByRoomId(self.id, self.roomId, self.begin, self.end)
+                    print('covered tasks', len (existCoveredTasks))
                     if len(existCoveredTasks) == 0:
                         return True
-                return False # past/future check or cover tasks
-            return True # because is already checked
+                # return False # past/future check or cover tasks
+            # return True # because is already checked
         return False
     
     def save(self, needCheckFuture=True):
+        print('presave f is', needCheckFuture)
         if not self._isValid(needCheckFuture):
             raise (Exception('The task is not valid (is covered or the beginning is in the past or greater then the end)'))
         
@@ -93,12 +102,12 @@ class Task(db.Model, BaseData):
         
     @classmethod
     def getTasksAtDay(cls, date) -> List[Task]:
-        
+        print(date)
         eTime = date + timedelta(days=1)
         return db.session.query(Task).filter(
             and_(
-                 date <= cls.begin, 
-                 eTime > cls.end,
+                 cls.begin >= date, 
+                 cls.end <= eTime,
             ) 
         ).all()
         
@@ -147,10 +156,10 @@ class Task(db.Model, BaseData):
                 or_(
                     and_(
                         bTime >= cls.begin, 
-                        bTime <= cls.end
+                        bTime < cls.end
                     ),
                     and_(
-                        eTime >= cls.begin, 
+                        eTime > cls.begin, 
                         eTime <= cls.end
                     )
                 )

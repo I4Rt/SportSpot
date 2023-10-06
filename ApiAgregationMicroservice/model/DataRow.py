@@ -1,7 +1,7 @@
 from __future__ import annotations
 from config import *
 from model.BaseData import *
-
+from model.SportObject import *
 from sqlalchemy import UniqueConstraint
 from sqlalchemy import and_, or_
 
@@ -45,18 +45,40 @@ class DataRow(db.Model, BaseData):
         self.save()
     
     @classmethod  
-    def getInInterval(cls, bd, bt, ed, et) -> List[DataRow]:
+    def getInInterval(cls, bd, bt, ed, et, id = None) -> List[DataRow]:
+        if id:
+            return db.session.query(DataRow).filter(
+                and_(
+                    or_(DataRow.date >= bd + timedelta(days=1),
+                        and_(DataRow.date == bd,
+                            DataRow.timeInterval >= bt
+                        )
+                    ),
+                    or_(DataRow.date <= ed - timedelta(days=1),
+                        and_(DataRow.date == ed,
+                            DataRow.timeInterval + timedelta(minutes=30) <= et
+                        )
+                    ),
+                    DataRow.sportObjectId == id
+                )
+            ).all()
         return db.session.query(DataRow).filter(
-            and_(
-                or_(DataRow.date >= bd + timedelta(days=1),
-                    and_(DataRow.date == bd,
-                         DataRow.timeInterval >= bt
-                    )
-                ),
-                or_(DataRow.date <= ed - timedelta(days=1),
-                    and_(DataRow.date == ed,
-                         DataRow.timeInterval + timedelta(minutes=30) <= et
+                and_(
+                    or_(DataRow.date >= bd + timedelta(days=1),
+                        and_(DataRow.date == bd,
+                            DataRow.timeInterval >= bt
+                        )
+                    ),
+                    or_(DataRow.date <= ed - timedelta(days=1),
+                        and_(DataRow.date == ed,
+                            DataRow.timeInterval + timedelta(minutes=30) <= et
+                        )
                     )
                 )
-            )
-        ).all()
+            ).all()
+        
+    
+    def getSideSOId(self) -> List[DataRow]:
+        return db.session.query(SportObject).filter(
+            self.sportObjectId == SportObject.id
+        ).first().outerId

@@ -12,6 +12,8 @@ from base64 import b64decode
 from shapely.geometry import Point, Polygon
 import os
 
+from threading import Thread
+
 from  producer import KafkaProducerPlus, json_serializer
 
 model = YOLO('model_n.pt')
@@ -25,11 +27,12 @@ def checkIfInside(border, target):
     """Checking if point in polygon or not."""
     return Polygon(border).contains(Point(target[0], target[1]))
 
-def recognition(sectors):
+def recognition(sectors, image):
     """Recognition image and send the counter."""
-    image = cv2.imread("queue/image_receive.jpg")
+    
+    
 
-    results = model.predict(source=image, imgsz=1920, conf=0.6, classes=[0])
+    results = model.predict(source=image, imgsz=1920, conf=0.5, classes=[0])
     decImg_h, decImg_w = image.shape[:2]
 
     counter = 0
@@ -81,42 +84,106 @@ class KafkaConsumerPlus:
         return self.group
 
 
+class Analysis(Thread):
+    
+    def __init__(self, path, inner, outer):
+        Thread.__init__(self)
+        self.inner = inner
+        self.outer = outer
+        self.path = path
+        # host
+        # TODO: check/make qeries
+        
+
+    def run(self):
+        
+        if not os.path.isdir(self.path):
+            os.mkdir(self.path)
+        consumer  = KafkaConsumerPlus(self.inner,
+                                    "localhost:9092",
+                                    "earliest",
+                                    "consumer-group-a")
+        
+        producer = KafkaProducerPlus(["localhost:9092"], topic=self.outer,
+                             value_serializer=json_serializer)
+
+        print("starting the consumer ImageReceiver from", self.inner)
+
+        for msg in consumer.consumer:
+            try:
+                aggregationMode = 1
+                taskId = 0
+                res_counter = 0
+                for key_main in json.loads(msg.value):
+                    if key_main == "taskId":
+                        taskId = json.loads(msg.value)["taskId"]
+                    if key_main == "aggregationMode":
+                        aggregationMode = json.loads(msg.value)["aggregationMode"]
+                    if key_main == "data":
+                        list_counter = []
+                        for key_data in json.loads(msg.value)["data"]:
+                            readImgBytes = base64.b64decode(key_data["img"])
+                            npImg = frombuffer(readImgBytes, 'u1')
+                            decImg = cv2.imdecode(npImg, 1)
+                            cv2.imwrite(f'{self.path}/image_receive.jpg', decImg)
+
+                            list_counter.append(recognition(key_data["sectors"], decImg))
+                        # Sum the people, aggregationMode=1
+                        if aggregationMode == 1:
+                            res_counter = sum(list_counter)
+                        # Find maximum, aggregationMode=2
+                        else:
+                            res_counter = max(list_counter)
+                print('taskId', taskId)
+                producer.sendMessage({"taskId":  taskId, "counter": res_counter, "aggregationMode": aggregationMode,
+                                    "datetime": str(datetime.datetime.now())})
+            except Exception as e:
+                print('got error', e)
+
 if __name__ == "__main__":
-    if not os.path.isdir('queue'):
-        os.mkdir('queue')
+    
+    analizer1 = Analysis('fileData', 'SO1_data', 'SO1_receive')
+    analizer2 = Analysis('streamData', 'SO1_local', 'SO1_receive')
+    
+    analizer1.start()
+    analizer2.start()
+    
+    '''
+    # if not os.path.isdir('queue'):
+    #     os.mkdir('queue')
 
-    consumer  = KafkaConsumerPlus("SO1_local",
-                                  "localhost:9092",
-                                  "earliest",
-                                  "consumer-group-a")
+    # consumer  = KafkaConsumerPlus("SO1_local",
+    #                               "localhost:9092",
+    #                               "earliest",
+    #                               "consumer-group-a")
 
-    print("starting the consumer ImageReceiver")
+    # print("starting the consumer ImageReceiver")
 
-    for msg in consumer.consumer:
-        aggregationMode = 1
-        taskID = 0
-        res_counter = 0
-        for key_main in json.loads(msg.value):
-            if key_main == "taskID":
-                taskID = json.loads(msg.value)["taskID"]
-            if key_main == "aggregationMode":
-                aggregationMode = json.loads(msg.value)["aggregationMode"]
-            if key_main == "data":
-                list_counter = []
-                for key_data in json.loads(msg.value)["data"]:
-                    readImgBytes = base64.b64decode(key_data["img"])
-                    npImg = frombuffer(readImgBytes, 'u1')
-                    decImg = cv2.imdecode(npImg, 1)
-                    cv2.imwrite("queue/image_receive.jpg", decImg)
+    # for msg in consumer.consumer:
+    #     aggregationMode = 1
+    #     taskId = 0
+    #     res_counter = 0
+    #     for key_main in json.loads(msg.value):
+    #         if key_main == "taskId":
+    #             taskId = json.loads(msg.value)["taskId"]
+    #         if key_main == "aggregationMode":
+    #             aggregationMode = json.loads(msg.value)["aggregationMode"]
+    #         if key_main == "data":
+    #             list_counter = []
+    #             for key_data in json.loads(msg.value)["data"]:
+    #                 readImgBytes = base64.b64decode(key_data["img"])
+    #                 npImg = frombuffer(readImgBytes, 'u1')
+    #                 decImg = cv2.imdecode(npImg, 1)
+    #                 cv2.imwrite("queue/image_receive.jpg", decImg)
 
-                    list_counter.append(recognition(key_data["sectors"]))
-                # Sum the people, aggregationMode=1
-                if aggregationMode == 1:
-                    res_counter = sum(list_counter)
-                # Find maximum, aggregationMode=2
-                else:
-                    res_counter = max(list_counter)
+    #                 list_counter.append(recognition(key_data["sectors"]))
+    #             # Sum the people, aggregationMode=1
+    #             if aggregationMode == 1:
+    #                 res_counter = sum(list_counter)
+    #             # Find maximum, aggregationMode=2
+    #             else:
+    #                 res_counter = max(list_counter)
 
-        producer.sendMessage({"taskID":  taskID, "counter": res_counter, "aggregationMode": aggregationMode,
-                              "datetime": str(datetime.datetime.now())})
-
+    #     producer.sendMessage({"taskId":  taskId, "counter": res_counter, "aggregationMode": aggregationMode,
+    #                           "datetime": str(datetime.datetime.now())})
+    '''

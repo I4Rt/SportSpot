@@ -106,7 +106,7 @@ class TaskProcessor(Thread, Jsonifyer):
                     with open('senderData.json', 'w') as file:
                         file.write(json.dumps(dataToSend))
                     sendData = sender.sendMessage(json.dumps(dataToSend))
-                    print(sendData)
+                    print('data to send is ', sendData)
                     print(f'In thread #{get_native_id()}: task id {self.task.id}, analizer sent')
                     # add wait param to kafka reciever  
                 sleep(self.task.interval)
