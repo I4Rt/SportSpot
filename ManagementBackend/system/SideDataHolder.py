@@ -29,6 +29,18 @@ class SideDataHolder():
     
     @classmethod
     def setResult(cls, key, data):
-        print('set', key, data)
+        print('use to set', data, 'key type is', type(key))
+        if key in cls.__instance.rooms:
+            print('key found')
+            if cls.__instance.rooms[key] >= data:
+                print('data is greater')
+                return
+        
         cls.__instance.rooms[key] = data
+        print('set', cls.__instance.rooms)
+        
+    @classmethod
+    def resetValues(cls):
+        print('dropping')
+        cls.__instance.rooms={}
         

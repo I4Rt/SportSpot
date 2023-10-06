@@ -11,7 +11,7 @@ class SideTaskProcessor(Thread, Jsonifyer):
     __trys = 3
     
     __duration = 1
-    __interval = 30
+    __interval = 15
     
     __rootTime = 1 * 60
     
@@ -33,8 +33,9 @@ class SideTaskProcessor(Thread, Jsonifyer):
                 maxedTime = 5 + 3 * self.__duration + self.__interval
                 self.dataHolder.updateRoomList()
                 expectedTime = len(self.dataHolder.rooms) * maxedTime
-                needSleep = expectedTime < self.__rootTime
+                # needSleep = expectedTime < self.__rootTime
                 localTime = 0
+                beginAllCams = time()
                 for roomId in self.dataHolder.rooms:
                     begin = time()
                     room = Room.getByID(roomId)
@@ -62,14 +63,14 @@ class SideTaskProcessor(Thread, Jsonifyer):
                               "agregationMode": room.classId, # CHECK
                               "data": []}     
                     # print('here', len(cameras))
-                    print('agregation part 1 t', time() - b1, 'camLen', len(cameras))
+                    # print('agregation part 1 t', time() - b1, 'camLen', len(cameras))
                     b2 = time()
                     for camData in cameras:
                         # print(camData)
                         try:
                             b = time()
                             frame = next(camData["generator"])
-                            print(camData['camera'].getRoute(), 'getting t', time() - b)
+                            # print(camData['camera'].getRoute(), 'getting t', time() - b)
                             # print(camData['camera'].getRoute(), len(str(frame)))
                             if not ( frame is None ):
                                 
@@ -82,35 +83,37 @@ class SideTaskProcessor(Thread, Jsonifyer):
                                                 for sector in camData["sectors"]]
                                     
                                 }
-                                print('mode is',  sector.typeId)
+                                # print('mode is',  sector.typeId)
                                 dataToSend["data"].append(localData)
                         except Exception as e: 
                             print(type(e), e)
-                        print('agregation part 2 t', time() - b2)
+                        # print('agregation part 2 t', time() - b2)
                             
                     if len(dataToSend['data']) > 0:
                         try:
                             b = time()
-                            print('side data to send', dataToSend['taskId'])
+                            # print('side data to send', dataToSend['taskId'])
                             sendData = self.sender.sendMessage(json.dumps(dataToSend))
                             # with open('errorSending.txt', 'w') as file:
                             #     file.write(json.dumps(dataToSend))
                             # print(camData['camera'].getRoute(), 'sending t', time() - b)
-                            print('here2 message is ', sendData)
+                            # print('here2 message is ', sendData)
                             # print('side analize', sendData)
                         except requests.exceptions.ConnectionError:
                             print('can not send message: connection error')
                         except Exception as e:
-                            print( 'here2 message is ', type(e) )
+                            print( 'error ', type(e) )
                     end = time()
                     print('time to process', end - begin)
                     maxedTime = max(maxedTime, end - begin)
-                    rest = 5 + len(cameras) * self.__duration - (end - begin) + self.__interval
+                    rest = 5 + len(cameras) * self.__duration + self.__interval - (end - begin) 
+                    print('sleep before the next camera', rest)
                     sleep(rest if rest > 0 else 0)
                     localTime += maxedTime
                     
-                if needSleep:
-                    sleep(self.__rootTime - expectedTime)
+                if time() - beginAllCams < self.__rootTime :
+                    print('sleep before all camera loop', self.__rootTime - (time() - beginAllCams) )
+                    sleep(self.__rootTime - (time() - beginAllCams))
                         
                     
                         

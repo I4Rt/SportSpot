@@ -30,7 +30,7 @@ class BaseData(Jsonifyer):
     #     cls.query.filter_by(id=targetId).delete()
     
     def delete(self):
-        print(f'deleting {self}')
+        # print(f'deleting {self}')
         db.session.delete(self)
         db.session.commit()
     

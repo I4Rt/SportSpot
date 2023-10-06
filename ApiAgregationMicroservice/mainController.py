@@ -7,7 +7,16 @@ from sqlalchemy.exc import DatabaseError
 import sys
 from time import time, sleep
 from datetime import datetime
- 
+actualRoomsInfo = None
+try:
+    with open('roomsData.txt', 'e') as file:
+        actualRoomsInfo = json.loads(file.read())
+except:
+    actualRoomsInfo = {}
+    with open('roomsData.txt', 'w') as file:
+        file.write(json.dumps(actualRoomsInfo))
+        
+
 index = 0
 def testDecorator(foo):
     global index
@@ -55,8 +64,14 @@ def soRegister():
 @cross_origin()
 @testDecorator
 def appendData():
+    global actualRoomsInfo
     data = request.json['data']
     soId = request.json['SOId']
+    print(request.json['rooms'])
+    actualRoomsInfo[str(SportObject.getByID(int(soId)))] = request.json['rooms']
+    
+    with open('roomsData.txt', 'w') as file:
+        file.write(json.dumps(actualRoomsInfo))
     '''
     {
         day:{
@@ -88,7 +103,7 @@ def appendData():
                 print('can not getDate', e)
             return {'appendData': True, 'data':{'updated': counter}}, 200
 
-@app.route('/api/getData', methods=['post'])
+@app.route('/api/getStatisticsData', methods=['get', 'post'])
 @cross_origin()
 @testDecorator
 def getData():
@@ -98,7 +113,7 @@ def getData():
         if sideId:
             so = SportObject.getBySideId(str(sideId))
             if not so:
-                return {'getData': False, 'data':{'description': 'No such side id'}}, 200
+                return {'getStatisticsData': False, 'data':{'description': 'No such side id'}}, 200
             id = so.id
         
         begin = datetime.strptime(request.json['begin'], '%d-%m-%Y %H:%M:%S')
@@ -132,5 +147,13 @@ def getData():
                 resultData[sideObjId][str(elem.date.date())] = { str(elem.timeInterval) : {str(elem.roomId): {'plan': elem.plan, 'real': elem.real}}}
             
         
-        return {'getData': True, 'data':{'statistics': resultData}}, 200
+        return {'getStatisticsData': True, 'data':{'statistics': resultData}}, 200
+    
+    
+@app.route('/api/getRoomsData', methods=['post'])
+@cross_origin()
+@testDecorator
+def getRoomsData():
+    global actualRoomsInfo
+    return {'getRoomsData': True, 'data':{'rooms': actualRoomsInfo}}, 200
     

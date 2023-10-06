@@ -622,7 +622,7 @@ def setTask():
             end = datetime.strptime(request.json['end'], '%m/%d/%Y %H:%M:%S')
             roomId = request.json['roomId']
             targetCount = request.json['targetCount']
-            interval = request.json['targetCount']
+            interval = request.json['interval']
             color = request.json['color']
             
             task = None

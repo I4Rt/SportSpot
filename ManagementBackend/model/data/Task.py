@@ -127,7 +127,7 @@ class Task(db.Model, BaseData):
     def getTasksToRun(cls, datetime:type(datetime.now())):
         res =  db.session.query(Task).filter(
             and_(
-                 datetime < cls.end, 
+                 datetime < cls.end,                           # TODO: проверить таски с 23.30 до 00.00
                  datetime >= cls.begin, 
                  cls.__status == 0,
             ) 

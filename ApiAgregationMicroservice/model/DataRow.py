@@ -32,13 +32,15 @@ class DataRow(db.Model, BaseData):
     # too bad: do not update - replaced by 2 operations
     def update(self):
         
-        db.session.query(DataRow).filter(
+        data = db.session.query(DataRow).filter(
             and_(
                 DataRow.roomId == self.roomId,
                 DataRow.date == self.date,
-                DataRow.timeInterval == self.timeInterval
+                DataRow.timeInterval == self.timeInterval,
+                DataRow.real <= self.real
             ),
         ).delete()
+                
         # print('delete is set')
         db.session.commit()
         # print('delete is done')

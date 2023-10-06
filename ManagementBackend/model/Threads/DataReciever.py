@@ -31,5 +31,6 @@ class DataReciever(Thread):
                         roomId = int( data["taskId"].split('_')[-1] )
                         print('good set is', data)
                         SideDataHolder.setResult(roomId, int(data["counter"]))
+                        SideDataHolder.getInstance().updateRoomList()
                     except:
                         pass

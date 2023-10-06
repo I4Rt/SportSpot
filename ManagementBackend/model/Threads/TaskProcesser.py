@@ -89,7 +89,7 @@ class TaskProcessor(Thread, Jsonifyer):
                             "sectors": [{"points": sector.getPointList(), 
                                          "mode": sector.typeId} 
                                         for sector in camData["sectors"]],
-                            "mode": camData['sectors'].typeId
+                            # "mode": camData['sectors'][].typeId
                         }
                         
                         dataToSend["data"].append(localData)
