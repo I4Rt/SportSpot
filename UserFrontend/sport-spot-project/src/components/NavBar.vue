@@ -1,52 +1,49 @@
 <template>
  <div class="container nav-bar">
-   <div class="row">
-     <div class="col-2">
-       <button
-           class="btn"
-           :class="page === 'Calendar' ? 'nav-bar-btn-on' : 'nav-bar-btn-off'"
-           @click="showPage('Calendar')"
-       >Календарь загруженности
-       </button>
-     </div>
-     <div class="col-1">
-       <button
-           class="btn "
-           :class="page === 'Cameras' ? 'nav-bar-btn-on' : 'nav-bar-btn-off'"
-           @click="showPage('Cameras')">
-         Настройка <br> камер
-       </button>
-     </div>
-     <div class="col-2">
-       <button
-           class="btn "
-           :class="page === 'Rooms' ? 'nav-bar-btn-on' : 'nav-bar-btn-off'"
-           @click="showPage('Rooms')">
-         Настройка помещений
-       </button>
-     </div>
-     <div class="col-6">
-       <div class="row justify-content-end" style="height: 100%">
-         <div class="col-3 dropdown" style="display: flex">
-             <div class="btn nav-bar-btn-off" style="margin: auto">
-               Пользователь
+   <div class="">
+     <div class="grid-default">
+       <div class="">
+         <button
+             class="btn"
+             :class="page === 'Calendar' ? 'nav-bar-btn-on' : 'nav-bar-btn-off'"
+             @click="showPage('Calendar')"
+         >Календарь <br> загруженности
+         </button>
+       </div>
+       <div class="">
+         <button
+             class="btn "
+             :class="page === 'Cameras' ? 'nav-bar-btn-on' : 'nav-bar-btn-off'"
+             @click="showPage('Cameras')">
+           Настройка <br> камер
+         </button>
+       </div>
+       <div class="">
+         <button
+             class="btn "
+             :class="page === 'Rooms' ? 'nav-bar-btn-on' : 'nav-bar-btn-off'"
+             @click="showPage('Rooms')">
+           Настройка <br> помещений
+         </button>
+       </div>
+       <div class="">
+         <button
+             class="btn nav-bar-btn-off"
+             @click="$emit('openExplorer')">
+           Анализ <br> архивных данных
+         </button>
+       </div>
+         <div >
+           <div class="dropdown">
+             <div class="btn nav-bar-btn-off" >
+               {{user.name}} <br> {{user.surname}}
                <div class="dropdown-menu">
                  <button @click="this.$emit('onLogout')" class="dropdown-item">Выйти</button>
+                 <button @click="this.$emit('changePassword')" class="dropdown-item">Изменить пароль</button>
                </div>
              </div>
-<!--           <div class="dropdown" :class="dropdownClass" @mouseover="dropdownClass = 'show'"-->
-<!--                @mouseleave="dropdownClass = ''">-->
-<!--             <div class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" >-->
-<!--               Dropdown button-->
-<!--             </div>-->
-<!--             <div class="dropdown-menu" :class="dropdownClass" aria-labelledby="dropdownMenuButton">-->
-<!--               <a class="dropdown-item" href="#">Action</a>-->
-<!--               <a class="dropdown-item" href="#">Another action</a>-->
-<!--               <a class="dropdown-item" href="#">Something else here</a>-->
-<!--             </div>-->
-<!--           </div>-->
+           </div>
          </div>
-       </div>
      </div>
    </div>
  </div>
@@ -55,6 +52,8 @@
 <script>
 
 export default {
+  props: ['user'],
+  emits: ['onLogout', 'showPage'],
   name: "NavBar",
   data(){
     return{
@@ -76,7 +75,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .nav-bar{
   margin-top: 40px;
   /*background-color: #e8eae4;*/
@@ -105,6 +104,7 @@ export default {
 .nav-bar-btn-on{
   background-color: #29239f;
   color: aliceblue;
+
 }
 .nav-bar-btn-off:hover{
   background-color: rgba(243, 238, 238, 0.99);
@@ -112,6 +112,12 @@ export default {
 .nav-bar-btn-off:focus{
   background-color: #29239f;
   color: aliceblue;
+}
+.grid-default{
+  display: grid;
+  grid-gap: 50px;
+  grid-template-columns: repeat(5, 1fr);
+
 }
 
 </style>

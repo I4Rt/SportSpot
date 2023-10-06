@@ -15,15 +15,16 @@
           <label class="field">Просмотр</label>
         </div>
         <div class="col-3" style="text-align: center">
-          <template v-if="getCameras.length === 0">
+          <template v-if="getCameras === null">
             <img :src="require('../assets/gifs/black-spinner.svg')" style="width: 100px; height: 100px" alt="">
           </template>
           <template v-else>
-            <div class="row window camera col-12"
-                @click="chooseCamera(camera)"
-                v-for="(camera, index) in getCameras" :key="index">
-            <span class="cam-name">{{camera.name}}</span>
-            <span class="cam-ip">{{camera.ip}}</span>
+            <div :style="camera.id === selectedCamera.id ? {background: '#a7a7a7'} : '' "
+                class="row window camera col-12"
+                @click="chooseCamera(selectedCamera)"
+                v-for="(selectedCamera, index) in getCameras" :key="index">
+            <span class="cam-name">{{selectedCamera.name}}</span>
+            <span class="cam-ip">{{selectedCamera.ip}}</span>
           </div>
           </template>
         </div>
@@ -109,7 +110,7 @@
           <label style="font-weight: 700">Секторы</label>
           <button style="position: absolute; right: 0; margin-right: 30px" @click="addSectorToCamera">Добавить</button>
           <div style="text-align: center">
-            <template v-if="cameraSelected && getSectorsByCameraID(this.camera.id).length === 0">
+            <template v-if="cameraSelected && getSectorsByCameraID(this.camera.id) === null">
               <img :src="require('../assets/gifs/black-spinner.svg')" style="width: 100px; height: 100px" alt="">
             </template>
             <template v-else>
@@ -162,6 +163,7 @@ import { required, integer} from '@vuelidate/validators'
 import ShowCamera from "@/components/ShowCamera";
 
 export default {
+  emits: ['onLogout'],
   props: ['selectFunction'],
   name: "CamerasPage",
   components: {
@@ -273,37 +275,18 @@ export default {
           });
       return returnResult
     },
-    async setSector(sector){
-      console.log('1 sector ' + sector)
-      let returnValue
-      try {
-        returnValue = await fetch('http://localhost:5000/setSector', {
-          credentials: "include",
-          method: 'POST',
-          cors: 'no-cors',
-          headers: {
-            'Content-Type': 'application/json;charset=utf-8',
-          },
-          body: JSON.stringify({
-            "camId": sector.camId,
-            "id": sector.id,
-            "name": sector.name,
-            "points": sector.points,
-            "roomId": sector.roomId,
-            "typeId": sector.typeId
-          })
-        })
-            .then(response => response.json())
-            .then((response) =>{
-              sector.id = response.id
-              if (sector.id === null) return  response
-              else return sector
-            })
-      } catch (err) {
-        console.error(err)
-      }
-      return returnValue
-    },
+    // async setSector(sector){
+    //   let returnValue
+    //   try {
+    //
+    //
+    //
+    //         })
+    //   } catch (err) {
+    //     console.error(err)
+    //   }
+    //   return returnValue
+    // },
     async setCamera() {
       return fetch('http://localhost:5000/setCamera', {
         credentials: "include",
@@ -328,7 +311,6 @@ export default {
           .then((response) => {
             console.log('setCameraResponse ' + response)
             console.log(response)
-
             this.camera.id = response.id
             let cameraCopy = Object.assign({}, this.camera)
             console.log('check')
@@ -337,10 +319,14 @@ export default {
               console.log('yesCheck')
             }
             console.log('noCheck')
-            this.getSectors.forEach((sector) => {
-              sector.camId = this.camera.id
-              this.selectFunction(this.setSector, sector)
-            })
+            try{
+              this.getSectors.forEach((sector) => {
+                sector.camId = this.camera.id
+                this.selectFunction(this.setSectorToDB, sector)
+              })
+            } catch (err) {
+              console.log(err)
+            }
             return response
           });
     },
@@ -349,7 +335,9 @@ export default {
       console.log('save')
       if (!this.v$.camera.$error) {
         console.log('Валидация прошла успешно')
-        this.selectFunction(this.setCamera)
+        this.selectFunction(this.setCamera).then(() => {
+          if (!this.cameraSelected) this.resetCamera()
+        })
       }
       else console.log('Валидация не прошла')
     },
@@ -378,9 +366,8 @@ export default {
       }
       else if (cameraSector.name === '' || cameraSector.typeId === null) alert("Сначала введите название сектора и выберите его тип")
       else if (cameraSector.id === null) {
-        let p1 = this.selectFunction(this.setSector, cameraSector)
+        let p1 = this.selectFunction(this.setSectorToDB, cameraSector)
         p1.then(() => {
-          console.log('4 value')
           console.log(cameraSector)
           this.showSector(cameraSector)
         })
@@ -404,7 +391,7 @@ export default {
       // this.$refs.showCamera.changeImgPath('@/assets/images/background.png')
       console.log('reset')
       this.cameraSelected = false
-      this.$store.state.sectors = []
+      this.$store.state.sectors = null
       let cameraCopy = Object.assign({}, this.camera)
       this.camera = cameraCopy
       this.camera.id = null
@@ -443,13 +430,14 @@ export default {
       console.log('p')
       this.resetSector()
       this.sector.camId = this.camera.id
-      this.$store.commit('setSector', Object.assign({}, this.sector))
+      this.$store.commit('addSector', Object.assign({}, this.sector))
     },
     ...mapActions([
         'addCamera',
         'removeCamera',
         'removeSector',
-        'getCamerasFromDB'
+        'getCamerasFromDB',
+        'setSectorToDB'
     ])
   }
 }

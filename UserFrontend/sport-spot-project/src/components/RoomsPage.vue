@@ -66,9 +66,9 @@
                       <table>
                         <tr v-for="(cameraSector, index) in camera.sectors" :key="index" >
                           <td style="padding: 0">
-                            <div class="grid-default" style="height: 26px">
+                            <div id="td-height-used" class="grid-default" style="height: 26px">
                               <div style="margin-left: 20px">
-                                <span >{{ cameraSector.name }}</span>
+                                <span class="sector-name" :title="cameraSector.name">{{ cameraSector.name }}</span>
                               </div>
                               <div class="content content-end">
                                 <button class="hidden-button swipe-sector" @click="selectFunction(removeSectorFromRoom,cameraSector)">
@@ -98,7 +98,7 @@
                       <table>
                         <tr v-for="(cameraSector, index) in camera.sectors" :key="index" >
                           <td style="padding: 0">
-                            <div id="td-height" class="grid-default" style="height: 26px">
+                            <div id="td-height-unused" class="grid-default" style="height: 26px">
                               <div style="margin-left: 20px">
                                 <span class="sector-name" :title="cameraSector.name">{{ cameraSector.name }}</span>
                               </div>
@@ -158,6 +158,7 @@ import { required} from '@vuelidate/validators'
 import ShowCamera from "@/components/ShowCamera";
 
 export default {
+  emits: ['onLogout'],
   props: ['selectFunction'],
   name: "RoomsPage",
   components: {
@@ -250,43 +251,12 @@ export default {
                 console.log('yesCheck')
               }
               this.v$.room.$reset()
-              if (this.sector.camId !== null) this.selectFunction(this.setSector, this.sector)
+              if (this.sector.camId !== null) this.selectFunction(this.setSectorToDB, this.sector)
               return response
             });
       }
       else console.log('Валидация не прошла')
       return returnResult
-    },
-    async setSector(sector){
-      console.log('1 sector ' + sector)
-      let returnValue
-      try {
-        returnValue = await fetch('http://localhost:5000/setSector', {
-          credentials: "include",
-          method: 'POST',
-          cors: 'no-cors',
-          headers: {
-            'Content-Type': 'application/json;charset=utf-8',
-          },
-          body: JSON.stringify({
-            "camId": sector.camId,
-            "id": sector.id,
-            "name": sector.name,
-            "points": sector.points,
-            "roomId": sector.roomId,
-            "typeId": sector.typeId
-          })
-        })
-            .then(response => response.json())
-            .then((response) =>{
-              sector.id = response.id
-              if (sector.id === null) return  response
-              else return sector
-            })
-      } catch (err) {
-        console.error(err)
-      }
-      return returnValue
     },
     async getUnusedCameraSectorsByRoomIdFromDB() {
       return await fetch(`http://localhost:5000/getUnusedCameraSectorsByRoomId?roomId=${this.room.id}`, {
@@ -404,10 +374,15 @@ export default {
     reloadCameraSectors() {
       this.selectFunction(this.getUsedCameraSectorsByRoomIdFromDB)
       this.selectFunction(this.getUnusedCameraSectorsByRoomIdFromDB).then(() => {
-        let tdHeight = document.getElementById("td-height").offsetHeight
+        let tdHeight = 26
+        // try{
+        //   tdHeight = document.getElementById("td-height-unused").offsetHeight
+        // } catch (err) {
+        //   tdHeight = document.getElementById("td-height-used").offsetHeight
+        // }
         let linearTable = document.getElementsByClassName('linear-table')
         Array.from(linearTable).forEach((item) => {
-          item.style.setProperty('--td-height', `${tdHeight*2}px`)
+            item.style.setProperty('--td-height', `${tdHeight*2}px`)
           item.style.setProperty('--table-height', `${tdHeight*12}px`)
         })
       })
@@ -450,7 +425,8 @@ export default {
         'getSectorsByCameraIDFromDB',
         'getRoomTypesFromDB',
         'getSectorTypesFromDB',
-        'getCamerasFromDB'
+        'getCamerasFromDB',
+        'setSectorToDB'
     ])
   }
 }

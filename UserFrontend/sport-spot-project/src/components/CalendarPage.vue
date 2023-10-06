@@ -1,15 +1,11 @@
 <template>
-  <explorer-page
-      v-if="openExplorer"
-      @openExplorerChange="openExplorer = false">
-  </explorer-page>
     <div class="container" @mouseup="onMousedown=false">
       <div class="row justify-content-around">
       <div class="col-6">
         <label class="field">Календарь</label>
       </div>
         <div class="col-6">
-          <div class="grid-default">
+          <div class="grid-default grid-default-room-label">
             <div class="content content-start">
               <label v-if="!roomSelected" class="field">Помещения</label>
               <label style="margin-left: 5px" v-if="roomSelected" class="field">
@@ -17,7 +13,10 @@
               </label>
             </div>
             <div class="content content-end">
-              <button class="btn btn-primary" style="margin-right: 5px; padding: 3px 8px" @click="roomSelected = false">Назад</button>
+              <button v-if="roomSelected"
+                      class="btn btn-primary"
+                      style="margin-right: 5px; padding: 3px 8px"
+                      @click="roomSelected = false; busyTimesArray = []">Назад</button>
             </div>
           </div>
         </div>
@@ -34,7 +33,7 @@
                 </button>
                 <div class="content content-center"> {{calendarMonths[currentMonth]}} </div>
                 <div class="content content-start"> {{currentYear}} </div>
-                <button @click="getCurrentDay" class="hidden-button" title="К текущему месяцу">
+                <button @click="getCurrentDay" class="hidden-button" title="К текущему дню">
                   <img  :src="require('../assets/icons/today24px.png')" alt="">
                 </button>
               </div>
@@ -57,10 +56,6 @@
               </div>
             </div>
           </div>
-          <div style="margin-top: 5px" class="">
-            <input class="input-field input-field-file" type="text" placeholder="Путь до папки с архивными файлами">
-            <button @click="openExplorer = true" class="btn btn-success">Открыть</button>
-          </div>
         </div>
       </div>
       <div class="col-6" >
@@ -82,7 +77,6 @@
           </div>
           <div class="row" v-else>
             <div class="col-5">
-              Расписание
               <div class="window">
                 <table
                     class="linear-table window-table"
@@ -93,20 +87,23 @@
                       :key="index"
                       onmousedown="return false"
                       onselect="return false">
-                    <template v-if="2 * index < 49">
+                    <template v-if="2 * index < 48">
                       <td
                           :id="timesArray[2 * index]"
                           class="linear-table-td"
                           @mouseenter = "setIndices(2 * index)"
                           @mousedown = "indexSelected = 2 * index; onMousedown = true; setIndices(2 * index)">
-                        {{timesArray[2 * index]}}
+                        {{timesArray[2 * index]}} - {{timesArray[2 * index + 1]}}
                       </td>
                       <td
                           :id="timesArray[2 * index + 1]"
                           class="linear-table-td"
                           @mouseenter="setIndices(2 * index + 1)"
                           @mousedown = "indexSelected = 2 * index + 1; onMousedown = true; setIndices(2 * index + 1)">
-                        {{timesArray[2 * index + 1]}}
+                        <span >
+                          {{timesArray[2 * index + 1]}} - {{timesArray[2 * index + 1] === '23:30' ? '24:00' : timesArray[2 * index + 2]}}
+                        </span>
+
                       </td>
                     </template>
                   </tr>
@@ -114,13 +111,30 @@
               </div>
             </div>
             <div class="col-7">
-              <div class="grid-default">
-                Мероприятие
-                <button class="hidden-button content content-end" @click="resetTask">
-                  <img src="../assets/icons/add24.png" alt="">
-                </button>
-              </div>
-              <form @submit.prevent="selectFunction(save)" style="margin-top: 10px">
+                <div  class="grid-default grid-default-task-label"  v-if="getFile !== null">
+                  <span
+                      class="short-name"
+                      :title="getFile.name">
+                    Архивный файл <br>
+                    <span
+                        style="font-size: 17px; font-weight: 700; "
+                        class="short-name">
+                      {{getFile.name}}
+                    </span>
+                  </span>
+                  <div class="content content-end">
+                    <button style="padding: 2px 8px" class="btn btn-danger" @click="$store.state.file = null">Х</button>
+                  </div>
+                </div>
+                <div style="margin-bottom: 5px" v-else class="grid-default grid-default-task-label">
+                  <label>Задать мероприятие</label>
+                  <button
+                      title="Создать новое мероприятие"
+                      class="hidden-button content content-end" @click="resetTask">
+                    <img src="../assets/icons/add24.png" alt="">
+                  </button>
+                </div>
+              <form @submit.prevent="selectFunction(save)" >
                 <div class="">
                   <label> Название: </label>
                   <input class=" input-field" type="text" v-model.trim="task.name"
@@ -131,7 +145,7 @@
                 </div>
                 <div class="">
                   <label> Количество участников: </label>
-                  <input class="input-field" type="text" v-model.trim="task.targetCount"
+                  <input class="input-field" type="number" v-model.trim="task.targetCount"
                          :class="v$.task.targetCount.$error ? 'is-invalid' : ''">
                   <p v-if="v$.task.targetCount.$dirty && v$.task.targetCount.required.$invalid " class="invalid-feedback">
                     Обязательное поле
@@ -144,25 +158,25 @@
                   <label> Комментарий: </label>
                   <input class="input-field" type="text" v-model.trim="task.comment">
                 </div>
-                <div style="width: 100%; margin-bottom: 10px">
+                <div style="width: 100%; margin-bottom: 10px" class="grid-default">
                   <button type="submit" class="btn btn-success" >Сохранить</button>
+                  <button
+                      type="button"
+                      v-if="taskSelected"
+                      @click="clearTimesArray(this.task.timesArray); canChangeTimesArray = true"
+                      class="btn btn-primary">
+                    Выбрать время
+                  </button>
                 </div>
               </form>
-              <button
-                  v-if="taskSelected"
-                  @click="clearTimesArray(this.task.timesArray); canChangeTimesArray = true"
-                  class="btn btn-primary"
-                  style="position: absolute; top: 0; right: 0; margin-right: 15px; margin-top: 132px">
-                Выбрать время
-              </button>
               Список мероприятий
                 <div style="text-align: center" v-if="!tasksLoaded">
                   <img :src="require('../assets/gifs/black-spinner.svg')" style="width: 100px; height: 100px" alt="">
                 </div>
-                <div v-else class="row" v-for="(task, index) in this.getTasks" :key="index">
-                  <div class="window camera col-6" @click="chooseTask(task)">
-                    <span class="name">{{task.name}}</span>
-                    <span class="name" style="margin-left: 10px">0/{{task.targetCount}}</span>
+                <div v-else class="row" v-for="(task, index) in this.getTasksByRoomID(roomSelectedId)" :key="index">
+                  <div class="window camera col-6 grid-default" @click="chooseTask(task)">
+                    <span class="name short-name short-name-task" :title="task.name">{{task.name}}</span>
+                    <span class="name" style="margin-left: 10px">{{task.statistics}}/{{task.targetCount}}</span>
                   </div>
                   <div class="col-2">
                     <input class="hidden-button"
@@ -198,13 +212,11 @@ import {mapGetters} from "vuex"
 import {mapActions} from 'vuex'
 import { useVuelidate } from '@vuelidate/core'
 import {integer, required} from "@vuelidate/validators";
-import explorerPage from "@/components/ExplorerPage";
+// import explorerPage from "@/components/ExplorerPage";
 
 export default {
-  components: {
-    explorerPage
-  },
   props: ['selectFunction'],
+  emits: ['onLogout'],
   name: "CalendarPage",
   setup () {
     return {
@@ -222,13 +234,16 @@ export default {
         begin: '',
         end: '',
         color: this.randomHex().slice(0,7),
-        timesArray: ''
+        timesArray: '',
+        interval: 5,
+        statistics: 0
       },
       // generatedColor: this.randomHex(),
 
       tasksLoaded: false,
 
       openExplorer: false,
+      routeToFile: null,
 
       indexStart: null,
       indexEnd: null,
@@ -270,8 +285,10 @@ export default {
         'getRooms',
         'getTasks',
         'getTaskByID',
+        'getTasksByRoomID',
         'getRefreshInterval',
-        'getRoomByID'
+        'getRoomByID',
+        'getFile'
     ])
   },
   mounted() {
@@ -288,45 +305,83 @@ export default {
       let task = this.task
       if (arguments.length === 1) task = saveTask
       else this.v$.task.$touch()
-      let returnResult
       console.log('save')
-      if (new Date(this.selectedDay + ' ' + this.indexStart + ':00') < new Date()) alert("")
-      else if(this.task.timesArray.length >= 2){
+      if (this.getFile !== null) {
+        if (new Date(this.selectedDay + ' ' + this.indexStart + ':00') >= new Date()) alert("Нельзя задать дату и время после текущего")
+        else this.setTaskToDB(task)
+      }
+      else {
+        if (new Date(this.selectedDay + ' ' + this.indexStart + ':00') < new Date()) alert("Нельзя задать дату и время до текущего")
+        else this.setTaskToDB(task)
+      }
+    },
+
+    async setTaskToDB(task) {
+      let returnResult
+
+      if(task.timesArray.length >= 1){
         if (!this.v$.task.$error) {
-          fetch('http://localhost:5000/setTask', {
-            credentials: "include",
-            method: 'POST',
-            cors: 'no-cors',
-            headers: {
-              'Content-Type': 'application/json;charset=utf-8',
-            },
-            body: JSON.stringify({
-              "id": task.id,
-              "name": task.name,
-              "comment": task.comment,
-              "roomId": this.roomSelectedId,
-              "targetCount": task.targetCount,
-              "begin": `${this.selectedDay} ${task.timesArray[0]}:00`,
-              "end": `${this.selectedDay} ${task.timesArray[task.timesArray.length-1]}:00`,
-              "color": task.color
+          let request
+          let dataBody = {
+            "name": task.name,
+            "comment": task.comment,
+            "roomId": this.roomSelectedId,
+            "targetCount": task.targetCount,
+            "interval": task.interval,
+            "begin": `${this.selectedDay} ${this.indexStart}:00`,
+            "end": `${this.indexEnd === '00:00' ? this.nextDay() : this.selectedDay} ${this.indexEnd}:00`,
+            "color": task.color
+          }
+          if (this.getFile === null){
+            request = 'setTask'
+            dataBody["id"] = task.id
+          }
+          else{
+            request = 'sendForAnalize'
+            dataBody["route"] = this.getFile.route.replaceAll('\\', '/')
+          }
+          console.log(dataBody)
+
+          try {
+            returnResult = await fetch(`http://localhost:5000/${request}`, {
+              credentials: "include",
+              method: 'POST',
+              cors: 'no-cors',
+              headers: {
+                'Content-Type': 'application/json;charset=utf-8',
+              },
+              body: JSON.stringify(dataBody)
             })
-          })
-              .then(response => response.json())
-              .then((response) => {
-                console.log(response)
-                returnResult = response
-                this.task.id = response.id
-                if (this.getTaskByID(this.task.id) === undefined)
-                  this.$store.commit('setTask', Object.assign({}, this.task))
-                this.repaintTimesArray(task.timesArray, task.color + this.alphaChannel).then((value => {
+                .then(response => response.json())
+                .then((response) => {
+                  console.log(response)
+                  try {
+                    if (response.name){
+                      this.task.id = response.id
+                      if (this.getTaskByID(this.task.id) === undefined)
+                        this.$store.commit('setTask', Object.assign({}, this.task))
+                    }
+                    else if (response.answer === 'recogonition beguns') alert ('Выбранный файл анализируется')
+                    this.repaintTimesArray(task.timesArray, task.color + this.alphaChannel).then((value => {
                       console.log(value)
                       this.resetTask()
-                    })
-                )
-              });
+                      this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
+                        this.paintTasks()
+                        this.$store.state.file = null
+                      })
+                        })
+                    )
+                  } catch (err) {
+                    console.log(err)
+                  }
+                  return response
+                });
+          } catch (err) {
+            console.log(err)
+          }
         }
       }
-      else alert("Выберите диапазон времени более одного значения")
+      else alert("Выберите диапазон времени")
       return returnResult
     },
     chooseTask(task) {
@@ -372,6 +427,7 @@ export default {
       return `#${color}${this.alphaChannel}`
     },
     setIndices(index){
+      // console.log(`indexes: ${index}/${this.indexSelected}`)
       if (this.canChangeTimesArray === false) return 1
       let indexStart = null
       let indexEnd = null
@@ -383,7 +439,9 @@ export default {
         indexStart = this.indexSelected
         indexEnd = index
       }
+      // console.log(`start/end: ${indexStart}/${indexEnd}`)
       let sliceArray = this.$data.timesArray.slice(indexStart, indexEnd+1)
+      // console.log(sliceArray)
       let includesBusyTime = false
       for (let time of sliceArray) {
         if (this.busyTimesArray.includes(time)) includesBusyTime = true
@@ -411,19 +469,28 @@ export default {
       else this.task.color = color.slice(0,7)
       for (let i of this.timesArray){
         if (!this.busyTimesArray.includes(i)){
-          if (sliceArray.includes(i)){
-            // console.log('include ' + i)
-            document.getElementById(i).style.setProperty('--color', color)
-            document.getElementById(i).classList.add('linear-table-td-painted')
-            // document.getElementById(i).classList.add(`task-${}`)
-          }
-          else {
-            document.getElementById(i).classList.remove('linear-table-td-painted')
-          }
-          this.indexStart = sliceArray[0]
-          this.indexEnd = sliceArray[sliceArray.length-1]
+          try {
+            if (sliceArray.includes(i)){
+              console.log(sliceArray)
+              // console.log('include ' + i)
+              document.getElementById(i).style.setProperty('--color', color)
+              document.getElementById(i).classList.add('linear-table-td-painted')
+              // document.getElementById(i).classList.add(`task-${}`)
+            }
+            else {
+              document.getElementById(i).classList.remove('linear-table-td-painted')
+            }
+            this.indexStart = sliceArray[0]
+            // sliceArray[sliceArray.length-1]
+            let endIndex = this.timesArray.indexOf(
+                this.timesArray.find(el => el === sliceArray[sliceArray.length-1]))
+            this.indexEnd = this.timesArray[endIndex] === '23:30' ? '00:00' : this.timesArray[endIndex+1]
 
-          this.task.timesArray = sliceArray
+            this.task.timesArray = sliceArray
+          } catch (err) {
+            console.log(err)
+          }
+
         }
       }
       return 'paintTimesArray'
@@ -461,10 +528,21 @@ export default {
       let day = this.selectedDay.substr(3, 2)
       console.log(this.selectedDay)
       this.prevCalendarIndex = null
+      console.log('selectedDay: ' + this.selectedDay)
       if (this.selectedDay !== '') this.chooseDay(day, (parseInt(day) - 1).toString())
+    },
+    nextDay() {
+      let thisDay = new Date(this.selectedDay)
+      thisDay.setDate(thisDay.getDate() + 1)
 
+      let monthStr = thisDay.getMonth() + 1
+      let day = thisDay.getDate()
+      if (day.toString().length !== 2) day = `0${day}`
+      if (monthStr.toString().length !== 2) monthStr = `0${monthStr}`
+      return `${monthStr}/${day}/${thisDay.getFullYear()}`
     },
     chooseDay(day, index){
+      console.log(`\nchooseDay ${day} ${index}`)
       if (index >= this.days.length){
         index = (this.days[this.days.length-2])
         day = index + 1
@@ -478,8 +556,9 @@ export default {
 
       document.getElementById(index).classList.add('calendar-number-selected')
       document.getElementById(index).style.color = 'aliceblue'
-      if (this.prevCalendarIndex !== null && this.prevCalendarIndex !== index)
-        if (document.getElementById(this.prevCalendarIndex).classList.length !== 0){
+
+      if (this.prevCalendarIndex !== null && this.prevCalendarIndex !== index) {
+        // if (document.getElementById(this.prevCalendarIndex).classList.length !== 0){
           console.log('remove')
           document.getElementById(this.prevCalendarIndex).classList.remove('calendar-number-selected')
           document.getElementById(this.prevCalendarIndex).style.color = ''
@@ -509,10 +588,12 @@ export default {
     },
     paintTasks() {
       this.tasksLoaded = true
-      for (let task of this.getTasks){
+      console.log(`roomSelected ${this.roomSelectedId}`)
+      for (let task of this.getTasksByRoomID(this.roomSelectedId)){
         let indexStart = this.getTimeIndex(task.begin)
-        let indexEnd = this.getTimeIndex(task.end)
-        task.timesArray = this.$data.timesArray.slice(indexStart, indexEnd+1)
+        let indexEnd = this.getTimeIndex(task.end)-1 // чтобы не занимать ячейку, не подходящую по id
+        let sliceArray = this.$data.timesArray.slice(indexStart, indexEnd+1)
+        task.timesArray = sliceArray.length === 0 ? ['23:30'] : sliceArray
         this.paintTimesArray(task.timesArray, task.color + this.alphaChannel)
         for (let time of task.timesArray){
           this.busyTimesArray.push(time)
@@ -525,7 +606,7 @@ export default {
             let date = new Date()
             if (this.currentMonth === date.getMonth() && this.currentYear === date.getFullYear()){
               document.getElementById((date.getDate() - 1).toString()).classList.add('calendar-number-current')
-              this.chooseDay(date.getDate(), date.getDate()-1)
+              if (this.selectedDay === "") this.chooseDay(date.getDate(), date.getDate()-1)
               this.selectFunction(this.getRoomsFromDB).then(() => {
                 this.chooseRoom(this.getRooms[0])
               })
@@ -540,14 +621,11 @@ export default {
       this.currentYear = curDay.getFullYear()
       this.setCurrentDay()
 
-      let day = this.selectedDay.substr(3, 2)
-      console.log(this.selectedDay)
-      this.prevCalendarIndex = null
+      let day = curDay.getDate().toString()
       if (this.selectedDay !== '') this.chooseDay(day, (parseInt(day) - 1).toString())
     },
     async setCorrectMonth(){
       let curDay = new Date()
-      curDay.get
       curDay.setDate(1)
       curDay.setMonth(this.currentMonth)
       curDay.setFullYear(this.currentYear)
@@ -572,6 +650,7 @@ export default {
         this.timesArray.push(`${setTime}${i}:30`)
         // this.timesArray.push(hourArray)
       }
+      this.timesArray.pop()
       this.timesArray.pop()
       // console.log(this.timesArray)
     },
@@ -619,6 +698,12 @@ export default {
   display: grid;
   grid-gap: 10px;
   grid-template-columns: 1fr 1fr;
+  &-room-label{
+    grid-template-columns: 1fr 80px;
+  }
+  &-task-label{
+    grid-template-columns: 1fr 50px;
+  }
 }
 .calendar-month-el{
   display: grid;
@@ -703,9 +788,10 @@ export default {
 }
 .linear-table{
   background: linear-gradient(rgba(223, 224, 255, 0.5) 50%, #ffffff 50%);
-  background-size: 100% 37px;
+  background-size: 100% 43px;
   &-td{
-    font-size: 11px;
+    width: 97px;
+    font-size: 13px;
     &:hover{
       cursor: pointer;
     }
@@ -734,6 +820,16 @@ export default {
     margin-top: 10px;
     width: 300px;
     position: relative;
+  }
+}
+.short-name {
+  display: inline-block;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  &-task {
+   width: 60px;
   }
 }
 

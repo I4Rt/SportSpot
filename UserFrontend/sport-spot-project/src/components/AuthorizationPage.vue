@@ -25,10 +25,10 @@
         </div >
         <div class="row justify-content-around form-group">
             <button type="submit" class="btn btn-success col-auto">Войти</button>
-          <button type="button" class="btn btn-primary col-auto"
-                  @click="this.$emit('registerUser')">
-            Зарегистрироваться
-          </button>
+<!--          <button type="button" class="btn btn-primary col-auto"-->
+<!--                  @click="this.$emit('registerUser')">-->
+<!--            Зарегистрироваться-->
+<!--          </button>-->
         </div>
     </form>
 

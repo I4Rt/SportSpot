@@ -1,7 +1,18 @@
 <template>
+  <registration-page
+      v-if="changePass === true"
+      @change="changePass = false">
+  </registration-page>
 <!--    Вы вошли-->
 <!--    <button class="btn btn-primary" @click="$emit('logout')">Выйти</button>-->
-  <nav-bar @showPage="viewPage" @onLogout="this.$emit('onLogout')"></nav-bar>
+  <nav-bar
+      :user="this.getUser"
+      @changePassword="changePass = true"
+      @showPage="viewPage"
+      @onLogout="this.$emit('onLogout')"
+      @openExplorer="openExplorer = true"
+      ref="navBar">
+  </nav-bar>
   <br>
   <calendar-page
       :selectFunction="selectFunction"
@@ -18,6 +29,16 @@
       @onLogout="this.$emit('onLogout')"
       v-if="page === 'Rooms'">
   </rooms-page>
+  <explorer-page
+      v-if="openExplorer"
+      :openExplorer="openExplorer"
+      :selectFunction="selectFunction"
+      @closeExplorer="openExplorer = false"
+      @openCalendar="$refs.navBar.showPage('Calendar'); openExplorer = false">
+  </explorer-page>
+<!--  <explorer-page-->
+<!--      v-if="page === 'Explorer'">-->
+<!--  </explorer-page>-->
 
 </template>
 
@@ -26,6 +47,9 @@ import NavBar from "@/components/NavBar";
 import CalendarPage from "@/components/CalendarPage";
 import CamerasPage from "@/components/CamerasPage";
 import RoomsPage from "@/components/RoomsPage";
+import ExplorerPage from "@/components/ExplorerPage";
+import RegistrationPage from "@/components/RegistrationPage";
+import {mapActions, mapGetters} from "vuex";
 
 export default{
   props: ['refreshToken'],
@@ -33,13 +57,25 @@ export default{
     NavBar,
     CalendarPage,
     CamerasPage,
-    RoomsPage
+    RoomsPage,
+    ExplorerPage,
+    RegistrationPage
   },
     data() {
         return{
-          page: 'Calendar'
+          changePass: false,
+          page: 'Calendar',
+          openExplorer: false,
         }
     },
+  mounted() {
+    this.selectFunction(this.getUserInfoFromDB)
+  },
+  computed:{
+    ...mapGetters([
+        'getUser'
+    ])
+  },
   methods: {
     viewPage(data) {
       this.page = data
@@ -67,6 +103,9 @@ export default{
       }
       return respFunc
     },
+    ...mapActions([
+        'getUserInfoFromDB'
+    ])
   }
 }
 </script>

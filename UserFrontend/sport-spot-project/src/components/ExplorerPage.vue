@@ -1,15 +1,48 @@
 <template>
   <div class="explorer-parent">
     <div class="explorer container window">
+      <div class="grid-default">
+        <div style="margin-top: 5px" class="content content-start">
+          <input @keydown.enter="getByRoutesCall(null); resetFile()" v-model.trim="routeToFile" class="input-field input-field-file" type="text" placeholder="Путь до папки с архивными файлами">
+          <button @click="getByRoutesCall(null); resetFile()" class="btn btn-success">Открыть</button>
+        </div>
+        <div class="content content-end">
+          <button style="padding: 2px 8px" class="btn btn-danger" @click="$emit('closeExplorer')">Х</button>
+        </div>
+      </div>
       <div style="margin: 10px 0" class="grid-default">
         <div class="content content-start">
           <div style="width: 245px;" class="grid-default">
             <div style="font-size: 12px">
-              <div>
-                Название фильтр
+              <div class="grid-default" style="width: 60px">
+                <div class="content content-start">
+                  <button @click="changePage('prev')" class="hidden-button">
+                    <img :src="require('../assets/icons/arrow-left.png')">
+                  </button>
+                </div>
+                <div class="content content-end">
+                  <button @click="changePage('next')" class="hidden-button">
+                    <img :src="require('../assets/icons/arrow-right.png')">
+                  </button>
+                </div>
               </div>
               <div>
-                Дата фильтр
+                <button style="font-size: 15px; margin-right: 5px" class="camera hidden-button"
+                        @click="sortByValue('name'); filterType = 'name'">
+                  Имя
+                </button>
+                <img :style="filterType === 'createTime' ? {display: 'none'} : {}"
+                     id="btn-img-name"
+                     :src=" require(`../assets/icons/${imgPath}`)">
+              </div>
+              <div>
+                <button style="font-size: 15px; margin-right: 5px" class="camera hidden-button"
+                        @click="sortByValue('createTime'); filterType = 'createTime'">
+                  Дата
+                </button>
+                <img :style="filterType === 'name' ? {display: 'none'} : {}"
+                     id="btn-img-createTime"
+                     :src="require(`../assets/icons/${imgPath}`)">
               </div>
             </div>
             <div class="content content-end">
@@ -17,17 +50,17 @@
             </div>
           </div>
         </div>
-        <div class="content content-end">
-          <button style="padding: 2px 8px" class="btn btn-danger" @click="$emit('openExplorerChange')">Х</button>
-        </div>
       </div>
 
       <div class="row">
         <div style="margin-left: 10px" class="explorer-folders col-5 window">
-          <div class="camera">Папка 1</div>
-          <div class="camera">Папка 2</div>
-          <div class="camera">Файл 1</div>
-          <div class="camera">Файл 2</div>
+          <div @dblclick="getByRoutesCall(file)" class="camera" v-for="(file, index) in this.getFiles" :key="index">
+            <img
+                :src="file.type === 'file' ? require('../assets/icons/file.png') : require('../assets/icons/folder.png')"
+                alt=""
+                style="margin-bottom: 10px; margin-right: 5px">
+            <span class="short-name short-name-file" :title="file.name">{{file.name}}</span>
+          </div>
         </div>
         <div  style="margin-left: 15px" class="explorer-preview col-6 window">
           <div v-if="!fileSelected">Выберите файл</div>
@@ -35,19 +68,20 @@
             <div class="content content-center">
               <img
                   style="margin-top: 10px; width: 250px; height: 140px"
-                  :src="require('../assets/images/img1.png')"
+                  :src="file.imageSrc"
                   alt="предпросмотр файла">
             </div>
             <div style="margin-left: 10px">
               <div class="file-information">
-                <span class="short-name" title="Название">Название: Название</span>
+                <span class="short-name" :title="file.name">Название: {{file.name}}</span>
               </div>
+<!--              <div class="file-information">-->
+<!--                <span class="short-name" :title="file.type">Тип: {{file.type}}</span>-->
+<!--              </div>-->
               <div class="file-information">
-                <span class="short-name" title="Тип">Тип: Тип</span>
+                <span class="short-name" :title="file.createTime">Дата: {{file.createTime}}</span>
               </div>
-              <div class="file-information">
-                <span class="short-name" title="Дата">Дата: Дата</span>
-              </div>
+              <button @click="$emit('openCalendar'); $store.state.file = file" class="btn btn-success">Подтвердить</button>
             </div>
           </div>
         </div>
@@ -57,15 +91,147 @@
 </template>
 
 <script>
+import {mapActions, mapGetters} from "vuex";
+
 export default {
   name: "ExplorerPage",
-  props: ['openExplorer'],
+  props: ['openExplorer', 'selectFunction'],
   data() {
     return{
-      fileSelected: true,
+      filterType: 'name',
+      imgPath: 'arrow-up.png',
+
+      file: {
+        name: '',
+        createTime: '',
+        type: '',
+        imageSrc: 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='
+      },
+      fileRoute: '',
+      fileSelected: false,
       explorerFilterDay: null,
+      routeToFile: null,
+
+      filterDefault: true,
+      foldersInfo: {
+        folders: [],
+        page: 0,
+      }
     }
-  }
+  },
+  mounted() {
+    this.$store.state.files = []
+  },
+  computed: {
+    ...mapGetters([
+      'getFiles',
+      'getFile'
+    ])
+  },
+  methods: {
+    async getByRoutesCall(file){
+      let data = {baseRoute: this.routeToFile}
+      if (file !== null){
+        if (file.type === 'dir'){
+          this.fileRoute += `${file.name}\\`
+          data.curRoute = this.fileRoute
+        }
+        else if (this.fileRoute !== ''){
+          data.curRoute = this.fileRoute
+        }
+        if (file.type === 'file') data.fileName = file.name
+      }
+      this.foldersInfo.folders = []
+      this.fileRoute.split('\\').forEach((value) => {
+        this.foldersInfo.folders.push(value)
+      })
+      this.foldersInfo.page = this.foldersInfo.folders.length -1
+      let resp = await this.selectFunction(this.getByRoutes, data)
+      try {
+        if (resp.image){
+          this.fileSelected = true
+          this.file = resp
+          let fileDate = new Date(resp.createTime.substring(0, resp.createTime.length-4))
+          this.file.createTime = `${this.corrDate(fileDate)}`
+          this.file.imageSrc = `data:image/jpg;base64,${resp.image}`
+        }
+        else if (resp.folderData){
+          this.sortByValue('default')
+          this.filterType = 'name'
+        }
+      } catch (err) {
+        console.log(err)
+      }
+    },
+    corrDate(value){
+      let year = value.getFullYear()
+      let date = value.getDate().toString().length === 1 ? `0${value.getDate()}` : value.getDate()
+      let month = value.getMonth().toString().length === 1 ? `0${value.getMonth()+1}` : value.getMonth()+1
+      let hour = value.getHours().toString().length === 1 ? `0${value.getHours()}` : value.getHours()
+      let minute = value.getMinutes().toString().length === 1 ? `0${value.getMinutes()}` : value.getMinutes()
+      let second = value.getSeconds().toString().length === 1 ? `0${value.getSeconds()}` : value.getSeconds()
+      return `${date}.${month}.${year} ${hour}:${minute}:${second}`
+    },
+    sortByValue(sortValue) {
+      if (sortValue === 'default'){ // сортировка по имени без изменения порядка
+        sortValue = 'name'
+        this.filterType = 'name'
+      }
+      else this.filterDefault = !this.filterDefault// сортировка по значению с изменением порядка
+
+      if (this.filterDefault){
+        this.getFiles.sort((a, b) => sortValue === 'name'
+            ? (a[sortValue].toLowerCase() < b[sortValue].toLowerCase() ? 1 : -1)
+            : (a[sortValue] < b[sortValue] ? 1 : -1))
+        this.imgPath = 'arrow-up.png'
+      }
+      else{
+        this.imgPath = 'arrow-down.png'
+        this.getFiles.sort((a, b) => sortValue === 'name'
+            ? (a[sortValue].toLowerCase() > b[sortValue].toLowerCase() ? 1 : -1)
+            : (a[sortValue] > b[sortValue] ? 1 : -1))
+      }
+      this.getFiles.sort((a, b) => a['type'] > b['type'] ? 1 : -1)
+    },
+    prevNextFolder() {
+      let path = ''
+      for (let i = 0; i < this.foldersInfo.page; i++){
+        console.log(this.foldersInfo.folders[i])
+        path += `${this.foldersInfo.folders[i]}\\`
+      }
+      this.fileRoute = path
+      let data = {
+        baseRoute: this.routeToFile,
+        curRoute: this.fileRoute}
+      this.selectFunction(this.getByRoutes, data).then(() => {
+        this.sortByValue('default')
+      })
+    },
+    changePage(value){
+      if (value === 'prev' && this.foldersInfo.page !== 0) {
+        this.foldersInfo.page -= 1
+        this.prevNextFolder()
+      }
+      else if (value === 'next' && this.foldersInfo.page !== this.foldersInfo.folders.length) {
+        this.foldersInfo.page += 1
+        this.prevNextFolder()
+      }
+    },
+    resetFile(){
+      this.file.name = ''
+      this.file.createTime = ''
+      this.file.type = ''
+      this.file.imageSrc = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='
+      this.fileRoute = ''
+      this.foldersInfo = {
+        folders: [],
+        page: 0
+      }
+    },
+    ...mapActions([
+        'getByRoutes'
+    ])
+    }
 }
 </script>
 
@@ -84,7 +250,7 @@ export default {
   background-color: rgba(218, 218, 218, 0.7);
 }
 .explorer-folders{
-  height: 200px;
+  height: 300px;
   overflow-y: auto;
 }
 .explorer-preview{
@@ -93,7 +259,7 @@ export default {
 }
 .explorer{
   width: 600px;
-  height: 400px;
+  height: 450px;
   background-color: #ffffff;
 }
 .camera:hover{
@@ -132,6 +298,11 @@ export default {
   margin-right: 15px;
   border-radius: 5px ;
   border: 1px solid grey;
+  &-file {
+    margin-top: 10px;
+    width: 300px;
+    position: relative;
+  }
 }
 //.file-information{
 //  width: 100%;
@@ -142,5 +313,16 @@ export default {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  &-file {
+    width: 80%;
+    font-size: 14px;
+  }
 }
+.hidden-button{
+  background: inherit;
+  border: none;
+  align-items: center;
+  justify-content: center;
+}
+
 </style>

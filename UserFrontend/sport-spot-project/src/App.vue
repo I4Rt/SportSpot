@@ -1,8 +1,8 @@
 <template>
 
   <!-- <search-page></search-page> -->
-  <authorization-page v-if="!authorized && !registration" @sendLogin="onLogin" @registerUser="registration = true"></authorization-page>
-  <registration-page v-if="!authorized && registration" @registrationCompleted="registration = false"></registration-page>
+  <authorization-page v-if="!authorized && !registration" @sendLogin="onLogin"></authorization-page>
+<!--  <registration-page v-if="!authorized && registration" @registrationCompleted="registration = false"></registration-page>-->
   <main-page
       :refreshToken="refreshToken"
       v-else-if="authorized"
@@ -16,19 +16,18 @@
 <script>
 import MainPage from './components/MainPage.vue';
 import AuthorizationPage from "@/components/AuthorizationPage";
-import RegistrationPage from "@/components/RegistrationPage";
+
 
 export default {
+  emits: ['onLogout'],
   name: 'App',
   components: {
     AuthorizationPage,
     MainPage,
-    RegistrationPage
   },
   data() {
     return{
       authorized: false,
-      registration: false
     }
   },
   mounted() {
@@ -36,9 +35,10 @@ export default {
   },
   methods: {
     onLogout() {
+      console.log('logout')
       this.authorized = false
       fetch('http://localhost:5000/logout',{
-        method: 'POST',
+        method: 'GET',
         credentials: 'include',
         cors: 'no-cors',
         headers: {
@@ -76,7 +76,7 @@ export default {
         console.log(err)
       }
       return returnResult
-    }
+    },
   }
 }
 </script>

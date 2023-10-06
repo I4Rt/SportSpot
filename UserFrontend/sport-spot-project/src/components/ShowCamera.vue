@@ -16,8 +16,8 @@
       </canvas>
     </div>
     <br>
-    <button @click="endDraw(); save()">Заполнить область</button>
-    <button @click="removeSectorPoints(); save()">Очистить всё</button>
+    <button @click="endDraw(); selectFunction(setSectorToDB, sector)">Заполнить область</button>
+    <button @click="removeSectorPoints(); selectFunction(setSectorToDB, sector)">Очистить всё</button>
     <br>
     <span>Информация сектора</span>
     <br>
@@ -36,7 +36,7 @@
 </template>
 
 <script>
-import {mapGetters} from "vuex";
+import {mapActions, mapGetters} from "vuex";
 
 export default {
   props: ['cameraID', 'sector', 'selectFunction', 'sectorSelected', 'cameraSelected', 'save'],
@@ -69,21 +69,26 @@ export default {
       interval = setInterval(() => this.selectFunction(this.refreshVideo), 5000)
       this.$store.commit('setRefreshInterval', interval)
     },
-    refreshVideo() {
+    async refreshVideo() {
       let returnResult
-      fetch(`http://localhost:5000/refreshVideo?camId=${this.cameraID}`, {
-        credentials: "include",
-        method: 'GET',
-        cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-      })
-          .then(response => response.json())
-          .then((response) => {
-            returnResult = response
-            console.log('refreshId ' + response + ' ' + this.cameraID)
-          });
+      try{
+        returnResult = await fetch(`http://localhost:5000/refreshVideo?camId=${this.cameraID}`, {
+          credentials: "include",
+          method: 'GET',
+          cors: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8',
+          },
+        })
+            .then(response => response.json())
+            .then((response) => {
+              console.log('refreshId ')
+              console.log(response)
+              return response
+            });
+      } catch (err) {
+        console.log(err)
+      }
       return returnResult
     },
     async changeImgPath(path){
@@ -119,6 +124,7 @@ export default {
       else alert("Выберите сектор")
     },
     endDraw() {
+      if (this.sector.points.length === 0) return ''
       this.ctx.lineTo(this.sector.points[0][0], this.sector.points[0][1])
       this.ctx.stroke()
       this.ctx.fillStyle = "rgba(255, 230, 0, 0.25)"
@@ -158,6 +164,9 @@ export default {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
       this.ctx.beginPath()
     },
+    ...mapActions([
+        'setSectorToDB'
+    ])
   }
 }
 </script>

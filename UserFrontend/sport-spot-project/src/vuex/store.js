@@ -5,16 +5,20 @@ import {createStore} from 'vuex'
 export default createStore({
     state () {
         return {
+            file: null,
+            files: [],
             tasks: [],
-            cameras: [],
+            cameras: null,
             rooms: [],
-            sectors: [],
+            sector: null,
+            sectors: null,
             sectorTypes: [],
             roomTypes: [],
             unusedCameras: {},
             usedCameras: {},
             refreshInterval: null,
-            authorized: false
+            authorized: false,
+            user: {}
         }
     },
     mutations: {
@@ -45,8 +49,11 @@ export default createStore({
         setRoom (state, room) {
             state.rooms.push(room)
         },
-        setSector (state, sector) {
+        addSector (state, sector) {
             state.sectors.push(sector)
+        },
+        setSector (state, sector) {
+            state.sector = sector
         },
         setSectors (state, sectors) {
             state.sectors = sectors
@@ -62,6 +69,15 @@ export default createStore({
         },
         setTask (state, task) {
             state.tasks.push(task)
+        },
+        setFile (state, file) {
+            state.file = file
+        },
+        setFiles (state, files) {
+            state.files = files
+        },
+        setUser (state, user) {
+            state.user = user
         },
         setRefreshInterval (state, interval) {
           state.refreshInterval = interval
@@ -140,6 +156,40 @@ export default createStore({
                     }
                     return response
                 })
+        },
+        async setSectorToDB({commit}, sector) {
+            console.log('setSectorToDB')
+            let returnValue
+            try {
+                returnValue = await fetch('http://localhost:5000/setSector', {
+                    credentials: "include",
+                    method: 'POST',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
+                    body: JSON.stringify({
+                        "camId": sector.camId,
+                        "id": sector.id,
+                        "name": sector.name,
+                        "points": sector.points,
+                        "roomId": sector.roomId,
+                        "typeId": sector.typeId
+                    })
+                })
+                    .then(response => response.json())
+                    .then((response) =>{
+                        sector.id = response.id
+                        if (sector.id === null) return response
+                        else{
+                            if (this.state.sector === null) commit('setSector', sector)
+                            return sector
+                        }
+                    })
+            } catch (err) {
+                console.log(err)
+            }
+            return returnValue
         },
         async getSectorsByCameraIDFromDB({commit}, id) {
             let returnResult
@@ -285,6 +335,65 @@ export default createStore({
             }
             return returnResult
         },
+        async getByRoutes({commit}, data) {
+            console.log(data)
+            let returnResult
+            try{
+                returnResult = await fetch(`http://localhost:5000/getByRoutes`, {
+                    credentials: "include",
+                    method: 'POST',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => response.json())
+                    .then((response) => {
+                        returnResult = response
+                        console.log('getByRoutes')
+                        console.log(response)
+                        try {
+                            if (response.answer === 'can not open file'){
+                                alert('Неподдерживаемый тип файла, выберите другой')
+                            }
+                            else if (response.folderData)
+                                commit('setFiles', response.folderData)
+                        } catch (err){
+                            console.log(err)
+                        }
+                        return response
+                    });
+            } catch (err) {
+                if (err instanceof TypeError) alert('Искомый путь не найден')
+            }
+            return returnResult
+        },
+        async getUserInfoFromDB({commit}) {
+            let returnResult
+            try{
+                returnResult = await fetch('http://localhost:5000/getUserInfo', {
+                    credentials: "include",
+                    method: 'GET',
+                    // cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    }
+                })
+                    .then(response => response.json())
+                    .then((response) => {
+                        returnResult = response
+                        // console.log(this.selectedDay)
+                        console.log('getUserInfo')
+                        commit('setUser', response)
+                        return response
+                        // console.log(this.randomHex())
+                    });
+            } catch (err){
+                console.log(err)
+            }
+            return returnResult
+        },
         addRoom({commit}, newRoom) {
             commit('setRoom', newRoom)
         },
@@ -306,7 +415,8 @@ export default createStore({
             return state.sectors.find(sector => sector.id === id)
         },
         getSectorsByCameraID: (state) => (id) => {
-            return state.sectors.filter(sector => sector.camId === id)
+            if (state.sectors === null) return state.sectors
+            else return state.sectors.filter(sector => sector.camId === id)
         },
         getSectorTypes(state) {
             return state.sectorTypes
@@ -320,6 +430,12 @@ export default createStore({
         getRooms(state) {
             return state.rooms
         },
+        getFiles(state) {
+            return state.files
+        },
+        // getFilesByDate: (state) => (date) => {
+        //   return state.sectorTypes.find()
+        // },
         getRoomByID: (state) => (id) => {
             return state.rooms.find(room => room.id === id)
         },
@@ -344,9 +460,18 @@ export default createStore({
         getTaskByID: (state) => (id) => {
             return state.tasks.find(task => task.id === id)
         },
+        getTasksByRoomID: (state) => (roomId) => {
+            return state.tasks.filter(task => task.roomId === roomId)
+        },
         getAuthorized(state) {
             return state.authorized
-        }
+        },
+        getFile(state) {
+            return state.file
+        },
+        getUser(state) {
+            return state.user
+        },
     },
 })
 
