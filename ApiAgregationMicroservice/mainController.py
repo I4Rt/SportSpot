@@ -198,3 +198,56 @@ def getSportObjects():
     data = [so.getParamsList() for so in SportObject.getAll()]
     return {'getSportObjects': True, 'data':{'sport objects': data}}, 200
     
+    
+    
+@app.route('/api/register', methods=['post'])
+@auth.login_required
+@cross_origin()
+@exceptionProcessing
+def getSportObjects():
+    login = request.json['login']
+    password = request.json['password']
+    OutUser(login, password).save()
+    return {'register': True}, 200
+
+@app.route('/api/askChangePassword', methods=['post'])
+@cross_origin()
+@exceptionProcessing
+def askChangePassword():
+    login = request.json['login']
+    newPassword = request.json['newPassword']
+    user = OutUser.getUserByLogin(login)
+    if user:
+        user.newPasswordHash = generate_password_hash(newPassword)
+        user.save()
+        return {'askChangePassword': True}
+    return {'askChangePassword': False, 'data': {'description': f'No user with login {str(login).upper()}', 'login': login}}
+
+@app.route('/api/permitChangePassword', methods=['post'])
+@cross_origin()
+@exceptionProcessing
+def permitChange():
+    login = request.json['login']
+
+    user = OutUser.getUserByLogin(login)
+    if user:
+        if user.newPasswordHash:
+            user.passwordHash = user.newPasswordHash
+            user.newPasswordHash = None
+            user.save()
+            return {'permitChangePassword': True}
+        else:
+            return {'permitChangePassword': False, 'data': {'description': f'User with login {str(login).upper()} did not ask for password change', 'login': login}}
+    return {'permitChangePassword': False, 'data': {'description': f'No user with login {str(login).upper()}', 'login': login}}
+
+
+@app.route('/api/getUsersToChangePassword', methods=['get'])
+@cross_origin()
+@exceptionProcessing
+def getUsersToChangePassword():
+    users = OutUser.getUsersToChangePassword()
+    userData = []
+    for u in users:
+        userData.append(u.login)
+    return {'permitChangePassword': True, 'data': {'logins': userData}}
+    
