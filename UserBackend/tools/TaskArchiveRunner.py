@@ -49,7 +49,7 @@ class TaskArchiveRunner(Thread):
                     output = image # cv2.resize(image, (600, 400))
                     #frames.append({'img': output, 'index': initTime + counter})
                     #counter += 1
-                    dataToSend = {"taskID": self.taskId,
+                    dataToSend = {"taskId": self.taskId,
                                     "agregationMode": 2, # CHECK максимальное
                                     "data": [{
                                                 "img": FileUtil.convertImageToBytes(output),

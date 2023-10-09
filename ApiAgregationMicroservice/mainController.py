@@ -1,13 +1,29 @@
 from config import *
 from model.SportObject import *
 from model.DataRow import *
+from model.OutUser import *
 from werkzeug.exceptions import *
 from flask import request
 from sqlalchemy.exc import DatabaseError
 import sys
 from time import time, sleep
 from datetime import datetime
+
+
+
 actualRoomsInfo = None
+
+
+@auth.verify_password
+def verify_password(username, password):
+    user = OutUser.getUserByLogin(username)
+    if user:
+        if user.checkUser(password):
+            return username
+
+
+
+
 try:
     with open('roomsData.txt', 'r') as file:
         actualRoomsInfo = json.loads(file.read())
@@ -19,7 +35,7 @@ except Exception as e:
         
 
 index = 0
-def testDecorator(foo):
+def exceptionProcessing(foo):
     global index
     def inner(*args, **kwargs):
         try:
@@ -39,6 +55,7 @@ def testDecorator(foo):
 # wtf with decorator?
 
 @app.route('/management/getTest', methods=['get'])
+@auth.login_required
 @cross_origin()
 def getTest():
     try:
@@ -48,22 +65,25 @@ def getTest():
         return {'getTest': False}, 200
     
 @app.route('/management/SORegister', methods=['post'])
+@auth.login_required
 @cross_origin()
-@testDecorator
+@exceptionProcessing
 def soRegister():
     
     name = request.json['name']
-    outerId = request.json['outerId']
     info = request.json['info']
+    t = int(time() * 10000)
+    ht = "{0:x}".format(t)
+    outerId = '0' * (12 - len(ht)) + ht
     so = SportObject(name, outerId, info)
     so.save()
-    return {'SORegister': True, 'data':{'SOId': so.id}}, 200
+    return {'SORegister': True, 'data':{'SOId': so.id, 'outerId': outerId}}, 200
     
 
 #{day:{time: [roomId:{plan:, real:},],},}
 @app.route('/management/appendData', methods=['post'])
+@exceptionProcessing
 @cross_origin()
-@testDecorator
 def appendData():
     global actualRoomsInfo
     data = request.json['data']
@@ -74,6 +94,7 @@ def appendData():
     with open('roomsData.txt', 'w') as file:
         file.write(json.dumps(actualRoomsInfo))
     '''
+    
     {
         day:{
             time: {
@@ -83,7 +104,10 @@ def appendData():
         }
     }
     '''
+    print(list(data.keys()))
+    
     counter = 0
+    
     for dayStamp in data:
         for timeStamp in data[dayStamp]:
             try:
@@ -95,18 +119,24 @@ def appendData():
                     try:
                         elemData = data[dayStamp][timeStamp][roomId]
                         element = DataRow(soId, int(roomId), date, timeInterval, elemData['plan'], elemData['real'])
-                        element.update()
-                        
+                        res = element.update()
+                        if res < 1:
+                            element.save()
+                        print(element)
                         counter += 1
+                        if date < datetime.now().date():
+                            print('saved old data')
                     except Exception as e:
                         print('can not update data', e)
+                    
             except Exception as e:
                 print('can not getDate', e)
-            return {'appendData': True, 'data':{'updated': counter}}, 200
+    return {'appendData': True, 'data':{'updated': counter}}, 200
 
 @app.route('/api/getStatisticsData', methods=['get', 'post'])
+@auth.login_required
 @cross_origin()
-@testDecorator
+@exceptionProcessing
 def getData():
         
         sideId = request.args.get("SOId")
@@ -152,9 +182,19 @@ def getData():
     
     
 @app.route('/api/getRoomsData', methods=['post'])
+@auth.login_required
 @cross_origin()
-@testDecorator
+@exceptionProcessing
 def getRoomsData():
     global actualRoomsInfo
     return {'getRoomsData': True, 'data':{'rooms': actualRoomsInfo}}, 200
+    
+    
+@app.route('/api/getSportObjects', methods=['get', 'post'])
+@auth.login_required
+@cross_origin()
+@exceptionProcessing
+def getSportObjects():
+    data = [so.getParamsList() for so in SportObject.getAll()]
+    return {'getSportObjects': True, 'data':{'sport objects': data}}, 200
     

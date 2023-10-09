@@ -15,7 +15,7 @@ class DataRow(db.Model, BaseData):
     real = db.Column(db.Integer, nullable=False)
     
     __table_args__ = (
-        db.UniqueConstraint('date', 'timeInterval', 'roomId', name='_datetime_unique', deferrable=True, initially="DEFERRED"),
+        db.UniqueConstraint('date', 'timeInterval', 'sportObjectId', 'roomId', name='_datetime_unique', deferrable=True, initially="DEFERRED"),
     )
     
     
@@ -31,20 +31,39 @@ class DataRow(db.Model, BaseData):
     
     # too bad: do not update - replaced by 2 operations
     def update(self):
-        
-        data = db.session.query(DataRow).filter(
-            and_(
-                DataRow.roomId == self.roomId,
-                DataRow.date == self.date,
-                DataRow.timeInterval == self.timeInterval,
-                DataRow.real <= self.real
-            ),
-        ).delete()
+        with app.app_context():
+            # print('to delete is ', len(db.session.query(DataRow).filter(
+            #     and_
+            #     (
+            #         DataRow.sportObjectId == self.sportObjectId,
+            #         DataRow.roomId == self.roomId,
+            #         DataRow.date == self.date,
+            #         DataRow.timeInterval == self.timeInterval,
+            #         DataRow.real <= self.real
+            #     ),
+            # ).all()))
+            # try:
+            result = db.session.query(DataRow).filter(
+                and_
+                (
+                    DataRow.sportObjectId == self.sportObjectId,
+                    DataRow.roomId == self.roomId,
+                    DataRow.date == self.date,
+                    DataRow.timeInterval == self.timeInterval,
+                    DataRow.real <= self.real
+                ),
+            ).update({DataRow.real: self.real})
+            
+                    
+            # print('delete is set')
+            db.session.commit()
+            
+            return result
+            
                 
-        # print('delete is set')
-        db.session.commit()
-        # print('delete is done')
-        self.save()
+            # print('delete is done')
+            # self.save()
+            # db.session.commit()
     
     @classmethod  
     def getInInterval(cls, bd, bt, ed, et, id = None) -> List[DataRow]:
@@ -64,6 +83,7 @@ class DataRow(db.Model, BaseData):
                     DataRow.sportObjectId == id
                 )
             ).all()
+            
         return db.session.query(DataRow).filter(
                 and_(
                     or_(DataRow.date >= bd + timedelta(days=1),
@@ -78,6 +98,7 @@ class DataRow(db.Model, BaseData):
                     )
                 )
             ).all()
+        db.session.commit()
         
     
     def getSideSOId(self) -> List[DataRow]:

@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
     analizer1.start()
     analizer2.start()
-
+    print('just print')
     '''
     # if not os.path.isdir('queue'):
     #     os.mkdir('queue')

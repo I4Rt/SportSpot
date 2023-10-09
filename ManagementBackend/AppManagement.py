@@ -16,6 +16,8 @@ if __name__ == "__main__":
     print('App is running')
     warnings.simplefilter('ignore')
     with app.app_context():
+        SideDataHolder.getInstance().getSavedChangedTasks()
+        
         KafkaSender.setInstance(app.config["senderTopic"], app.config["kafkaServer"])
         KafkaReciever.setInstance(app.config["recieverTopic"], app.config["kafkaServer"])
         

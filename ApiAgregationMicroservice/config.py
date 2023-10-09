@@ -8,6 +8,7 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS, cross_origin
 from datetime import timedelta
 
+from flask_httpauth import HTTPBasicAuth
 
 
 
@@ -25,3 +26,5 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
 Session(app)
 db = SQLAlchemy(app)
 cors = CORS(app, supports_credentials=True, resources={r"*": {"origins": "*"}})
+
+auth = HTTPBasicAuth()

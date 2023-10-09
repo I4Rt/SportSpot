@@ -334,6 +334,47 @@ def getTasks():
         resp.headers['Content-Type'] = "application/json"
         return resp
 
+
+@cross_origin()
+@jwt_required()
+@app.route('/getRoomsForDay', methods=['get', 'post'])
+def getRoomsForDay():
+    verify_jwt_in_request()
+    identy = get_jwt_identity()
+    if identy:
+        try:
+            date = datetime.strptime(request.json['date'], '%m/%d/%Y')
+        except Exception as e:
+            return make_response({'answer': str(e)})
+        rooms = Room.getAll()
+        data = []
+        for room in rooms:
+            timeIntervals = [0 for i in range(48)]
+            roomData = room.getParamsList()
+            objectiveData = Task.getTasksAtDay(date, room.id)
+            for obj in objectiveData:
+                beginTime = datetime.strptime(str(obj.begin)[:-6], "%Y-%m-%d %H:%M:%S")
+                endTime = datetime.strptime(str(obj.end)[:-6], "%Y-%m-%d %H:%M:%S")
+                checkTime = date
+                i = 0
+                while checkTime < endTime:
+                    if checkTime >= beginTime:
+                        timeIntervals[i] = 1
+                    i+=1
+                    checkTime += timedelta(minutes=30)
+            
+            roomData['selectedTime'] = timeIntervals
+            data.append(roomData)
+            
+            
+        resp = make_response(data)
+        resp.headers['Content-Type'] = "application/json"
+        return resp
+    else:
+        resp = make_response({'answer': "Bad token"})
+        resp.headers['Content-Type'] = "application/json"
+        return resp
+
 @cross_origin
 @jwt_required()
 @app.route('/getRoomByID', methods=['get', 'post'])
@@ -1070,4 +1111,5 @@ def sendForAnalize():
         except:
             task.delete()
             return {'answer': 'can not open file with cv2'}, 200
+            
             

@@ -33,6 +33,7 @@ def appendDataToRoute():
     data = request.json['data'] # data
     print(f'SO{int(SOId)}_local')
     print(app.config["kafkaServer"])
+    print('data', list(data.keys()))
     sender = KafkaPublicSender.getKafkaSender(f'SO{int(SOId)}_data', app.config["kafkaServer"])
     result = sender.sendMessage(json.dumps(data))
     sender.closeConnection()

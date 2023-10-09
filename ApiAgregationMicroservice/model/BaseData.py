@@ -12,8 +12,13 @@ class BaseData(Jsonifyer):
             self.id = id
             
     def save(self):
-        db.session.add(self)
-        db.session.commit()
+        try:
+            
+            db.session.add(self)
+            db.session.commit()
+        except Exception as e:
+            print('save error', e)
+            db.session.rollback()
    
     @classmethod 
     def getAll(cls) -> List[BaseData]:
@@ -30,7 +35,7 @@ class BaseData(Jsonifyer):
     #     cls.query.filter_by(id=targetId).delete()
     
     def delete(self):
-        # print(f'deleting {self}')
+        print(f'deleting {self}')
         db.session.delete(self)
         db.session.commit()
     

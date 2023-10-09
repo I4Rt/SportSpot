@@ -101,16 +101,23 @@ class Task(db.Model, BaseData):
         return cls.query.filter_by(roomId=searchId).all()
         
     @classmethod
-    def getTasksAtDay(cls, date) -> List[Task]:
-        print(date)
+    def getTasksAtDay(cls, date, room = None) -> List[Task]:
         eTime = date + timedelta(days=1)
+        if not room:
+            return db.session.query(Task).filter(
+                    and_(
+                        cls.begin >= date, 
+                        cls.end <= eTime,
+                    ) 
+                ).all()
         return db.session.query(Task).filter(
-            and_(
-                 cls.begin >= date, 
-                 cls.end <= eTime,
-            ) 
-        ).all()
-        
+                and_(
+                    cls.begin >= date, 
+                    cls.end <= eTime,
+                    cls.roomId == room
+                ) 
+            ).all()
+            
     @classmethod
     def getTasksToRun(cls, datetime:type(datetime.now()) = datetime.now()):
         return db.session.query(Task).filter(

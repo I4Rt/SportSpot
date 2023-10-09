@@ -10,7 +10,7 @@ from system.SideDataHolder import *
 from datetime import timedelta
 
 
-from time import time, sleep
+from time import time, sleep, altzone, timezone, localtime
 
 class AgregatedDataSender(Thread, Jsonifyer):
     __interval = 10 * 1
@@ -26,14 +26,25 @@ class AgregatedDataSender(Thread, Jsonifyer):
         Thread.__init__(self)
         self.dataHolder = SideDataHolder.getInstance()
         self.sender = KafkaSender.getInstance()
+        
+        
         with open('lastResultativeTime.txt', 'w') as file:
             file.write(str(datetime.now()))
         
     
-
+    
+                
+    
+    
     def run(self):
         with app.app_context():
-            interval = 10 # in minutes
+            SideDataHolder.getInstance().getSavedChangedTasks()
+            offset = timezone if (localtime().tm_isdst == 0) else altzone
+            tz = int(offset / 60 / 60 * -1)
+            print('timezone is', tz)
+                            
+                            
+            interval = 1 # in minutes
             lastTime = datetime.now()
             lastTime-= timedelta(minutes= lastTime.minute - (lastTime.minute // interval) * interval)
             
@@ -43,6 +54,8 @@ class AgregatedDataSender(Thread, Jsonifyer):
                 # 2023-10-03 16:48:21.011302
                 # print('rooms data is', SideDataHolder.getInstance().rooms)
                 
+                        
+                        
                 
                 sleep(1 * 60)
                 nt = datetime.now()
@@ -68,6 +81,7 @@ class AgregatedDataSender(Thread, Jsonifyer):
                     rooms = Room.getAll()
                     unmathcedRooms = [room.id for room in rooms]
                     
+                    
                     result = {}
                     for task in tasks:
                         unmathcedRooms.remove(task.roomId)
@@ -79,6 +93,19 @@ class AgregatedDataSender(Thread, Jsonifyer):
                         except:
                             pass
                     
+                    changedData = SideDataHolder.getInstance().changedTasks.copy()
+                    setData = []
+                    for task in tasks:
+                        for _ in changedData:
+                            if _ == task.id:
+                                changedData.remove(changedData)
+                                setData.append(_)
+                                #SideDataHolder.getInstance().removeTask(_)
+                                
+                    
+                    
+                            
+                            
                     
                     # sending
                     dateToAgregate = timeToRun
@@ -97,16 +124,58 @@ class AgregatedDataSender(Thread, Jsonifyer):
                     
                     resultToSend= {
                         sendDate: {timeInterval: result},
-                        
-                            
                     }
-
+                    print(changedData)
+                    for taskId in changedData:
+                        
+                        task = Task.getById(taskId)
+                        #SideDataHolder.getInstance().removeTask(taskId)
+                        begining = task.begin
+                        ending = task.end
+                        
+                        curDate = begining
+                        
+                        while curDate < ending:
+                            print(curDate)
+                            noTZDate = datetime.strptime(str(curDate)[:-6], '%Y-%m-%d %H:%M:%S')
+                            #noTZDate -= timedelta(hours= tz)
+                            print(noTZDate)
+                            
+                            mins = noTZDate.minute
+                            if mins >= 30:
+                                print('diff is ', mins - 30)
+                                noTZDate -= timedelta(minutes = (mins - 30))
+                            else:
+                                print('diff is ', mins)
+                                noTZDate -= timedelta(minutes = mins)
+                            print('minute set after is ', noTZDate)
+                            localDate = noTZDate.date()
+                            localTime = noTZDate.time()
+                            
+                            print('local date is', str(localDate))
+                            print('local time is', str(localTime))
+                            dateStr = str(localDate)
+                            timeStr = str(localTime).replace(':', '-')
+                            try:
+                                resultToSend[dateStr][timeStr][task.roomId] = {'real':task.getCount(), 'plan':task.targetCount}
+                            except:
+                                try:
+                                    resultToSend[dateStr][timeStr] = {task.roomId: {'real':task.getCount(), 'plan':task.targetCount}}
+                                except:
+                                    resultToSend[dateStr] = {timeStr: {task.roomId: {'real':task.getCount(), 'plan':task.targetCount}}}
+                            #print('after Append data is ', resultToSend)
+                            curDate += timedelta(minutes=30)
+                        setData.append(taskId)
+                        
                     print(resultToSend)
                     try:
                         url = 'http://localhost:4999/management/appendData'
                         myobj = {'SOId': app.config['SPORT_OBJECT_ID'], 'data': resultToSend, 'rooms': [room.getParamsList() for room in rooms]}
                         data = requests.post(url, json = myobj)
-                        # print(data)
+                        print(data.status_code, data.json)
+                        for taskId in setData:
+                            SideDataHolder.getInstance().removeTask(taskId)
+                            SideDataHolder.getInstance().saveChangedTasks()
                     except:
                         print ('connection error')
                     if nt.minute == 30 or nt.minute == 0:

@@ -5,8 +5,12 @@ class SideDataHolder():
     
     def __init__(self):
         self.rooms = {}
+        self.changedTasks = []
         self.updateRoomList()
         
+    def setChangedTask(self, taskId):
+        if not (taskId in self.changedTasks):
+            self.changedTasks.append(taskId)
         
     def updateRoomList(self):
         try:
@@ -19,13 +23,33 @@ class SideDataHolder():
                     self.rooms[rId] = 0
         except:
             print('error in roomListUpdate')
-                    
+               
+    def removeTask(self, taskId):
+         for _ in self.changedTasks:
+                if _ == taskId:
+                    self.changedTasks.remove(_)    
                     
     @classmethod
     def getInstance(cls):
         if not cls.__instance:
             cls.__instance = SideDataHolder()
         return cls.__instance
+    
+    def getSavedChangedTasks(self):
+        try:
+            with open('existToUpdateData.txt', 'r') as file:
+                data_ = json.loads(file.read())
+                for id_ in data_:
+                    self.setChangedTask(id_)
+        except:
+            with open('existToUpdateData.txt', 'w') as file:
+                file.write(json.dumps([]))
+                
+    def saveChangedTasks(self):
+        with open('existToUpdateData.txt', 'w') as file:
+            file.write(json.dumps(self.changedTasks))
+                
+    
     
     @classmethod
     def setResult(cls, key, data):
