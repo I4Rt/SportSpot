@@ -25,7 +25,7 @@ class AgregatedDataSender(Thread, Jsonifyer):
     def __init__(self):
         Thread.__init__(self)
         self.dataHolder = SideDataHolder.getInstance()
-        self.sender = KafkaSender.getInstance()
+        #self.sender = KafkaSender.getInstance()
         
         
         with open('lastResultativeTime.txt', 'w') as file:
