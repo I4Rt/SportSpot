@@ -5,6 +5,8 @@ from model.QueueTaskHolder import *
 from system.kafka.KafkaSingleton import *
 from time import altzone, timezone, localtime
 from system.SideDataHolder import *
+
+from requests import get, ConnectTimeout
 class DataReciever(Thread):
     
     def __init__(self) -> None:
@@ -12,8 +14,8 @@ class DataReciever(Thread):
         
     def run(self):
         with app.app_context():
-            reciever = KafkaReciever.getInstance()
-            for msg in reciever.recieve():
+            # reciever = KafkaReciever.getInstance()
+            while True:
                 '''
                     if data[counter] > task.counter and task.end < datetime.now():
                         task intervals  <-  {date: {time1: data[counter], 
@@ -25,10 +27,23 @@ class DataReciever(Thread):
                     ~~~ for data in toSendDataHolder if data.send(): toSendDataHolder.remove(data) ~~~
                                                       
                 '''
-                
-                print(str(msg.value))
+                try:
+                    print('getting data from topic ', f'SO{int(app.config["SPORT_OBJECT_ID"])}_recieve')
+                    url = 'http://localhost:4998/readData'
+                    
+                    fetchData = get(url,params={'topic': app.config["recieverTopic"]}, timeout=200)
+                    fetchData = json.loads(fetchData.text)
+                    print(fetchData.text)
+                    if fetchData['readData']:
+                        data = fetchData['message']
+                    else:
+                        print('getting data from inner error', fetchData)
+                        continue
+                except Exception as e:
+                    print('tmisot')
+                    continue
                 #save
-                data = json.loads(msg.value)
+                
                 if str(data["taskId"]).isdigit():
                     task = Task.getByID(int(data["taskId"]))
                     if task is not None:

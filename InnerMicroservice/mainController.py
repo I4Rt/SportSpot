@@ -5,6 +5,9 @@ from sqlalchemy.exc import DatabaseError
 from tools.KafkaFactory import *
 
 from datetime import datetime
+
+
+localReceiverStorage = {}
 index = 0
 def testDecorator(foo):
     global index
@@ -17,8 +20,8 @@ def testDecorator(foo):
             return {request.path[1:]: False, 'data': {'description': 'Identy error, such outerId already exist'}}, 200
         except KeyError as jsone:
             return {request.path[1:]: False, 'data': {'description': f'Json error, lost {str(jsone.args[0]).upper()} param', 'param': jsone.args[0]}}, 200
-        except Exception as e:
-            return {request.path[1:]: False, 'data': {'description': 'Unmatched error', "error": type(e).__name__}}, 200
+        # except Exception as e:
+        #     return {request.path[1:]: False, 'data': {'description': 'Unmatched error', "error": type(e).__name__}}, 200
     inner.__name__ = "inner" + str(index)
     index += 1
     return inner
@@ -45,4 +48,55 @@ def appendDataToRoute():
     elif result == 3:
         return {request.path[1:]: False, 'data':{'msg':'kafka time is out'}}, 200
     return {request.path[1:]: True}, 200
+    
+    
+@app.route('/readData', methods=['get', 'post'])
+@testDecorator 
+@cross_origin()
+def readDataFromRoute():
+    global localReceiverStorage
+    topicName = request.args.get('topic')
+    # data = request.json['data'] # data
+    if not (topicName in localReceiverStorage):
+        localReceiverStorage[topicName] = KafkaPublicReciever.getKafkaReciever(topicName, app.config["kafkaServer"], True).recieve()
+    
+    try:
+        # in outer Thread
+        taskData = next(localReceiverStorage[topicName])
+    except Exception as e:
+        print('got exception', e)
+        localReceiverStorage[topicName] = KafkaPublicReciever.getKafkaReciever(topicName, app.config["kafkaServer"]).recieve()
+        taskData = next(localReceiverStorage[topicName])
+    
+        
+    print(type(taskData.value), taskData.value)
+    try:
+        return {request.path[1:]: True, 'data':{'message': json.loads(taskData.value)}}, 200
+    except:
+        raise Exception('error was here')
+
+
+@app.teardown_request
+def teardown(exception=None):
+    if exception:
+        print(f'exception is {exception}')
+    
+
+# @app.after_request
+# def afterRequest(response):
+#     print(type(response.get_data(True)), response.get_data(True))
+#     if response.get_data(True) == 'ok':
+#         print(f'after {response.headers}')
+#     return response
+    
+
+
+@app.route('/test', methods=['get'])
+@testDecorator      
+@cross_origin()
+def test():
+    time.sleep(1)
+    return 'test', 200
+    
+    
     

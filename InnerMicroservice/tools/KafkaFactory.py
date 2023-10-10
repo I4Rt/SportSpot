@@ -1,5 +1,5 @@
 from __future__ import annotations
-from kafka import KafkaProducer, KafkaConsumer
+from kafka import KafkaProducer, KafkaConsumer, TopicPartition
 from kafka.errors import TopicAlreadyExistsError
 from kafka.admin import KafkaAdminClient, NewTopic
 import time
@@ -14,7 +14,7 @@ class KafkaBasics:
         self._topic = topic
     
     def _createTopic(self):
-        print('server', self._server)
+        print('creating topic', self._topic)
         admin_client = KafkaAdminClient(
             bootstrap_servers=["localhost:9092"], 
             
@@ -87,9 +87,13 @@ class KafkaPublicReciever(KafkaBasics):
     
     __consumer: KafkaConsumer | None = None
     
-    def __init__(self, topic, server):
+    def __init__(self, topic, server, needCheck = False):
+        
         KafkaBasics.__init__(self, topic, server)
         cns = KafkaConsumer(bootstrap_servers=self._server)
+        
+        self._topicIsChecked = not needCheck
+            
         try:
             if not self._topicIsChecked:
                 self._createTopic()
@@ -99,9 +103,9 @@ class KafkaPublicReciever(KafkaBasics):
         self.__consumer = cns
         
     @classmethod
-    def getKafkaReciever(cls, topic:str, server:str = "loclahost:9092") -> KafkaPublicReciever:
+    def getKafkaReciever(cls, topic:str, server:str = "loclahost:9092", needCheck = False) -> KafkaPublicReciever:
         
-        __instance = KafkaPublicReciever(topic, server)
+        __instance = KafkaPublicReciever(topic, server, needCheck)
         return __instance
 
     def recieve(self):
@@ -109,7 +113,8 @@ class KafkaPublicReciever(KafkaBasics):
             try:
                 for msg in self.__consumer:
                     yield msg
-            except:
+            except Exception as e:
+                # print(e)
                 raise Exception('Message recieving error')
         else:
             raise Exception('No consumer')

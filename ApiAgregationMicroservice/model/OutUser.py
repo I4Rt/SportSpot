@@ -30,11 +30,3 @@ class OutUser(db.Model, BaseData):
     def getUsersToChangePassword(cls):
         return db.session.query(OutUser).filter(cls.newPasswordHash != None).all()
         
-    
-    
-    
-        
-        
-        
-        
-        

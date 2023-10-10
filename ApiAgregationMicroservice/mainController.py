@@ -251,3 +251,4 @@ def getUsersToChangePassword():
         userData.append(u.login)
     return {'permitChangePassword': True, 'data': {'logins': userData}}
     
+

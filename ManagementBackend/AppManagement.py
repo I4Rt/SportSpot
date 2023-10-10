@@ -18,8 +18,8 @@ if __name__ == "__main__":
     with app.app_context():
         SideDataHolder.getInstance().getSavedChangedTasks()
         
-        KafkaSender.setInstance(app.config["senderTopic"], app.config["kafkaServer"])
-        KafkaReciever.setInstance(app.config["recieverTopic"], app.config["kafkaServer"])
+        #KafkaSender.setInstance(app.config["senderTopic"], app.config["kafkaServer"])
+        #KafkaReciever.setInstance(app.config["recieverTopic"], app.config["kafkaServer"])
         
         DataReciever().start()
         StreamBase.init()

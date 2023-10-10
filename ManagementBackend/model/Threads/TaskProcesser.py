@@ -26,7 +26,7 @@ class TaskProcessor(Thread, Jsonifyer):
 
     def run(self):
         with app.app_context():
-            sender = KafkaSender.getInstance()
+            # sender = KafkaSender.getInstance()
             self.task.setStatusInProgress()
             self.task.save(False)
             tzDateStr = str(self.task.end)
@@ -105,8 +105,15 @@ class TaskProcessor(Thread, Jsonifyer):
                     #
                     with open('senderData.json', 'w') as file:
                         file.write(json.dumps(dataToSend))
-                    sendData = sender.sendMessage(json.dumps(dataToSend))
-                    print('data to send is ', sendData)
+                    try:
+                        url = 'http://localhost:4998/appendDataToRoute'
+                        myobj = {'SOId': app.config['SPORT_OBJECT_ID'], 'data': dataToSend}
+                        responcedata = requests.post(url, json = myobj, timeout=10)
+                        print('inner sending result',responcedata.text)
+                    except Exception as e:
+                        print('tmisot')
+                        continue
+                    # print('data to send is ', sendData)
                     print(f'In thread #{get_native_id()}: task id {self.task.id}, analizer sent')
                     # add wait param to kafka reciever  
                 sleep(self.task.interval)

@@ -23,7 +23,7 @@ class SideTaskProcessor(Thread, Jsonifyer):
     def __init__(self):
         Thread.__init__(self)
         self.dataHolder = SideDataHolder.getInstance()
-        self.sender = KafkaSender.getInstance()
+        # self.sender = KafkaSender.getInstance()
         
     
 
@@ -93,7 +93,17 @@ class SideTaskProcessor(Thread, Jsonifyer):
                         try:
                             b = time()
                             # print('side data to send', dataToSend['taskId'])
-                            sendData = self.sender.sendMessage(json.dumps(dataToSend))
+                            try:
+                                url = 'http://localhost:4998/appendDataToRoute'
+                                myobj = {'SOId': app.config['SPORT_OBJECT_ID'], 'data': dataToSend}
+                                responcedata = requests.post(url, json = myobj, timeout=10)
+                                print('inner sending result',responcedata.text)
+                            except Exception as e:
+                                print('tmisot')
+                                continue
+                            
+                            #sendData = self.sender.sendMessage(json.dumps(dataToSend))
+                            
                             # with open('errorSending.txt', 'w') as file:
                             #     file.write(json.dumps(dataToSend))
                             # print(camData['camera'].getRoute(), 'sending t', time() - b)
