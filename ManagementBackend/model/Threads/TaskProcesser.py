@@ -107,7 +107,7 @@ class TaskProcessor(Thread, Jsonifyer):
                         file.write(json.dumps(dataToSend))
                     try:
                         url = 'http://localhost:4998/appendDataToRoute'
-                        myobj = {'SOId': app.config['SPORT_OBJECT_ID'], 'data': dataToSend}
+                        myobj = {'query': f'SO{int(app.config["SPORT_OBJECT_ID"])}_data', 'data': dataToSend}
                         responcedata = requests.post(url, json = myobj, timeout=10)
                         print('inner sending result',responcedata.text)
                     except Exception as e:

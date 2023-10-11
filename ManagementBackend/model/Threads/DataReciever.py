@@ -28,19 +28,19 @@ class DataReciever(Thread):
                                                       
                 '''
                 try:
-                    print('getting data from topic ', f'SO{int(app.config["SPORT_OBJECT_ID"])}_recieve')
+                    print('getting data from topic ', f'SO{int(app.config["SPORT_OBJECT_ID"])}_receive')
                     url = 'http://localhost:4998/readData'
                     
-                    fetchData = get(url,params={'topic': app.config["recieverTopic"]}, timeout=200)
+                    fetchData = get(url,params={'topic': f'SO{int(app.config["SPORT_OBJECT_ID"])}_receive'}, timeout=200)
                     fetchData = json.loads(fetchData.text)
-                    print(fetchData.text)
+                    print(fetchData)
                     if fetchData['readData']:
-                        data = fetchData['message']
+                        data = fetchData['data']['message']
                     else:
                         print('getting data from inner error', fetchData)
                         continue
                 except Exception as e:
-                    print('tmisot')
+                    print('tmisot', e)
                     continue
                 #save
                 

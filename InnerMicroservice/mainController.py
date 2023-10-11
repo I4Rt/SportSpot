@@ -32,12 +32,14 @@ def testDecorator(foo):
 @cross_origin()
 def appendDataToRoute():
     
-    SOId = request.json['SOId']
+    query = request.json['query']
     data = request.json['data'] # data
-    print(f'SO{int(SOId)}_local')
+
+    print('query to write', query)
+    
     print(app.config["kafkaServer"])
     print('data', list(data.keys()))
-    sender = KafkaPublicSender.getKafkaSender(f'SO{int(SOId)}_data', app.config["kafkaServer"])
+    sender = KafkaPublicSender.getKafkaSender(query, app.config["kafkaServer"])
     result = sender.sendMessage(json.dumps(data))
     sender.closeConnection()
     

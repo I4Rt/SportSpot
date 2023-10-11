@@ -13,7 +13,7 @@ from datetime import timedelta
 from time import time, sleep, altzone, timezone, localtime
 
 class AgregatedDataSender(Thread, Jsonifyer):
-    __interval = 10 * 1
+    __interval = 1 * 1
     
     __instance = None
     

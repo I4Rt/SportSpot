@@ -95,7 +95,7 @@ class SideTaskProcessor(Thread, Jsonifyer):
                             # print('side data to send', dataToSend['taskId'])
                             try:
                                 url = 'http://localhost:4998/appendDataToRoute'
-                                myobj = {'SOId': app.config['SPORT_OBJECT_ID'], 'data': dataToSend}
+                                myobj = {'query': f'SO{int(app.config["SPORT_OBJECT_ID"])}_local', 'data': dataToSend}
                                 responcedata = requests.post(url, json = myobj, timeout=10)
                                 print('inner sending result',responcedata.text)
                             except Exception as e:
