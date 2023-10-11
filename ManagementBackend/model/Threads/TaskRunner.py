@@ -40,7 +40,7 @@ class TaskRunner(Thread, Jsonifyer):
                 
                 # print(f'status in progress is {Task.getStatused()}')
                 tasks = Task.getTasksToRun(datetime.now())
-                # print(f'now tasks are: {tasks}')
+                print(f'now tasks are: {tasks}')
                 if tasks != None:
                     for task in tasks:
                         task.setStatusInProgress()

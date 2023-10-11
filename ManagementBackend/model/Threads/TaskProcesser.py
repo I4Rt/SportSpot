@@ -81,7 +81,13 @@ class TaskProcessor(Thread, Jsonifyer):
                               "agregationMode": room.classId, # CHECK
                               "data": []}
                 for camData in cameras:
-                    frame = next(camData["generator"])
+                    try: 
+                        frame = next(camData["generator"])
+                    except Exception as e:
+                        st = f'camera  {camData["camId"]} task {self.task.id} generator error ({e})'+ f' \ntime to task finish is {self.task.end}' + f' now is{datetime.now()}\n\n'
+                        with open('tasks.log', 'a') as file:
+                            file.write(st)
+                        print(f'camera  {camData["camId"]} task {self.task.id} generator error', e, 'time to task finish is', self.task.end, 'now is', datetime.now())
                     if frame is not None:
                         output = frame # cv2.resize(frame, (600, 400))
                         localData = {
@@ -93,6 +99,13 @@ class TaskProcessor(Thread, Jsonifyer):
                         }
                         
                         dataToSend["data"].append(localData)
+                        st = f'ok\n\n'
+                        with open('tasks.log', 'a') as file:
+                            file.write(st)
+                    else:
+                        st = f'camera  {camData["camId"]} task {self.task.id} generator NONE'+ f' \ntime to task finish is {self.task.end}' + f' now is{datetime.now()}\n\n'
+                        with open('tasks.log', 'a') as file:
+                            file.write(st)
                 if len(dataToSend["data"]) > 0:
                     # print("sending:")
                     #
