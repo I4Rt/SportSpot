@@ -151,7 +151,7 @@ def getUser():
     identy = get_jwt_identity()
     if identy:
         user = User.getByID(identy)
-        return user.getParamsList(exceptions=['password', 'login']), 200
+        return user.getParamsList(exceptions=['password']), 200
     else:
         return {'answer': 'No such user'}
     

@@ -284,6 +284,36 @@ export default createStore({
             }
             return returnResult
         },
+        async getRoomsForDayFromDB({commit}, selectedDay){
+            console.log('getRoomsForDay')
+            let returnResult
+            try{
+                returnResult = await fetch(`http://localhost:5000/getRoomsForDay`, {
+                    credentials: "include",
+                    method: 'POST',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
+                    body: JSON.stringify({
+                        'date': selectedDay
+                    })
+                })
+                    .then(response => response.json())
+                    .then((response) => {
+                        console.log(response)
+                        try {
+                            if (!response.answer) commit('setRooms', response)
+                        } catch (err) {
+                            console.log(err)
+                        }
+                        return response
+                    })
+            } catch (err) {
+                console.log(err)
+            }
+            return returnResult
+        },
         async getCamerasFromDB({commit}) {
             let returnResult
             try{
@@ -433,9 +463,18 @@ export default createStore({
         getFiles(state) {
             return state.files
         },
-        // getFilesByDate: (state) => (date) => {
-        //   return state.sectorTypes.find()
-        // },
+        getFilesByDay: (state) => (date) => {
+            return state.files.filter(file => {
+                if (!file.createTime) return true
+
+                let fileDate = new Date(file.createTime.substring(0, file.createTime.length-4))
+                let fullFileDate = new Date(`${fileDate.getFullYear()}-${fileDate.getMonth()+1}-${fileDate.getDate()}`).getTime()
+
+                let fullDate = date.getTime()-(7*60*60*1000)
+                // console.log(`${fullFileDate === fullDate}  ${new Date(fullFileDate)}  ${new Date(fullDate)}`)
+                return fullFileDate === fullDate
+            })
+        },
         getRoomByID: (state) => (id) => {
             return state.rooms.find(room => room.id === id)
         },

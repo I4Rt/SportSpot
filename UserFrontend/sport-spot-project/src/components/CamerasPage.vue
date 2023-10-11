@@ -14,17 +14,17 @@
         <div class="col-5">
           <label class="field">Просмотр</label>
         </div>
-        <div class="col-3" style="text-align: center">
+        <div class="col-3" >
           <template v-if="getCameras === null">
             <img :src="require('../assets/gifs/black-spinner.svg')" style="width: 100px; height: 100px" alt="">
           </template>
           <template v-else>
             <div :style="camera.id === selectedCamera.id ? {background: '#a7a7a7'} : '' "
-                class="row window camera col-12"
+                class="row window camera col-12 "
                 @click="chooseCamera(selectedCamera)"
                 v-for="(selectedCamera, index) in getCameras" :key="index">
-            <span class="cam-name">{{selectedCamera.name}}</span>
-            <span class="cam-ip">{{selectedCamera.ip}}</span>
+            <span class="cam-name short-name short-name-camera" :title="selectedCamera.name">{{selectedCamera.name}}</span>
+<!--            <span class="cam-ip">{{selectedCamera.ip}}</span>-->
           </div>
           </template>
         </div>
@@ -39,60 +39,60 @@
                 Обязательное поле
               </p>
             </div>
-            <div class="">
-              <label> ip: </label>
-              <input class="input-field" type="text" v-model.trim="camera.ip"
-                     :class="v$.camera.ip.$error ? 'is-invalid' : ''">
-              <p v-if="v$.camera.ip.$dirty && v$.camera.ip.required.$invalid" class="invalid-feedback">
-                Обязательное поле
-              </p>
-            </div>
-            <div class="">
-              <label> Порт: </label>
-              <input class="input-field" type="text" v-model.trim="camera.port"
-                     :class="v$.camera.port.$error ? 'is-invalid' : ''">
-              <p v-if="v$.camera.port.$dirty && v$.camera.port.required.$invalid" class="invalid-feedback">
-                Обязательное поле
-              </p>
-              <p v-if="v$.camera.port.$dirty && v$.camera.port.integer.$invalid " class="invalid-feedback">
-                Значение должно быть числовым
-              </p>
-            </div>
-            <div class="">
-              <label> Канал: </label>
-              <input class="input-field" type="text" v-model.trim="camera.chanel"
-                     :class="v$.camera.chanel.$error ? 'is-invalid' : ''">
-              <p v-if="v$.camera.chanel.$dirty && v$.camera.chanel.required.$invalid" class="invalid-feedback">
-                Обязательное поле
-              </p>
-              <p v-if="v$.camera.chanel.$dirty && v$.camera.chanel.integer.$invalid " class="invalid-feedback">
-                Значение должно быть числовым
-              </p>
-            </div>
-            <div class="">
-              <label> Кодек: </label>
-              <input class="input-field" type="text" v-model.trim="camera.codec"
-                     :class="v$.camera.codec.$error ? 'is-invalid' : ''">
-              <p v-if="v$.camera.codec.$dirty && v$.camera.codec.required.$invalid" class="invalid-feedback">
-                Обязательное поле
-              </p>
-            </div>
-            <div class="">
-              <label> Логин: </label>
-              <input class="input-field" type="text" v-model.trim="camera.login"
-                     :class="v$.camera.login.$error ? 'is-invalid' : ''">
-              <p v-if="v$.camera.login.$dirty && v$.camera.login.required.$invalid" class="invalid-feedback">
-                Обязательное поле
-              </p>
-            </div>
-            <div class="">
-              <label> Пароль: </label>
-              <input class="input-field" type="text" v-model.trim="camera.password"
-                     :class="v$.camera.password.$error ? 'is-invalid' : ''">
-              <p v-if="v$.camera.password.$dirty && v$.camera.password.required.$invalid " class="invalid-feedback">
-                Обязательное поле
-              </p>
-            </div>
+<!--            <div class="">-->
+<!--              <label> ip: </label>-->
+<!--              <input class="input-field" type="text" v-model.trim="camera.ip"-->
+<!--                     :class="v$.camera.ip.$error ? 'is-invalid' : ''">-->
+<!--              <p v-if="v$.camera.ip.$dirty && v$.camera.ip.required.$invalid" class="invalid-feedback">-->
+<!--                Обязательное поле-->
+<!--              </p>-->
+<!--            </div>-->
+<!--            <div class="">-->
+<!--              <label> Порт: </label>-->
+<!--              <input class="input-field" type="text" v-model.trim="camera.port"-->
+<!--                     :class="v$.camera.port.$error ? 'is-invalid' : ''">-->
+<!--              <p v-if="v$.camera.port.$dirty && v$.camera.port.required.$invalid" class="invalid-feedback">-->
+<!--                Обязательное поле-->
+<!--              </p>-->
+<!--              <p v-if="v$.camera.port.$dirty && v$.camera.port.integer.$invalid " class="invalid-feedback">-->
+<!--                Значение должно быть числовым-->
+<!--              </p>-->
+<!--            </div>-->
+<!--            <div class="">-->
+<!--              <label> Канал: </label>-->
+<!--              <input class="input-field" type="text" v-model.trim="camera.chanel"-->
+<!--                     :class="v$.camera.chanel.$error ? 'is-invalid' : ''">-->
+<!--              <p v-if="v$.camera.chanel.$dirty && v$.camera.chanel.required.$invalid" class="invalid-feedback">-->
+<!--                Обязательное поле-->
+<!--              </p>-->
+<!--              <p v-if="v$.camera.chanel.$dirty && v$.camera.chanel.integer.$invalid " class="invalid-feedback">-->
+<!--                Значение должно быть числовым-->
+<!--              </p>-->
+<!--            </div>-->
+<!--            <div class="">-->
+<!--              <label> Кодек: </label>-->
+<!--              <input class="input-field" type="text" v-model.trim="camera.codec"-->
+<!--                     :class="v$.camera.codec.$error ? 'is-invalid' : ''">-->
+<!--              <p v-if="v$.camera.codec.$dirty && v$.camera.codec.required.$invalid" class="invalid-feedback">-->
+<!--                Обязательное поле-->
+<!--              </p>-->
+<!--            </div>-->
+<!--            <div class="">-->
+<!--              <label> Логин: </label>-->
+<!--              <input class="input-field" type="text" v-model.trim="camera.login"-->
+<!--                     :class="v$.camera.login.$error ? 'is-invalid' : ''">-->
+<!--              <p v-if="v$.camera.login.$dirty && v$.camera.login.required.$invalid" class="invalid-feedback">-->
+<!--                Обязательное поле-->
+<!--              </p>-->
+<!--            </div>-->
+<!--            <div class="">-->
+<!--              <label> Пароль: </label>-->
+<!--              <input class="input-field" type="text" v-model.trim="camera.password"-->
+<!--                     :class="v$.camera.password.$error ? 'is-invalid' : ''">-->
+<!--              <p v-if="v$.camera.password.$dirty && v$.camera.password.required.$invalid " class="invalid-feedback">-->
+<!--                Обязательное поле-->
+<!--              </p>-->
+<!--            </div>-->
             <div class="">
               <label> Полный путь: </label>
               <input class="input-field" type="text" v-model.trim="camera.fullRoute">
@@ -115,7 +115,7 @@
             </template>
             <template v-else>
               <div v-for="(cameraSector, index) in getSectorsByCameraID(this.camera.id)" :key="index">
-                <div class="grid-default sectors">
+                <div class="grid-default grid-default-sectors">
                   <input class="input-field-sector" type="text" v-model.trim="cameraSector.name" placeholder="Название">
                   <select v-model="cameraSector.typeId">
                     <option v-for="(sectorType, index) in getSectorTypes" :value="sectorType.id" :key="index">
@@ -159,7 +159,7 @@
 import {mapGetters} from 'vuex'
 import {mapActions} from 'vuex'
 import { useVuelidate } from '@vuelidate/core'
-import { required, integer} from '@vuelidate/validators'
+import { required} from '@vuelidate/validators'
 import ShowCamera from "@/components/ShowCamera";
 
 export default {
@@ -181,13 +181,13 @@ export default {
       camera: {
         id : null,
         roomID: null,
-        name: '',
-        ip: '',
-        port: '',
-        chanel : '',
-        codec : '',
-        login : '',
-        password : '',
+        name: null,
+        ip: null,
+        port: null,
+        chanel : null,
+        codec : null,
+        login : null,
+        password : null,
         fullRoute: '',
       },
       sector: {
@@ -205,12 +205,13 @@ export default {
   validations: {
     camera: {
       name: {required},
-      ip: {required},
-      port: {required, integer},
-      chanel: {required, integer},
-      codec: {required},
-      login: { required },
-      password: {required},
+      // ip: {required},
+      // port: {required, integer},
+      // chanel: {required, integer},
+      // codec: {required},
+      // login: { required },
+      // password: {required},
+      fullRoute: {required}
     },
   },
   computed: {
@@ -275,18 +276,6 @@ export default {
           });
       return returnResult
     },
-    // async setSector(sector){
-    //   let returnValue
-    //   try {
-    //
-    //
-    //
-    //         })
-    //   } catch (err) {
-    //     console.error(err)
-    //   }
-    //   return returnValue
-    // },
     async setCamera() {
       return fetch('http://localhost:5000/setCamera', {
         credentials: "include",
@@ -311,21 +300,23 @@ export default {
           .then((response) => {
             console.log('setCameraResponse ' + response)
             console.log(response)
-            this.camera.id = response.id
-            let cameraCopy = Object.assign({}, this.camera)
-            console.log('check')
-            if (this.getCameraByID(cameraCopy.id) === undefined) {
-              this.addCamera(cameraCopy)
-              console.log('yesCheck')
-            }
-            console.log('noCheck')
-            try{
-              this.getSectors.forEach((sector) => {
-                sector.camId = this.camera.id
-                this.selectFunction(this.setSectorToDB, sector)
-              })
-            } catch (err) {
-              console.log(err)
+            if (response.id) {
+              this.camera.id = response.id
+              let cameraCopy = Object.assign({}, this.camera)
+              console.log('check')
+              if (this.getCameraByID(cameraCopy.id) === undefined) {
+                this.addCamera(cameraCopy)
+                console.log('yesCheck')
+              }
+              console.log('noCheck')
+              try {
+                this.getSectors.forEach((sector) => {
+                  sector.camId = this.camera.id
+                  this.selectFunction(this.setSectorToDB, sector)
+                })
+              } catch (err) {
+                console.log(err)
+              }
             }
             return response
           });
@@ -396,13 +387,13 @@ export default {
       this.camera = cameraCopy
       this.camera.id = null
       this.camera.roomID = null
-      this.camera.name = ''
-      this.camera.ip = ''
-      this.camera.codec = ''
-      this.camera.port = ''
-      this.camera.chanel = ''
-      this.camera.login = ''
-      this.camera.password = ''
+      this.camera.name = null
+      this.camera.ip = null
+      this.camera.codec = null
+      this.camera.port = null
+      this.camera.chanel = null
+      this.camera.login = null
+      this.camera.password = null
       this.camera.fullRoute = ''
       this.$refs.showCamera.changeImgPath("data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=")
       this.v$.camera.$reset()
@@ -547,8 +538,18 @@ export default {
   display: grid;
   grid-gap: 10px;
   grid-template-columns: 1fr 1fr;
+  &-sectors{
+    grid-template-columns: repeat(4, 1fr)
+  }
 }
-.sectors{
-  grid-template-columns: repeat(4, 1fr)
+.short-name {
+  display: inline-block;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  &-camera{
+    width: 90%;
+  }
 }
 </style>

@@ -46,7 +46,7 @@
               </div>
             </div>
             <div class="content content-end">
-              <input v-model.lazy="explorerFilterDay" type="date">
+              <input v-model.trim="explorerFilterDay" @change="sortByDay" type="date">
             </div>
           </div>
         </div>
@@ -54,12 +54,21 @@
 
       <div class="row">
         <div style="margin-left: 10px" class="explorer-folders col-5 window">
-          <div @dblclick="getByRoutesCall(file)" class="camera" v-for="(file, index) in this.getFiles" :key="index">
+          <div @dblclick="getByRoutesCall(file)"
+               class="camera"
+               v-for="(file, index) in this.getFiles"
+               :key="index"
+               onmousedown="return false">
             <img
                 :src="file.type === 'file' ? require('../assets/icons/file.png') : require('../assets/icons/folder.png')"
                 alt=""
                 style="margin-bottom: 10px; margin-right: 5px">
             <span class="short-name short-name-file" :title="file.name">{{file.name}}</span>
+            <span class="short-name short-name-file fileDate"
+                  v-if="file.createTime"
+                  :title="corrDate(file.createTime)">
+              {{corrDate(file.createTime)}}
+            </span>
           </div>
         </div>
         <div  style="margin-left: 15px" class="explorer-preview col-6 window">
@@ -125,7 +134,8 @@ export default {
   computed: {
     ...mapGetters([
       'getFiles',
-      'getFile'
+      'getFile',
+      'getFilesByDay'
     ])
   },
   methods: {
@@ -151,8 +161,7 @@ export default {
         if (resp.image){
           this.fileSelected = true
           this.file = resp
-          let fileDate = new Date(resp.createTime.substring(0, resp.createTime.length-4))
-          this.file.createTime = `${this.corrDate(fileDate)}`
+          this.file.createTime = `${this.corrDate(resp.createTime)}`
           this.file.imageSrc = `data:image/jpg;base64,${resp.image}`
         }
         else if (resp.folderData){
@@ -163,14 +172,19 @@ export default {
         console.log(err)
       }
     },
-    corrDate(value){
-      let year = value.getFullYear()
-      let date = value.getDate().toString().length === 1 ? `0${value.getDate()}` : value.getDate()
-      let month = value.getMonth().toString().length === 1 ? `0${value.getMonth()+1}` : value.getMonth()+1
-      let hour = value.getHours().toString().length === 1 ? `0${value.getHours()}` : value.getHours()
-      let minute = value.getMinutes().toString().length === 1 ? `0${value.getMinutes()}` : value.getMinutes()
-      let second = value.getSeconds().toString().length === 1 ? `0${value.getSeconds()}` : value.getSeconds()
-      return `${date}.${month}.${year} ${hour}:${minute}:${second}`
+    corrDate(incorrDate){
+      try{
+        let value = new Date(incorrDate.substring(0, incorrDate.length-4))
+        let year = value.getFullYear()
+        let date = value.getDate().toString().length === 1 ? `0${value.getDate()}` : value.getDate()
+        let month = value.getMonth().toString().length === 1 ? `0${value.getMonth()+1}` : value.getMonth()+1
+        let hour = value.getHours().toString().length === 1 ? `0${value.getHours()}` : value.getHours()
+        let minute = value.getMinutes().toString().length === 1 ? `0${value.getMinutes()}` : value.getMinutes()
+        let second = value.getSeconds().toString().length === 1 ? `0${value.getSeconds()}` : value.getSeconds()
+        return `${date}.${month}.${year} ${hour}:${minute}:${second}`
+      } catch (err) {
+        console.log(err)
+      }
     },
     sortByValue(sortValue) {
       if (sortValue === 'default'){ // сортировка по имени без изменения порядка
@@ -192,6 +206,14 @@ export default {
             : (a[sortValue] > b[sortValue] ? 1 : -1))
       }
       this.getFiles.sort((a, b) => a['type'] > b['type'] ? 1 : -1)
+    },
+    sortByDay(){
+      this.getByRoutesCall(null).then(() => {
+        if (this.explorerFilterDay !== '') this.$store.state.files = this.getFilesByDay(new Date(this.explorerFilterDay))
+        // for (let file in this.getFiles)
+        // else this.getByRoutesCall(null)
+      })
+
     },
     prevNextFolder() {
       let path = ''
@@ -317,6 +339,9 @@ export default {
     width: 80%;
     font-size: 14px;
   }
+}
+.fileDate{
+  font-size: 12px
 }
 .hidden-button{
   background: inherit;

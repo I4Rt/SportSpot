@@ -1,7 +1,7 @@
 <template>
   <div class="explorer-parent">
-    <div class="container login">
-      <form @submit.prevent="change">
+    <div class="explorer window content content-center">
+      <form @submit.prevent="selectFunction(updateUser)">
         <div class="form-group">
           <label>Имя: </label>
           <input type="text"  v-model.trim="user.name" class="form-control"
@@ -42,12 +42,11 @@
         </div >
         <div class="row justify-content-around form-group">
           <button type="submit" class="btn btn-success col-auto">Подтвердить</button>
-          <button type="button" class="btn btn-primary col-auto"
-                  @click="this.$emit('change')">
+          <button type="button" class="btn btn-primary col-auto" @click="$emit('changePassword')">
             Назад
           </button>
         </div>
-        <button @click="register">register</button>
+<!--        <button @click="register">register</button>-->
       </form>
     </div>
   </div>
@@ -59,6 +58,7 @@ import { required, minLength } from '@vuelidate/validators'
 import {mapGetters} from "vuex";
 
 export default {
+  props:['selectFunction'],
   name: "RegistrationPage",
   setup () {
     return {
@@ -95,7 +95,40 @@ export default {
   methods: {
     change() {
       console.log('change')
-      this.$emit('change')
+    },
+    async updateUser() {
+      let returnResult
+      try{
+        returnResult = await fetch('http://localhost:5000/setUserData',{
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8'
+          },
+          body: JSON.stringify({
+            "id": this.user.id,
+            "name": this.user.name,
+            "surname": this.user.surname,
+            "password": this.user.password
+          })
+        })
+            .then((response) => response.json())
+            .then((response) => {
+              console.log(response)
+              try{
+                if (response.setUserData === true) return response
+                else{
+                  alert('Что-то пошло не так, попробуйте еще раз')
+                  console.log()
+                }
+              } catch (err) {
+                console.log(err)
+              }
+            })
+      } catch (err) {
+        console.log(err)
+      }
+      this.$emit('onLogout')
+      return returnResult
     },
     setUser() {
       this.v$.user.$touch()
@@ -114,7 +147,6 @@ export default {
         })
             .then((response) => {
               console.log(response.json())
-              this.$emit('registrationCompleted')
             });
       }
     },
@@ -135,7 +167,6 @@ export default {
         })
             .then((response) => {
               console.log(response.json())
-              this.$emit('registrationCompleted')
             });
       }
     }
@@ -145,29 +176,64 @@ export default {
 </script>
 
 <style lang="scss">
-.login {
-  max-width: 400px;
-  /*margin: 0 auto;*/
-  padding: 0 20px;
-  /*margin-top: 40px;*/
-}
+//.login {
+//  max-width: 400px;
+//  /*margin: 0 auto;*/
+//  padding: 0 20px;
+//  /*margin-top: 40px;*/
+//}
 .form-control {
   width: 400px;
 }
 .form-group {
   width: 400px;
 }
+//.explorer-parent {
+//  width: 100%;
+//  height: 100%;
+//  position: absolute;
+//  left: 0;
+//  top: 0;
+//  display: flex;
+//  //align-items: center;
+//  //align-content: center;
+//  //justify-content: center;
+//  z-index: 100;
+//  background-color: #ffffff;
+//}
+.content{
+  display: flex;
+  align-items: center;
+  &-center{
+    justify-content: center;
+  }
+  &-end{
+    justify-content: end;
+  }
+  &-start{
+    justify-content: start;
+  }
+}
+.explorer{
+  width: 450px;
+  height: 450px;
+  background-color: #ffffff;
+}
 .explorer-parent {
   width: 100%;
   height: 100%;
-  position: absolute;
+  position: fixed;
   left: 0;
   top: 0;
   display: flex;
-  //align-items: center;
+  align-items: center;
   //align-content: center;
-  //justify-content: center;
+  justify-content: center;
   z-index: 100;
-  background-color: #ffffff;
+  background-color: rgba(218, 218, 218, 0.7);
+}
+.window{
+  box-shadow: 0 3px 4px rgba(0,0,0,.25);
+  border-radius: 10px ;
 }
 </style>

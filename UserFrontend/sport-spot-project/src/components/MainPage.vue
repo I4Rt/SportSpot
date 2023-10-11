@@ -1,32 +1,36 @@
 <template>
+<!--  <change-pass-page-->
+<!--    v-if="changePass"-->
+<!--    @changePassword="change"-->
+<!--  ></change-pass-page>-->
   <registration-page
-      v-if="changePass === true"
-      @change="changePass = false">
+      v-if="changePass"
+      :selectFunction="selectFunction"
+      @changePassword="changePass = false"
+      @onLogout="$emit('onLogout')">
   </registration-page>
-<!--    Вы вошли-->
-<!--    <button class="btn btn-primary" @click="$emit('logout')">Выйти</button>-->
   <nav-bar
       :user="this.getUser"
       @changePassword="changePass = true"
       @showPage="viewPage"
-      @onLogout="this.$emit('onLogout')"
+      @onLogout="$emit('onLogout')"
       @openExplorer="openExplorer = true"
       ref="navBar">
   </nav-bar>
   <br>
   <calendar-page
       :selectFunction="selectFunction"
-      @onLogout="this.$emit('onLogout')"
+      @onLogout="$emit('onLogout')"
       v-if="page === 'Calendar'">
   </calendar-page>
   <cameras-page
       :selectFunction="selectFunction"
-      @onLogout="this.$emit('onLogout')"
+      @onLogout="$emit('onLogout')"
       v-if="page === 'Cameras'">
   </cameras-page>
   <rooms-page
       :selectFunction="selectFunction"
-      @onLogout="this.$emit('onLogout')"
+      @onLogout="$emit('onLogout')"
       v-if="page === 'Rooms'">
   </rooms-page>
   <explorer-page
@@ -59,7 +63,7 @@ export default{
     CamerasPage,
     RoomsPage,
     ExplorerPage,
-    RegistrationPage
+    RegistrationPage,
   },
     data() {
         return{
@@ -77,6 +81,9 @@ export default{
     ])
   },
   methods: {
+    change() {
+      console.log('change')
+    },
     viewPage(data) {
       this.page = data
       console.log(this.page + data)

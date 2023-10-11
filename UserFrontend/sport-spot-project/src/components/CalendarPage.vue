@@ -5,10 +5,10 @@
         <label class="field">Календарь</label>
       </div>
         <div class="col-6">
-          <div class="grid-default grid-default-room-label">
+          <div class="grid-default" :class="roomSelected ? 'grid-default-room-label' : ''">
             <div class="content content-start">
               <label v-if="!roomSelected" class="field">Помещения</label>
-              <label style="margin-left: 5px" v-if="roomSelected" class="field">
+              <label style="margin-left: 5px" v-if="roomSelected" class="field short-name short-name-room-label">
                 {{this.getRoomByID(roomSelectedId).name}} {{`${this.selectedDay.substr(3, 2)}/${this.selectedDay.substr(0, 2)}/${this.selectedDay.substr(6, 4)}`}}
               </label>
             </div>
@@ -16,7 +16,8 @@
               <button v-if="roomSelected"
                       class="btn btn-primary"
                       style="margin-right: 5px; padding: 3px 8px"
-                      @click="roomSelected = false; busyTimesArray = []">Назад</button>
+                      @click="roomSelected = false; busyTimesArray = []; selectFunction(getRoomsForDayFromDB, selectedDay)">Назад</button>
+              <label v-if="taskSelected" class="field">Выбран архивный файл</label>
             </div>
           </div>
         </div>
@@ -64,14 +65,16 @@
             <img :src="require('../assets/gifs/black-spinner.svg')" style="width: 100px; height: 100px" alt="">
           </div>
           <div v-else-if="!roomSelected" class="row">
-            <div class="col-6">
-              Занятые
-            </div>
-            <div class="col-6">
-              Свободные
+            <div class="col-12">
               <div class="row window camera col-12" @click="chooseRoom(room)" v-for="(room, index) in getRooms"
-                   :key="index">
-                <span class="name">{{room.name}}</span>
+                   :key="index" style="margin-top: 10px; margin-left: 0; padding-bottom: 10px">
+                <span class="name short-name short-name-room" :title="room.name">{{room.name}}</span>
+                <div style="width: 100%" class="grid-default grid-default-squares">
+                  <div v-for="(square, index) in room.selectedTime" :key="index"
+                       style="width: 10px; height: 10px; border: 1px solid black"
+                       :style="square === 0 ? {'background-color': 'white'} : {'background-color': 'greenyellow'}">
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -173,20 +176,22 @@
                 <div style="text-align: center" v-if="!tasksLoaded">
                   <img :src="require('../assets/gifs/black-spinner.svg')" style="width: 100px; height: 100px" alt="">
                 </div>
-                <div v-else class="row" v-for="(task, index) in this.getTasksByRoomID(roomSelectedId)" :key="index">
-                  <div class="window camera col-6 grid-default" @click="chooseTask(task)">
-                    <span class="name short-name short-name-task" :title="task.name">{{task.name}}</span>
-                    <span class="name" style="margin-left: 10px">{{task.statistics}}/{{task.targetCount}}</span>
+                <div v-else class="row" v-for="(selectedTask, index) in this.getTasksByRoomID(roomSelectedId)" :key="index">
+                  <div  :style="task.id === selectedTask.id ? {background: '#a7a7a7'} : '' "
+                        class="window camera col-6 grid-default"
+                        @click="chooseTask(selectedTask)">
+                    <span class="name short-name short-name-task" :title="selectedTask.name">{{selectedTask.name}}</span>
+                    <span class="name" style="margin-left: 10px">{{selectedTask.statistics}}/{{selectedTask.targetCount}}</span>
                   </div>
                   <div class="col-2">
                     <input class="hidden-button"
                            type="color"
-                           @change="repaintTimesArray(task.timesArray, task.color + alphaChannel); save(task)"
-                           v-model.trim="task.color">
+                           @change="repaintTimesArray(selectedTask.timesArray, selectedTask.color + alphaChannel); save(selectedTask)"
+                           v-model.trim="selectedTask.color" disabled>
                   </div>
                   <div class="col-2">
                     <button class="hidden-button"
-                            @click="removeTask(task.id); resetTask(); clearTimesArray(task.timesArray)">
+                            @click="removeTask(selectedTask.id); resetTask(); clearTimesArray(selectedTask.timesArray)">
                       <img src="../assets/icons/delete.png" alt="">
                     </button>
                   </div>
@@ -357,14 +362,19 @@ export default {
                   console.log(response)
                   try {
                     if (response.name){
-                      this.task.id = response.id
+                      if (this.task.id === null) this.task.id = response.id
                       if (this.getTaskByID(this.task.id) === undefined)
                         this.$store.commit('setTask', Object.assign({}, this.task))
                     }
                     else if (response.answer === 'recogonition beguns') alert ('Выбранный файл анализируется')
+                    else{
+                      alert('Что-то пошло не так, попробуйте еще раз')
+                      this.resetTask()
+                    }
+                    this.canChangeTimesArray = false
                     this.repaintTimesArray(task.timesArray, task.color + this.alphaChannel).then((value => {
                       console.log(value)
-                      this.resetTask()
+                      if (!this.taskSelected) this.resetTask()
                       this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
                         this.paintTasks()
                         this.$store.state.file = null
@@ -384,6 +394,7 @@ export default {
       else alert("Выберите диапазон времени")
       return returnResult
     },
+
     chooseTask(task) {
       console.log('choose')
       // this.resetTask()
@@ -454,7 +465,7 @@ export default {
         console.log(value)
             this.setBusyTimeArray(timesArray).then((value => {
                   console.log(value)
-                  this.task.timesArray = []
+                  // this.task.timesArray = []
                 })
             )
       })
@@ -471,7 +482,7 @@ export default {
         if (!this.busyTimesArray.includes(i)){
           try {
             if (sliceArray.includes(i)){
-              console.log(sliceArray)
+              // console.log(sliceArray)
               // console.log('include ' + i)
               document.getElementById(i).style.setProperty('--color', color)
               document.getElementById(i).classList.add('linear-table-td-painted')
@@ -480,13 +491,14 @@ export default {
             else {
               document.getElementById(i).classList.remove('linear-table-td-painted')
             }
-            this.indexStart = sliceArray[0]
-            // sliceArray[sliceArray.length-1]
-            let endIndex = this.timesArray.indexOf(
-                this.timesArray.find(el => el === sliceArray[sliceArray.length-1]))
-            this.indexEnd = this.timesArray[endIndex] === '23:30' ? '00:00' : this.timesArray[endIndex+1]
-
-            this.task.timesArray = sliceArray
+            if (this.canChangeTimesArray) {
+              this.indexStart = sliceArray[0]
+              // sliceArray[sliceArray.length-1]
+              let endIndex = this.timesArray.indexOf(
+                  this.timesArray.find(el => el === sliceArray[sliceArray.length-1]))
+              this.indexEnd = this.timesArray[endIndex] === '23:30' ? '00:00' : this.timesArray[endIndex+1]
+            }
+            this.task.timesArray = sliceArray //!!
           } catch (err) {
             console.log(err)
           }
@@ -575,6 +587,7 @@ export default {
           this.paintTasks()
         })
       }
+      else (this.selectFunction(this.getRoomsForDayFromDB, this.selectedDay))
     },
     chooseRoom(room){
       this.roomSelected = true
@@ -594,6 +607,7 @@ export default {
         let indexEnd = this.getTimeIndex(task.end)-1 // чтобы не занимать ячейку, не подходящую по id
         let sliceArray = this.$data.timesArray.slice(indexStart, indexEnd+1)
         task.timesArray = sliceArray.length === 0 ? ['23:30'] : sliceArray
+        console.log('color ' + task.color)
         this.paintTimesArray(task.timesArray, task.color + this.alphaChannel)
         for (let time of task.timesArray){
           this.busyTimesArray.push(time)
@@ -607,8 +621,8 @@ export default {
             if (this.currentMonth === date.getMonth() && this.currentYear === date.getFullYear()){
               document.getElementById((date.getDate() - 1).toString()).classList.add('calendar-number-current')
               if (this.selectedDay === "") this.chooseDay(date.getDate(), date.getDate()-1)
-              this.selectFunction(this.getRoomsFromDB).then(() => {
-                this.chooseRoom(this.getRooms[0])
+              this.selectFunction(this.getRoomsForDayFromDB, this.selectedDay).then(() => {
+                // if (this.getRooms.length !== 0) this.chooseRoom(this.getRooms[0])
               })
             }
             else document.getElementById((date.getDate() - 1).toString()).classList.remove('calendar-number-current')
@@ -657,7 +671,8 @@ export default {
     ...mapActions([
         'removeTask',
         'getRoomsFromDB',
-        'getTasksFromDB'
+        'getTasksFromDB',
+        'getRoomsForDayFromDB'
     ])
   }
 }
@@ -703,6 +718,10 @@ export default {
   }
   &-task-label{
     grid-template-columns: 1fr 50px;
+  }
+  &-squares{
+    grid-template-columns: repeat(48, 1fr);
+    grid-gap: 0;
   }
 }
 .calendar-month-el{
@@ -829,7 +848,13 @@ export default {
   white-space: nowrap;
   text-overflow: ellipsis;
   &-task {
-   width: 60px;
+   width: 90%;
+  }
+  &-room{
+    width: 80%;
+  }
+  &-room-label{
+    width: 50%;
   }
 }
 

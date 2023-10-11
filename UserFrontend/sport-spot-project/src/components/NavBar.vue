@@ -2,38 +2,40 @@
  <div class="container nav-bar">
    <div class="">
      <div class="grid-default">
-       <div class="">
-         <button
-             class="btn"
-             :class="page === 'Calendar' ? 'nav-bar-btn-on' : 'nav-bar-btn-off'"
-             @click="showPage('Calendar')"
-         >Календарь <br> загруженности
-         </button>
+       <div class="grid-default grid-default-main-buttons">
+         <div class="">
+           <button
+               class="btn"
+               :class="page === 'Calendar' ? 'nav-bar-btn-on' : 'nav-bar-btn-off'"
+               @click="showPage('Calendar')"
+           >Календарь <br> загруженности
+           </button>
+         </div>
+         <div class="">
+           <button
+               class="btn "
+               :class="page === 'Cameras' ? 'nav-bar-btn-on' : 'nav-bar-btn-off'"
+               @click="showPage('Cameras')">
+             Настройка <br> камер
+           </button>
+         </div>
+         <div class="">
+           <button
+               class="btn "
+               :class="page === 'Rooms' ? 'nav-bar-btn-on' : 'nav-bar-btn-off'"
+               @click="showPage('Rooms')">
+             Настройка <br> помещений
+           </button>
+         </div>
+         <div class="">
+           <button
+               class="btn nav-bar-btn-off"
+               @click="$emit('openExplorer')">
+             Анализ <br> архивных данных
+           </button>
+         </div>
        </div>
-       <div class="">
-         <button
-             class="btn "
-             :class="page === 'Cameras' ? 'nav-bar-btn-on' : 'nav-bar-btn-off'"
-             @click="showPage('Cameras')">
-           Настройка <br> камер
-         </button>
-       </div>
-       <div class="">
-         <button
-             class="btn "
-             :class="page === 'Rooms' ? 'nav-bar-btn-on' : 'nav-bar-btn-off'"
-             @click="showPage('Rooms')">
-           Настройка <br> помещений
-         </button>
-       </div>
-       <div class="">
-         <button
-             class="btn nav-bar-btn-off"
-             @click="$emit('openExplorer')">
-           Анализ <br> архивных данных
-         </button>
-       </div>
-         <div >
+         <div class="content content-end">
            <div class="dropdown">
              <div class="btn nav-bar-btn-off" >
                {{user.name}} <br> {{user.surname}}
@@ -116,8 +118,24 @@ export default {
 .grid-default{
   display: grid;
   grid-gap: 50px;
-  grid-template-columns: repeat(5, 1fr);
-
+  grid-template-columns: 60% 30%;
+  &-main-buttons{
+    grid-template-columns: repeat(4, 1fr);
+    grid-gap: 20px;
+  }
+}
+.content{
+  display: flex;
+  align-items: center;
+  &-center{
+    justify-content: center;
+  }
+  &-end{
+    justify-content: end;
+  }
+  &-start{
+    justify-content: start;
+  }
 }
 
 </style>
