@@ -60,7 +60,7 @@ class TaskArchiveRunner(Thread):
                                         ]
                                 }
                     print('sending')
-                    url = 'http://localhost:4998/appendDataToRoute'
+                    url = 'http://192.168.210.32:4998/appendDataToRoute'
                     myobj = {'query': f'SO{int(app.config["SPORT_OBJECT_ID"])}_data', 'data': dataToSend}
                     data = requests.post(url, json = myobj)
                     print('result',data.text)

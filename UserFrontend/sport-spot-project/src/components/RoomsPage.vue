@@ -15,9 +15,12 @@
           <label class="field">Просмотр</label>
         </div>
         <div class="col-3" >
-          <div class="row window camera col-12" @click="chooseRoom(room)" v-for="(room, index) in getRooms"
+          <div  :style="room.id === selectedRoom.id ? {background: '#a7a7a7'} : '' "
+                class="row window camera col-12"
+                @click="chooseRoom(selectedRoom)"
+                v-for="(selectedRoom, index) in getRooms"
                :key="index">
-            <span class="room-name">{{room.name}}</span>
+            <span class="room-name short-name short-name-room" :title="selectedRoom.name">{{selectedRoom.name}}</span>
           </div>
         </div>
 
@@ -229,7 +232,17 @@ export default {
       let returnResult
       if (!this.v$.room.$error) {
         console.log('Валидация прошла успешно')
-        returnResult = fetch('http://localhost:5000/setRoom', {
+        this.setRoom().then(() => {
+          if (!this.roomSelected) this.resetRoom()
+        })
+      }
+      else console.log('Валидация не прошла')
+      return returnResult
+    },
+    async setRoom() {
+      let returnResult
+      try{
+        returnResult = await fetch('http://localhost:5000/setRoom', {
           credentials: "include",
           method: 'POST',
           cors: 'no-cors',
@@ -241,21 +254,22 @@ export default {
             "name": this.room.name,
             "id": this.room.id,
           })
-          })
+        })
             .then(response => response.json())
             .then((response) => {
               console.log(response)
-              this.room.id = response.id
-              if (this.getRoomByID(response.id) === undefined) {
-                this.addRoom(Object.assign({}, this.room))
-                console.log('yesCheck')
+              if (response.id) {
+                this.room.id = response.id
+                if (this.getRoomByID(response.id) === undefined) {
+                  this.addRoom(Object.assign({}, this.room))
+                  console.log('yesCheck')
+                }
               }
-              this.v$.room.$reset()
-              if (this.sector.camId !== null) this.selectFunction(this.setSectorToDB, this.sector)
               return response
-            });
+            })
+      } catch (err) {
+        console.log(err)
       }
-      else console.log('Валидация не прошла')
       return returnResult
     },
     async getUnusedCameraSectorsByRoomIdFromDB() {
@@ -355,6 +369,7 @@ export default {
       this.room.sportObjectId = ''
       this.$store.state.unusedCameras = {}
       this.$store.state.usedCameras = {}
+      this.v$.room.$reset()
       this.resetSector()
     },
     resetSector() {
@@ -533,6 +548,16 @@ export default {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+.short-name {
+  display: inline-block;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  &-room{
+    width: 80%;
+  }
 }
 //:root{
 //  --td-height: 52px;

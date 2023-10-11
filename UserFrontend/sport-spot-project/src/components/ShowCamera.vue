@@ -66,7 +66,7 @@ export default {
         console.log('clean')
         this.$store.commit('clearRefreshInterval')
       }
-      interval = setInterval(() => this.selectFunction(this.refreshVideo), 5000)
+      interval = setInterval(() => this.selectFunction(this.refreshVideo), 10000) //5000
       this.$store.commit('setRefreshInterval', interval)
     },
     async refreshVideo() {
