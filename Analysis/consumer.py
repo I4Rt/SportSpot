@@ -16,7 +16,11 @@ from threading import Thread
 
 from producer import KafkaProducerPlus, json_serializer
 
-model = YOLO('model_n.pt')
+try:
+    model = YOLO('model_n.pt')
+except:
+    print("error in model_n.pt or file not found.")
+
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
@@ -38,7 +42,6 @@ def recognition(sectors, image):
     counter = 0
     for sector in sectors:
         border = []
-        # print("len", len(sector["points"]), sector["mode"])
         boxes = results[0].boxes
 
         if sector["mode"] == 1:
@@ -98,7 +101,6 @@ class Analysis(Thread):
         self.inner = inner
         self.outer = outer
         self.path = path
-        self.index = 0  # count of recognized images
         # host
         # TODO: check/make qeries
 
@@ -106,6 +108,17 @@ class Analysis(Thread):
 
         if not os.path.isdir(self.path):
             os.mkdir(self.path)
+
+        # Only for debugging
+        if not os.path.isdir(self.path + "/received"):
+            os.mkdir(self.path + "/received")
+        if not os.path.isdir(self.path + "/detected"):
+            os.mkdir(self.path + "/detected")
+        if not os.path.isfile(self.path + '/counter.txt'):
+            with open(self.path + '/counter.txt', 'x') as f:
+                f.write("0")
+                f.close()
+
         consumer = KafkaConsumerPlus(self.inner,
                                      "localhost:9092",
                                      "earliest",
@@ -121,8 +134,31 @@ class Analysis(Thread):
                 aggregationMode = 1
                 taskId = 0
                 res_counter = 0
-                self.index = len([name for name in os.listdir(self.path)
-                                  if os.path.isfile(os.path.join(self.path, name))]) // 2
+
+                # Only for debugging
+                with open(self.path + '/counter.txt', 'r') as f:
+                    count_images = str(int(f.read()) + 1)
+                    f.close()
+                count_images = "0"*(5 - len(count_images)) + count_images
+
+                threshold = 500
+                count_for_delete = 100
+                if len([filename for filename in os.listdir(self.path + "/received")]) > threshold:
+                    count_deleted = 0
+                    for filename in os.listdir(self.path + "/received"):
+                        if count_deleted < count_for_delete:
+                            os.remove(self.path + "/received/" + filename)
+                            count_deleted += 1
+                        else:
+                            break
+                    count_deleted = 0
+                    for filename in os.listdir(self.path + "/detected"):
+                        if count_deleted < count_for_delete:
+                            os.remove(self.path + "/detected/" + filename)
+                            count_deleted += 1
+                        else:
+                            break
+
                 for key_main in json.loads(msg.value):
                     if key_main == "taskId":
                         taskId = json.loads(msg.value)["taskId"]
@@ -134,10 +170,10 @@ class Analysis(Thread):
                             readImgBytes = base64.b64decode(key_data["img"])
                             npImg = frombuffer(readImgBytes, 'u1')
                             decImg = cv2.imdecode(npImg, 1)
-                            cv2.imwrite(f'{self.path}/image_received_' + str(self.index) + '.jpg', decImg)
+                            cv2.imwrite(f'{self.path}/received/image_received_' + count_images + '.jpg', decImg)
 
                             cnt, image = recognition(key_data["sectors"], decImg)
-                            cv2.imwrite(f'{self.path}/image_detected_' + str(self.index) + '.jpg', image)
+                            cv2.imwrite(f'{self.path}/detected/image_detected_' + count_images + '.jpg', image)
 
                             list_counter.append(cnt)
                         # Sum the people, aggregationMode=1
@@ -149,10 +185,14 @@ class Analysis(Thread):
                 print('taskId', taskId)
 
                 # Only for debugging
-                image = cv2.imread(f'{self.path}/image_detected_' + str(self.index) + '.jpg', 1)
+                image = cv2.imread(f'{self.path}/detected/image_detected_' + count_images + '.jpg', 1)
                 cv2.putText(image, str(res_counter), (20, 60), cv2.FONT_HERSHEY_SIMPLEX , 1,
                             (255, 255, 255), 2, cv2.LINE_AA)
-                cv2.imwrite(f'{self.path}/image_detected_' + str(self.index) + '.jpg', image)
+                cv2.imwrite(f'{self.path}/detected/image_detected_' + count_images + '.jpg', image)
+                # Only for debugging
+                with open(self.path + '/counter.txt', 'w') as f:
+                    f.write(count_images)
+                    f.close()
 
                 producer.sendMessage({"taskId": taskId, "counter": res_counter, "aggregationMode": aggregationMode,
                                       "datetime": str(datetime.datetime.now())})
