@@ -8,16 +8,26 @@
           <div class="grid-default" :class="roomSelected ? 'grid-default-room-label' : ''">
             <div class="content content-start">
               <label v-if="!roomSelected" class="field">Помещения</label>
-              <label style="margin-left: 5px" v-if="roomSelected" class="field short-name short-name-room-label">
-                {{this.getRoomByID(roomSelectedId).name}} {{`${this.selectedDay.substr(3, 2)}/${this.selectedDay.substr(0, 2)}/${this.selectedDay.substr(6, 4)}`}}
-              </label>
+              <div v-if="roomSelected" class="grid-default grid-default-room-label" style="margin-left: 5px">
+                <label
+                    class="field short-name short-name-room-label"
+                    :title="getRoomByID(roomSelectedId).name">
+                  {{getRoomByID(roomSelectedId).name}}
+                </label>
+                <div class="content content-start">
+                  <label class="field">
+                    {{`${selectedDay.substr(3, 2)}/${selectedDay.substr(0, 2)}/${selectedDay.substr(6, 4)}`}}
+                  </label>
+                </div>
+
+              </div>
             </div>
             <div class="content content-end">
               <button v-if="roomSelected"
                       class="btn btn-primary"
                       style="margin-right: 5px; padding: 3px 8px"
                       @click="roomSelected = false; busyTimesArray = []; selectFunction(getRoomsForDayFromDB, selectedDay)">Назад</button>
-              <label v-if="taskSelected" class="field">Выбран архивный файл</label>
+              <label v-if="getFile !== null" class="field">Выбран архивный файл</label>
             </div>
           </div>
         </div>
@@ -161,7 +171,13 @@
                   <label> Комментарий: </label>
                   <input class="input-field" type="text" v-model.trim="task.comment">
                 </div>
-                <div style="width: 100%; margin-bottom: 10px" class="grid-default">
+                <div>
+<!--                  <input v-model="duplicateTask" type="checkbox">-->
+<!--                  <span style="font-size: 14px">  Сохранять мероприятие каждый день до:</span>-->
+<!--                  <input v-model.trim="duplicateDate" type="date">-->
+<!--                  <button @click="checkToDuplicate">Dupl</button>-->
+                </div>
+                <div style="width: 100%; margin-bottom: 10px; margin-top: 10px" class="grid-default">
                   <button type="submit" class="btn btn-success" >Сохранить</button>
                   <button
                       type="button"
@@ -176,34 +192,33 @@
                 <div style="text-align: center" v-if="!tasksLoaded">
                   <img :src="require('../assets/gifs/black-spinner.svg')" style="width: 100px; height: 100px" alt="">
                 </div>
-                <div v-else class="row" v-for="(selectedTask, index) in this.getTasksByRoomID(roomSelectedId)" :key="index">
-                  <div  :style="task.id === selectedTask.id ? {background: '#a7a7a7'} : '' "
-                        class="window camera col-6 grid-default"
-                        @click="chooseTask(selectedTask)">
-                    <span class="name short-name short-name-task" :title="selectedTask.name">{{selectedTask.name}}</span>
-                    <span class="name" style="margin-left: 10px">{{selectedTask.statistics}}/{{selectedTask.targetCount}}</span>
+                <div v-else class="scroll scroll-tasks">
+                  <div
+                      class="grid-default grid-default-tasks"
+                      v-for="(selectedTask, index) in this.getTasksByRoomID(roomSelectedId)"
+                      :key="index"
+                      style="margin-left: 5px; margin-bottom: 5px">
+                    <div  :style="task.id === selectedTask.id ? {background: '#a7a7a7'} : '' "
+                          class="window camera grid-default grid-default-task-info"
+                          @click="chooseTask(selectedTask)">
+                      <span class="name short-name short-name-task" :title="selectedTask.name">{{selectedTask.name}}</span>
+                      <span class="name content content-end" style="margin-left: 10px">{{selectedTask.statistics}}/{{selectedTask.targetCount}}</span>
+                    </div>
+                    <div class="">
+                      <input class="hidden-button"
+                             type="color"
+                             @change="repaintTimesArray(selectedTask.timesArray, selectedTask.color + alphaChannel); save(selectedTask)"
+                             v-model.trim="selectedTask.color" disabled>
+                    </div>
+                    <div class="">
+                      <button class="hidden-button"
+                              @click="removeTask(selectedTask.id); resetTask(); clearTimesArray(selectedTask.timesArray)">
+                        <img src="../assets/icons/delete.png" alt="">
+                      </button>
+                    </div>
                   </div>
-                  <div class="col-2">
-                    <input class="hidden-button"
-                           type="color"
-                           @change="repaintTimesArray(selectedTask.timesArray, selectedTask.color + alphaChannel); save(selectedTask)"
-                           v-model.trim="selectedTask.color" disabled>
-                  </div>
-                  <div class="col-2">
-                    <button class="hidden-button"
-                            @click="removeTask(selectedTask.id); resetTask(); clearTimesArray(selectedTask.timesArray)">
-                      <img src="../assets/icons/delete.png" alt="">
-                    </button>
-                  </div>
-<!--                  <div class="col-2">-->
-<!--                    <button-->
-<!--                        title="Установить время"-->
-<!--                        class="hidden-button"-->
-<!--                        @click="clearTimesArray(task.timesArray)">-->
-<!--                      <img src="../assets/icons/time.png" alt="">-->
-<!--                    </button>-->
-<!--                  </div>-->
                 </div>
+
             </div>
           </div>
         </div>
@@ -213,9 +228,8 @@
 </template>
 
 <script>
-import {mapGetters} from "vuex"
-import {mapActions} from 'vuex'
-import { useVuelidate } from '@vuelidate/core'
+import {mapActions, mapGetters} from "vuex"
+import {useVuelidate} from '@vuelidate/core'
 import {integer, required} from "@vuelidate/validators";
 // import explorerPage from "@/components/ExplorerPage";
 
@@ -243,7 +257,8 @@ export default {
         interval: 5,
         statistics: 0
       },
-      // generatedColor: this.randomHex(),
+      duplicateTask: false,
+      duplicateDate: '',
 
       tasksLoaded: false,
 
@@ -306,6 +321,31 @@ export default {
     this.createTimesArray()
   },
   methods: {
+    async checkToDuplicate(task){
+      let returnResult = true
+      console.log('\ndupl')
+        let date1 = new Date(this.selectedDay)
+        let date2 = new Date(new Date(this.duplicateDate).getTime()- 7*60*60*1000)
+        let dates = (date2 - date1)/86400000 // количество дней
+      console.log('dupl ' + this.duplicateDate)
+      console.log('dates ' + dates + ' ' + date1 + ' ' + new Date(date2))
+        for (let i = 0; i < dates; i++){
+          console.log('nextDay')
+          console.log(date1)
+          date1 = this.nextDay(date1)
+          console.log(date1)
+          let finalDate = this.getCorrectFormatDate(new Date(date1))
+          console.log(finalDate)
+          let resp = await this.setTaskToDB(task, finalDate)
+          if (resp === 'error') returnResult = false
+        }
+        if (!this.taskSelected){
+          this.paintTasks()
+          this.resetTask()
+        }
+        if (!returnResult) alert('Мероприятия записались не полностью. Возможно, произошло наложение времени')
+    },
+
     save(saveTask){
       let task = this.task
       if (arguments.length === 1) task = saveTask
@@ -313,16 +353,41 @@ export default {
       console.log('save')
       if (this.getFile !== null) {
         if (new Date(this.selectedDay + ' ' + this.indexStart + ':00') >= new Date()) alert("Нельзя задать дату и время после текущего")
-        else this.setTaskToDB(task)
+        else if (this.duplicateDate){
+          this.setTaskToDB(task, this.selectedDay).then(() => {
+            this.checkToDuplicate(task)
+          })
+        }
+        else {
+          this.setTaskToDB(task, this.selectedDay).then(() => {
+            if (!this.taskSelected){
+              this.paintTasks()
+              this.resetTask()
+            }
+          })
+        }
       }
       else {
         if (new Date(this.selectedDay + ' ' + this.indexStart + ':00') < new Date()) alert("Нельзя задать дату и время до текущего")
-        else this.setTaskToDB(task)
+        else if (this.duplicateDate) {
+          this.setTaskToDB(task, this.selectedDay).then(() => {
+            this.checkToDuplicate(task)
+          })
+        }
+        else {
+          this.setTaskToDB(task, this.selectedDay).then(() => {
+            if (!this.taskSelected){
+              this.paintTasks()
+              this.resetTask()
+            }
+          })
+        }
       }
     },
 
-    async setTaskToDB(task) {
+    async setTaskToDB(task, date) {
       let returnResult
+      console.log('\nsetDate ' + date)
 
       if(task.timesArray.length >= 1){
         if (!this.v$.task.$error) {
@@ -333,8 +398,8 @@ export default {
             "roomId": this.roomSelectedId,
             "targetCount": task.targetCount,
             "interval": task.interval,
-            "begin": `${this.selectedDay} ${this.indexStart}:00`,
-            "end": `${this.indexEnd === '00:00' ? this.nextDay() : this.selectedDay} ${this.indexEnd}:00`,
+            "begin": `${date} ${this.indexStart}:00`,
+            "end": `${this.indexEnd === '00:00' ? this.nextDay(new Date(date)) : date} ${this.indexEnd}:00`,
             "color": task.color
           }
           if (this.getFile === null){
@@ -368,17 +433,19 @@ export default {
                     }
                     else if (response.answer === 'recogonition beguns') alert ('Выбранный файл анализируется')
                     else{
+                      response = 'error'
                       alert('Что-то пошло не так, попробуйте еще раз')
                       this.resetTask()
                     }
                     this.canChangeTimesArray = false
                     this.repaintTimesArray(task.timesArray, task.color + this.alphaChannel).then((value => {
+                      // if (!this.taskSelected) this.taskSelected = ''
                       console.log(value)
-                      if (!this.taskSelected) this.resetTask()
-                      this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
-                        this.paintTasks()
-                        this.$store.state.file = null
-                      })
+                      if (date === this.selectedDay){
+                        this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
+                          this.$store.state.file = null
+                        })
+                      }
                         })
                     )
                   } catch (err) {
@@ -417,10 +484,12 @@ export default {
       this.task.timesArray = ''
       this.taskSelected = false
       this.v$.task.$reset()
-      this.indexEnd = ''
-      this.indexStart = ''
       this.canChangeTimesArray = true
       this.paintTimesArray(this.task.timesArray, '#ffffff66')
+      this.indexEnd = ''
+      this.indexStart = ''
+      this.duplicateTask = false
+      this.duplicateDate = ''
       return 0
     },
 
@@ -463,10 +532,13 @@ export default {
       this.clearTimesArray(timesArray)
       this.paintTimesArray(timesArray, color).then((value => {
         console.log(value)
-            this.setBusyTimeArray(timesArray).then((value => {
+            this.setBusyTimeArray(timesArray).then((value) => {
+              console.log('clearTimesArray')
                   console.log(value)
-                  // this.task.timesArray = []
-                })
+                  this.task.timesArray = []
+              console.log('timesArray')
+              console.log(this.task.timesArray)
+                }
             )
       })
       )
@@ -502,7 +574,6 @@ export default {
           } catch (err) {
             console.log(err)
           }
-
         }
       }
       return 'paintTimesArray'
@@ -515,10 +586,13 @@ export default {
       }
     },
     async setBusyTimeArray(timesArray){
-      for (let time of timesArray){
-        this.busyTimesArray.push(time)
-      }
-      return 'setBusyTimeArray'
+      new Promise((resolve) => {
+        for (let time of timesArray){
+          this.busyTimesArray.push(time)
+        }
+        console.log('setBusyTimeArray')
+        resolve('ok')
+      })
     },
     chooseMonth(value){
       if (value === 'back'){
@@ -543,15 +617,27 @@ export default {
       console.log('selectedDay: ' + this.selectedDay)
       if (this.selectedDay !== '') this.chooseDay(day, (parseInt(day) - 1).toString())
     },
-    nextDay() {
-      let thisDay = new Date(this.selectedDay)
+    nextDay(thisDay) {
+      if (typeof thisDay === "string") thisDay = new Date(new Date(thisDay)-7*60*60*1000)
+      console.log('value ' + thisDay)
+      console.log('indexEnd ' + this.indexEnd)
       thisDay.setDate(thisDay.getDate() + 1)
 
       let monthStr = thisDay.getMonth() + 1
       let day = thisDay.getDate()
       if (day.toString().length !== 2) day = `0${day}`
       if (monthStr.toString().length !== 2) monthStr = `0${monthStr}`
+      console.log('endValue\n')
       return `${monthStr}/${day}/${thisDay.getFullYear()}`
+    },
+    getCorrectFormatDate(date){
+      console.log('correct Format')
+      console.log(date)
+      let day = date.getDate()
+      let monthStr = date.getMonth() + 1
+      if (day.toString().length !== 2) day = `0${day}`
+      if (monthStr.toString().length !== 2) monthStr = `0${monthStr}`
+      return `${monthStr}/${day}/${date.getFullYear()}`
     },
     chooseDay(day, index){
       console.log(`\nchooseDay ${day} ${index}`)
@@ -559,10 +645,7 @@ export default {
         index = (this.days[this.days.length-2])
         day = index + 1
       }
-      let monthStr = this.currentMonth + 1
-      if (day.toString().length !== 2) day = `0${day}`
-      if (monthStr.toString().length !== 2) monthStr = `0${monthStr}`
-      this.selectedDay = `${monthStr}/${day}/${this.currentYear}`
+      this.selectedDay = this.getCorrectFormatDate(new Date(`${this.currentMonth+1}-${day}-${this.currentYear}`))
 
       console.log(index + ' ' + this.prevCalendarIndex)
 
@@ -612,6 +695,7 @@ export default {
         for (let time of task.timesArray){
           this.busyTimesArray.push(time)
         }
+        if (!this.taskSelected) this.resetTask()
       }
     },
     setCurrentDay(){
@@ -714,7 +798,7 @@ export default {
   grid-gap: 10px;
   grid-template-columns: 1fr 1fr;
   &-room-label{
-    grid-template-columns: 1fr 80px;
+    grid-template-columns: 60% 40%;
   }
   &-task-label{
     grid-template-columns: 1fr 50px;
@@ -722,6 +806,13 @@ export default {
   &-squares{
     grid-template-columns: repeat(48, 1fr);
     grid-gap: 0;
+  }
+  &-tasks{
+    grid-template-columns: 60% 20% 10%;
+  }
+  &-task-info{
+    grid-template-columns: 70% 20%;
+    grid-gap: 5px;
   }
 }
 .calendar-month-el{
@@ -820,11 +911,28 @@ export default {
     }
   }
 }
-.scroll-table{
-  height: 480px;
-  overflow-x: auto;
-  margin-top: 5px;
+.scroll{
+  overflow-y: auto;
+  &-tasks{
+    height: 250px;
+  }
 }
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+  border-radius: 10px;
+}
+//.scroll-table{
+//  height: 480px;
+//  overflow-x: auto;
+//  margin-top: 5px;
+//}
 .input-field{
   outline: none;
   width: 100px;
@@ -848,13 +956,13 @@ export default {
   white-space: nowrap;
   text-overflow: ellipsis;
   &-task {
-   width: 90%;
+   width: 80%;
   }
   &-room{
     width: 80%;
   }
   &-room-label{
-    width: 50%;
+    width: 100%;
   }
 }
 

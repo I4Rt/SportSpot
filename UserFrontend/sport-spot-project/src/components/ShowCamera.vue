@@ -1,5 +1,5 @@
 <template>
-  <div class="col-12 window">
+  <div class="col-12 window window-onPage">
     <p>Изображение</p>
     <div style="width: 400px; height: 300px">
       <img
@@ -16,7 +16,7 @@
       </canvas>
     </div>
     <br>
-    <button @click="endDraw(); selectFunction(setSectorToDB, sector)">Заполнить область</button>
+    <button @click="endDraw(); convertToPercents()">Заполнить область</button>
     <button @click="removeSectorPoints(); selectFunction(setSectorToDB, sector)">Очистить всё</button>
     <br>
     <span>Информация сектора</span>
@@ -25,13 +25,14 @@
     <br>
     <span>Техническая информация:</span>
     <ul>
-      <li>
-      <span class="short-name" :title="sector.points">Границы:</span>
-      </li>
-      <li>Высота от пола:</li>
+<!--      <li>-->
+<!--      <span class="short-name" :title="sector.points">Границы:</span>-->
+<!--      </li>-->
+<!--      <li>Высота от пола:</li>-->
       <li>Тип сектора: <span v-if="sectorSelected">{{getSectorTypeByID(sector.typeId).name}}</span></li>
     </ul>
     <p>Справка:</p>
+<!--    <button @click="convertToPixels">convert</button>-->
   </div>
 </template>
 
@@ -131,12 +132,48 @@ export default {
       this.ctx.fill()
       this.drawClicks = 0
     },
+    convertToPixels(){
+      console.log('\nconvertToPixels')
+      new Promise((resolve) => {
+        let points = this.sector.points
+        console.log(points)
+        for (let i = 0; i < points.length; i++){
+          console.log(points[i][0] + ';' + points[i][1])
+          points[i][0] = points[i][0]/100 * this.canvas.width
+          points[i][1] = points[i][1]/100 * this.canvas.height
+          console.log(points[i][0] + ';' + points[i][1])
+        }
+        resolve('ok')
+      }).then(() => {
+        console.log('after all')
+        this.drawSectorPoints()
+      })
+    },
+    convertToPercents(){
+      console.log('\nconvertToPercents')
+      new Promise((resolve) => {
+        let points = this.sector.points
+        for (let i = 0; i < points.length; i++){
+          console.log(points[i][0] + ';' + points[i][1])
+          points[i][0] = points[i][0]*100 / this.canvas.width
+          points[i][1] = points[i][1]*100 / this.canvas.height
+          console.log(points[i][0] + ';' + points[i][1])
+        }
+        resolve('ok')
+      }).then(() => {
+        console.log('after all')
+        this.selectFunction(this.setSectorToDB, this.sector)
+        // this.selectFunction(this.setSectorToDB, this.sector)
+      })
+    },
     drawSectorPoints() {
       let interval = setInterval(() => {
         console.log('check')
         if (this.sector.id !== null){
           clearInterval(interval)
           console.log('drawSectorPoints')
+
+
           let points = this.sector.points
           console.log(this.sector)
           this.ctx.moveTo(points[0][0], points[0][1])
@@ -171,7 +208,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 canvas {
   border: 1px solid black;
   background: none;
@@ -182,5 +219,12 @@ canvas {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+.window{
+  box-shadow: 0 3px 4px rgba(0,0,0,.25);
+  border-radius: 10px;
+&-onPage{
+   height: 550px;
+ }
 }
 </style>

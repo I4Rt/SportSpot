@@ -18,17 +18,18 @@
           <template v-if="getCameras === null">
             <img :src="require('../assets/gifs/black-spinner.svg')" style="width: 100px; height: 100px" alt="">
           </template>
-          <template v-else>
-            <div :style="camera.id === selectedCamera.id ? {background: '#a7a7a7'} : '' "
-                class="row window camera col-12 "
-                @click="chooseCamera(selectedCamera)"
-                v-for="(selectedCamera, index) in getCameras" :key="index">
-            <span class="cam-name short-name short-name-camera" :title="selectedCamera.name">{{selectedCamera.name}}</span>
-<!--            <span class="cam-ip">{{selectedCamera.ip}}</span>-->
-          </div>
-          </template>
+            <div v-else class="scroll scroll-cameras">
+              <div :style="camera.id === selectedCamera.id ? {background: '#a7a7a7'} : '' "
+                   style="margin-left: 5px"
+                   class="row window camera col-11 "
+                   @click="chooseCamera(selectedCamera)"
+                   v-for="(selectedCamera, index) in getCameras" :key="index">
+                <span class="cam-name short-name short-name-camera" :title="selectedCamera.name">{{selectedCamera.name}}</span>
+                <!--            <span class="cam-ip">{{selectedCamera.ip}}</span>-->
+              </div>
+            </div>
         </div>
-        <div class="col-4 window">
+        <div class="col-4 window window-onPage">
           <label style="font-weight: 700; margin-top: 10px">Изображение</label>
           <form style="margin-top: 10px" @submit.prevent="save" class="needs-validation">
             <div class="">
@@ -114,23 +115,31 @@
               <img :src="require('../assets/gifs/black-spinner.svg')" style="width: 100px; height: 100px" alt="">
             </template>
             <template v-else>
-              <div v-for="(cameraSector, index) in getSectorsByCameraID(this.camera.id)" :key="index">
-                <div class="grid-default grid-default-sectors">
-                  <input class="input-field-sector" type="text" v-model.trim="cameraSector.name" placeholder="Название">
-                  <select v-model="cameraSector.typeId">
-                    <option v-for="(sectorType, index) in getSectorTypes" :value="sectorType.id" :key="index">
-                      {{sectorType.name}}
-                    </option>
-                  </select>
-                  <button class="hidden-button content content-center" @click="chooseSector(cameraSector)">
-                    <img v-if="sectorSelected && sector.id === cameraSector.id" style="margin-bottom: 5px" :src="require('../assets/icons/eye-opened.png')" alt="">
-                    <img v-else style="margin-bottom: 5px" :src="require('../assets/icons/eye-closed.png')" alt="">
-                  </button>
-                  <button
-                      class="hidden-button"
-                      @click="selectFunction(removeSector,cameraSector.id); $refs.showCamera.drawClear()">
-                    <img style="margin-bottom: 5px" :src="require('../assets/icons/delete.png')" alt="">
-                  </button>
+              <div v-if="cameraSelected" class="scroll scroll-sectors">
+                <div
+                    v-for="(cameraSector, index) in getSectorsByCameraID(this.camera.id)"
+                    style="margin-top: 5px; margin-left: 5px"
+                    :key="index">
+                  <div class="grid-default grid-default-sectors">
+                    <input class="input-field-sector" type="text" v-model.trim="cameraSector.name" placeholder="Название">
+                    <select v-model="cameraSector.typeId">
+                      <option v-for="(sectorType, index) in getSectorTypes" :value="sectorType.id" :key="index">
+                        {{sectorType.name}}
+                      </option>
+                    </select>
+                    <button class="hidden-button content content-center" @click="chooseSector(cameraSector)">
+                      <img v-if="sectorSelected && sector.id === cameraSector.id" style="margin-bottom: 5px" :src="require('../assets/icons/eye-opened.png')" alt="">
+                      <img v-else style="margin-bottom: 5px" :src="require('../assets/icons/eye-closed.png')" alt="">
+                    </button>
+                    <button
+                        class="hidden-button"
+                        @click="cameraSector.id === null ?
+                          this.$store.commit('deleteSector', index) :
+                          selectFunction(removeSector,cameraSector.id);
+                        $refs.showCamera.drawClear()">
+                      <img style="margin-bottom: 5px" :src="require('../assets/icons/delete.png')" alt="">
+                    </button>
+                  </div>
                 </div>
               </div>
             </template>
@@ -300,6 +309,13 @@ export default {
           .then((response) => {
             console.log('setCameraResponse ' + response)
             console.log(response)
+            if (response.answer === 'Save error, check identy if values (full route may be)'){
+              alert('Данные не сохранены. Возможно, камера с указанным путем уже существует')
+              // try {
+              //   this.camera.fullRoute = this.getCameraByID(this.camera.id).fullRoute
+              // }
+            }
+
             if (response.id) {
               this.camera.id = response.id
               let cameraCopy = Object.assign({}, this.camera)
@@ -365,6 +381,10 @@ export default {
       }
       else this.showSector(cameraSector)
     },
+    // deleteSector(index){
+    //
+    //   this.$store.state.deleteSector(index)
+    // },
     showSector(sector) {
       console.log('5 show')
       if (sector.id !== null) {
@@ -374,7 +394,14 @@ export default {
         if (this.sector.points.length !== 0) {
 
           console.log(this.sector)
-          this.$refs.showCamera.drawSectorPoints()
+          let interval = setInterval(() => {
+            console.log('check sector points')
+            // console.log('id' + camera.id + ' ' + this.camera.id)
+            if (this.sector.sectors !== []){
+              this.$refs.showCamera.convertToPixels()
+              clearInterval(interval)
+            }
+          }, 100)
         }
       }
     },
@@ -420,8 +447,16 @@ export default {
     addSectorToCamera() {
       console.log('p')
       this.resetSector()
-      this.sector.camId = this.camera.id
-      this.$store.commit('addSector', Object.assign({}, this.sector))
+      try{
+        if (!this.cameraSelected) alert('Выберите камеру')
+        else {
+          this.sector.camId = this.camera.id
+          this.$store.commit('addSector', Object.assign({}, this.sector))
+        }
+      } catch (err) {
+        console.log(err)
+      }
+
     },
     ...mapActions([
         'addCamera',
@@ -456,6 +491,12 @@ export default {
 .window{
   box-shadow: 0 3px 4px rgba(0,0,0,.25);
   border-radius: 10px ;
+  &-border-bottom{
+    box-shadow: 0 0 4px rgba(0,0,0,.25);
+  }
+  &-onPage{
+    height: 550px;
+  }
 }
 .input-field{
   outline: none;
@@ -552,4 +593,25 @@ export default {
     width: 90%;
   }
 }
+.scroll{
+  overflow-y: auto;
+  &-sectors{
+    height: 300px;
+  }
+  &-cameras{
+    height: 550px;
+  }
+}
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+  border-radius: 10px;
+}
+
 </style>

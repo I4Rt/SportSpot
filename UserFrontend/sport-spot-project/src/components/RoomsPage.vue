@@ -14,7 +14,7 @@
         <div class="col-5">
           <label class="field">Просмотр</label>
         </div>
-        <div class="col-3" >
+        <div class="col-3 scroll scroll-rooms" >
           <div  :style="room.id === selectedRoom.id ? {background: '#a7a7a7'} : '' "
                 class="row window camera col-12"
                 @click="chooseRoom(selectedRoom)"
@@ -61,17 +61,22 @@
           <div class="row" v-if="roomSelected">
             <div class="col-6">
               <label>Назначенные</label>
-              <div id="table-used" class="window linear-table">
+              <div id="table-used" class="window linear-table scroll">
                 <table >
                   <tr  v-for="(camera, index) in getUsedCameras" :key="index">
                     <td style="width: 200px" >
-                      <span style="margin-left: 5px">{{ camera.name }}</span>
+                      <span
+                          style="margin-left: 5px"
+                          class="short-name short-name-camera"
+                          :title="camera.name">
+                        {{ camera.name }}
+                      </span>
                       <table>
                         <tr v-for="(cameraSector, index) in camera.sectors" :key="index" >
                           <td style="padding: 0">
                             <div id="td-height-used" class="grid-default" style="height: 26px">
                               <div style="margin-left: 20px">
-                                <span class="sector-name" :title="cameraSector.name">{{ cameraSector.name }}</span>
+                                <span class="short-name short-name-sector" :title="cameraSector.name">{{ cameraSector.name }}</span>
                               </div>
                               <div class="content content-end">
                                 <button class="hidden-button swipe-sector" @click="selectFunction(removeSectorFromRoom,cameraSector)">
@@ -93,17 +98,22 @@
             </div>
             <div class="col-6">
               <label>Существующие</label>
-              <div id="table-unused" class="window linear-table">
+              <div id="table-unused" class="window linear-table scroll">
                 <table >
                   <tr v-for="(camera, index) in getUnusedCameras" :key="index">
                     <td style="width: 200px" >
-                      <span style="margin-left: 5px">{{ camera.name }}</span>
+                      <span
+                          style="margin-left: 5px"
+                          class="short-name short-name-camera"
+                          :title="camera.name">
+                        {{ camera.name }}
+                      </span>
                       <table>
                         <tr v-for="(cameraSector, index) in camera.sectors" :key="index" >
                           <td style="padding: 0">
                             <div id="td-height-unused" class="grid-default" style="height: 26px">
                               <div style="margin-left: 20px">
-                                <span class="sector-name" :title="cameraSector.name">{{ cameraSector.name }}</span>
+                                <span class="short-name short-name-sector" :title="cameraSector.name">{{ cameraSector.name }}</span>
                               </div>
                               <div class="content content-end">
                                 <button class="hidden-button swipe-sector" @click="selectFunction(setSectorToRoom,cameraSector)">
@@ -232,8 +242,13 @@ export default {
       let returnResult
       if (!this.v$.room.$error) {
         console.log('Валидация прошла успешно')
-        this.setRoom().then(() => {
-          if (!this.roomSelected) this.resetRoom()
+        this.setRoom().then((response) => {
+          if (!this.roomSelected){
+            this.resetRoom().then(() => {
+              console.log('setAfterReset')
+              this.chooseRoom(this.getRoomByID(response.id))
+            })
+          }
         })
       }
       else console.log('Валидация не прошла')
@@ -273,6 +288,7 @@ export default {
       return returnResult
     },
     async getUnusedCameraSectorsByRoomIdFromDB() {
+      console.log('getUnused')
       return await fetch(`http://localhost:5000/getUnusedCameraSectorsByRoomId?roomId=${this.room.id}`, {
         credentials: "include",
         method: 'GET',
@@ -353,24 +369,28 @@ export default {
                   })
             }
             if (this.sector.points.length !== 0) {
-              this.$refs.showCamera.drawSectorPoints()
+              this.$refs.showCamera.convertToPixels()
             }
             clearInterval(interval)
           }
         }, 100)
       }
     },
-    resetRoom(){
-      let roomCopy = Object.assign({}, this.room)
-      this.room = roomCopy
-      this.room.name = ''
-      this.room.classId = null
-      this.room.id = null
-      this.room.sportObjectId = ''
-      this.$store.state.unusedCameras = {}
-      this.$store.state.usedCameras = {}
-      this.v$.room.$reset()
-      this.resetSector()
+    async resetRoom(){
+      new Promise((resolve) => {
+        let roomCopy = Object.assign({}, this.room)
+        this.room = roomCopy
+        this.room.name = ''
+        this.room.classId = null
+        this.room.id = null
+        this.room.sportObjectId = ''
+        this.$store.state.unusedCameras = {}
+        this.$store.state.usedCameras = {}
+        this.v$.room.$reset()
+        this.roomSelected = false
+        this.resetSector()
+        resolve('ok')
+      })
     },
     resetSector() {
       this.sector.camId = null
@@ -387,9 +407,10 @@ export default {
       }
     },
     reloadCameraSectors() {
+      console.log('reload')
       this.selectFunction(this.getUsedCameraSectorsByRoomIdFromDB)
       this.selectFunction(this.getUnusedCameraSectorsByRoomIdFromDB).then(() => {
-        let tdHeight = 26
+        let tdHeight = 28.8
         // try{
         //   tdHeight = document.getElementById("td-height-unused").offsetHeight
         // } catch (err) {
@@ -511,7 +532,23 @@ export default {
   background: linear-gradient(#dfe0ff 50%, #ffffff 50%) local;
   background-size: 100% var(--td-height);
   height: var(--table-height);
+}
+.scroll{
   overflow-y: auto;
+  &-rooms{
+    height: 550px;
+  }
+}
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+  border-radius: 10px;
 }
 .content{
   display: flex;
@@ -542,13 +579,13 @@ export default {
   box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
   border-radius: 10px;
 }
-.sector-name {
-  display: inline-block;
-  width: 4em;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
+//.sector-name {
+//  display: inline-block;
+//  width: 4em;
+//  overflow: hidden;
+//  white-space: nowrap;
+//  text-overflow: ellipsis;
+//}
 .short-name {
   display: inline-block;
   width: 100%;
@@ -557,6 +594,12 @@ export default {
   text-overflow: ellipsis;
   &-room{
     width: 80%;
+  }
+  &-camera{
+    width: 8em;
+  }
+  &-sector{
+    width: 4em;
   }
 }
 //:root{

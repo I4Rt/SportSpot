@@ -52,6 +52,9 @@ export default createStore({
         addSector (state, sector) {
             state.sectors.push(sector)
         },
+        deleteSector (state, index) {
+          state.sectors.splice(index, 1)
+        },
         setSector (state, sector) {
             state.sector = sector
         },
