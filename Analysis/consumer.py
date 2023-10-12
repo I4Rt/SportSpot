@@ -52,14 +52,16 @@ def recognition(sectors, image):
             border.append([0, decImg_h])
 
         for box in boxes:
-            # Only for debugging
-            cv2.rectangle(image, (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())),
-                          (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())), (0, 255, 0), 2)
-            cv2.putText(image, str(round(box.conf[0].item(), 2)), (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item()) - 5),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2, cv2.LINE_AA)
-
             if checkIfInside(border, (box.xyxy[0][0].item(), box.xyxy[0][3].item())) and \
                     checkIfInside(border, (box.xyxy[0][2].item(), box.xyxy[0][3].item())):
+
+                # Only for debugging
+                cv2.rectangle(image, (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())),
+                              (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())), (0, 255, 0), 2)
+                cv2.putText(image, str(round(box.conf[0].item(), 2)),
+                            (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item()) - 5),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2, cv2.LINE_AA)
+
                 counter += 1
 
     return counter, image  # image we should remove after debugging
