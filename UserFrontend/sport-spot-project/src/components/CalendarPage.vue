@@ -339,10 +339,15 @@ export default {
           let resp = await this.setTaskToDB(task, finalDate)
           if (resp === 'error') returnResult = false
         }
-        if (!this.taskSelected){
-          this.paintTasks()
-          this.resetTask()
-        }
+        this.repaintTimesArray(task.timesArray, task.color + this.alphaChannel).then((value => {
+            console.log(value)
+            if (!this.taskSelected) this.resetTask()
+            this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
+              this.paintTasks()
+              this.$store.state.file = null
+            })
+          })
+      )
         if (!returnResult) alert('Мероприятия записались не полностью. Возможно, произошло наложение времени')
     },
 
@@ -360,10 +365,15 @@ export default {
         }
         else {
           this.setTaskToDB(task, this.selectedDay).then(() => {
-            if (!this.taskSelected){
-              this.paintTasks()
-              this.resetTask()
-            }
+            this.repaintTimesArray(task.timesArray, task.color + this.alphaChannel).then((value => {
+                  console.log(value)
+                  if (!this.taskSelected) this.resetTask()
+                  this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
+                    this.paintTasks()
+                    this.$store.state.file = null
+                  })
+                })
+            )
           })
         }
       }
@@ -376,10 +386,15 @@ export default {
         }
         else {
           this.setTaskToDB(task, this.selectedDay).then(() => {
-            if (!this.taskSelected){
-              this.paintTasks()
-              this.resetTask()
-            }
+            this.repaintTimesArray(task.timesArray, task.color + this.alphaChannel).then((value => {
+                  console.log(value)
+                  if (!this.taskSelected) this.resetTask()
+                  this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
+                    this.paintTasks()
+                    this.$store.state.file = null
+                  })
+                })
+            )
           })
         }
       }
@@ -438,16 +453,16 @@ export default {
                       this.resetTask()
                     }
                     this.canChangeTimesArray = false
-                    this.repaintTimesArray(task.timesArray, task.color + this.alphaChannel).then((value => {
-                      // if (!this.taskSelected) this.taskSelected = ''
-                      console.log(value)
-                      if (date === this.selectedDay){
-                        this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
-                          this.$store.state.file = null
-                        })
-                      }
-                        })
-                    )
+                    // this.repaintTimesArray(task.timesArray, task.color + this.alphaChannel).then((value => {
+                    //   // if (!this.taskSelected) this.taskSelected = ''
+                    //   console.log(value)
+                    //   if (date === this.selectedDay){
+                    //     this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
+                    //       this.$store.state.file = null
+                    //     })
+                    //   }
+                    //     })
+                    // )
                   } catch (err) {
                     console.log(err)
                   }
@@ -554,7 +569,7 @@ export default {
         if (!this.busyTimesArray.includes(i)){
           try {
             if (sliceArray.includes(i)){
-              // console.log(sliceArray)
+              console.log(sliceArray)
               // console.log('include ' + i)
               document.getElementById(i).style.setProperty('--color', color)
               document.getElementById(i).classList.add('linear-table-td-painted')
@@ -686,9 +701,12 @@ export default {
       this.tasksLoaded = true
       console.log(`roomSelected ${this.roomSelectedId}`)
       for (let task of this.getTasksByRoomID(this.roomSelectedId)){
+        console.log(`\n tasks: ${task.begin}; ${task.end}`)
+        console.log(task)
         let indexStart = this.getTimeIndex(task.begin)
         let indexEnd = this.getTimeIndex(task.end)-1 // чтобы не занимать ячейку, не подходящую по id
-        let sliceArray = this.$data.timesArray.slice(indexStart, indexEnd+1)
+        let sliceArray = this.$data.timesArray.slice(indexStart, indexEnd+1) // $data - копирование без реактивности
+        console.log(`\ncheck: ${indexStart}; ${indexEnd}; ${sliceArray}`)
         task.timesArray = sliceArray.length === 0 ? ['23:30'] : sliceArray
         console.log('color ' + task.color)
         this.paintTimesArray(task.timesArray, task.color + this.alphaChannel)
