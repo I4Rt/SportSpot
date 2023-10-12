@@ -83,29 +83,25 @@ class AgregatedDataSender(Thread, Jsonifyer):
                     
                     
                     result = {}
-                    for task in tasks:
-                        unmathcedRooms.remove(task.roomId)
-                        result[str(task.roomId)] = {'real':task.getCount(), 'plan':task.targetCount}
+                    
                         
                     for roomId in unmathcedRooms:
                         try:
                             result[str(roomId)] = {'real':SideDataHolder.getInstance().rooms[roomId], 'plan': 0}
                         except:
                             pass
-                    
+                    for task in tasks:
+                        unmathcedRooms.remove(task.roomId)
+                        result[str(task.roomId)] = {'real':task.getCount(), 'plan':task.targetCount}
+                        
                     changedData = SideDataHolder.getInstance().changedTasks.copy()
                     setData = []
                     for task in tasks:
                         for _ in changedData:
                             if _ == task.id:
-                                changedData.remove(changedData)
+                                changedData.remove(_)
                                 setData.append(_)
                                 #SideDataHolder.getInstance().removeTask(_)
-                                
-                    
-                    
-                            
-                            
                     
                     # sending
                     dateToAgregate = timeToRun
@@ -157,6 +153,7 @@ class AgregatedDataSender(Thread, Jsonifyer):
                             dateStr = str(localDate)
                             timeStr = str(localTime).replace(':', '-')
                             try:
+                                print('setting real-plan', {'real':task.getCount(), 'plan':task.targetCount})
                                 resultToSend[dateStr][timeStr][task.roomId] = {'real':task.getCount(), 'plan':task.targetCount}
                             except:
                                 try:
@@ -167,7 +164,7 @@ class AgregatedDataSender(Thread, Jsonifyer):
                             curDate += timedelta(minutes=30)
                         setData.append(taskId)
                         
-                    print(resultToSend)
+                    print('data to send for api', resultToSend)
                     try:
                         url = 'http://localhost:4999/management/appendData'
                         myobj = {'SOId': app.config['SPORT_OBJECT_ID'], 'data': resultToSend, 'rooms': [room.getParamsList() for room in rooms]}

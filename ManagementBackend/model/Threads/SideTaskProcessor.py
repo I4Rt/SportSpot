@@ -74,7 +74,7 @@ class SideTaskProcessor(Thread, Jsonifyer):
                             # print(camData['camera'].getRoute(), len(str(frame)))
                             if not ( frame is None ):
                                 
-                                output = cv2.resize(frame, (600, 400))
+                                output = frame # cv2.resize(frame, (600, 400))
                                 
                                 localData = {
                                     "img": FileUtil.convertImageToBytes(output),

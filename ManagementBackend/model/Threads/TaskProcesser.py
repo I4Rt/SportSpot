@@ -88,6 +88,7 @@ class TaskProcessor(Thread, Jsonifyer):
                         with open('tasks.log', 'a') as file:
                             file.write(st)
                         print(f'camera  {camData["camId"]} task {self.task.id} generator error', e, 'time to task finish is', self.task.end, 'now is', datetime.now())
+                        continue
                     if frame is not None:
                         output = frame # cv2.resize(frame, (600, 400))
                         localData = {

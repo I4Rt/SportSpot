@@ -201,12 +201,12 @@ class Task(db.Model, BaseData):
         return db.session.query(Task).filter(
             or_(
                 and_(
-                    prevTime >= cls.begin, 
-                    curTime < cls.begin
+                    curTime > cls.begin, 
+                    curTime <= cls.end
                 ),
                 and_(
-                    prevTime >= cls.end, 
-                    curTime <= cls.end
+                    prevTime >= cls.begin, 
+                    prevTime < cls.end
                 )
             )
         ).all()
