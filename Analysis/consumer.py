@@ -52,14 +52,16 @@ def recognition(sectors, image):
             border.append([0, decImg_h])
 
         for box in boxes:
-            # Only for debugging
-            cv2.rectangle(image, (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())),
-                          (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())), (0, 255, 0), 2)
-            cv2.putText(image, str(round(box.conf[0].item(), 2)), (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item()) - 5),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2, cv2.LINE_AA)
-
             if checkIfInside(border, (box.xyxy[0][0].item(), box.xyxy[0][3].item())) and \
                     checkIfInside(border, (box.xyxy[0][2].item(), box.xyxy[0][3].item())):
+
+                # Only for debugging
+                cv2.rectangle(image, (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())),
+                              (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())), (0, 255, 0), 2)
+                cv2.putText(image, str(round(box.conf[0].item(), 2)),
+                            (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item()) - 5),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2, cv2.LINE_AA)
+
                 counter += 1
 
     return counter, image  # image we should remove after debugging
@@ -120,7 +122,7 @@ class Analysis(Thread):
                 taskId = 0
                 res_counter = 0
                 self.index = len([name for name in os.listdir(self.path)
-                                  if os.path.isfile(os.path.join(self.path, name))])
+                                  if os.path.isfile(os.path.join(self.path, name))]) // 2
                 for key_main in json.loads(msg.value):
                     if key_main == "taskId":
                         taskId = json.loads(msg.value)["taskId"]
@@ -132,9 +134,10 @@ class Analysis(Thread):
                             readImgBytes = base64.b64decode(key_data["img"])
                             npImg = frombuffer(readImgBytes, 'u1')
                             decImg = cv2.imdecode(npImg, 1)
+                            cv2.imwrite(f'{self.path}/image_received_' + str(self.index) + '.jpg', decImg)
 
                             cnt, image = recognition(key_data["sectors"], decImg)
-                            cv2.imwrite(f'{self.path}/image_receive_' + str(self.index) + '.jpg', image)
+                            cv2.imwrite(f'{self.path}/image_detected_' + str(self.index) + '.jpg', image)
 
                             list_counter.append(cnt)
                         # Sum the people, aggregationMode=1
@@ -146,13 +149,14 @@ class Analysis(Thread):
                 print('taskId', taskId)
 
                 # Only for debugging
-                image = cv2.imread(f'{self.path}/image_receive_' + str(self.index) + '.jpg', 1)
+                image = cv2.imread(f'{self.path}/image_detected_' + str(self.index) + '.jpg', 1)
                 cv2.putText(image, str(res_counter), (20, 60), cv2.FONT_HERSHEY_SIMPLEX , 1,
                             (255, 255, 255), 2, cv2.LINE_AA)
-                cv2.imwrite(f'{self.path}/image_receive_' + str(self.index) + '.jpg', image)
+                cv2.imwrite(f'{self.path}/image_detected_' + str(self.index) + '.jpg', image)
 
                 producer.sendMessage({"taskId": taskId, "counter": res_counter, "aggregationMode": aggregationMode,
                                       "datetime": str(datetime.datetime.now())})
+
             except Exception as e:
                 print('got error', e)
 
