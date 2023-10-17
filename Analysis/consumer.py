@@ -3,6 +3,7 @@ import json
 import cv2
 import base64
 import datetime
+import numpy as np
 from numpy import frombuffer
 
 from flask import Flask, request, json
@@ -54,6 +55,9 @@ def recognition(sectors, image):
             border.append([decImg_w, decImg_h])
             border.append([0, decImg_h])
 
+        pts = np.array(border, np.int32)
+        #pts = pts.reshape((-1, 1, 2))
+        cv2.polylines(image, [pts], True, (0, 255, 255))
         for box in boxes:
             if checkIfInside(border, (box.xyxy[0][0].item(), box.xyxy[0][3].item())) and \
                     checkIfInside(border, (box.xyxy[0][2].item(), box.xyxy[0][3].item())):
@@ -139,7 +143,7 @@ class Analysis(Thread):
                 with open(self.path + '/counter.txt', 'r') as f:
                     count_images = str(int(f.read()) + 1)
                     f.close()
-                count_images = "0"*(5 - len(count_images)) + count_images
+                count_images = "0"*(8 - len(count_images)) + count_images
 
                 threshold = 500
                 count_for_delete = 100
