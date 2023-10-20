@@ -19,7 +19,7 @@ from threading import Thread
 from producer import KafkaProducerPlus, json_serializer
 
 try:
-    #model = YOLO('model_n.pt')
+    # model = YOLO('model_n.pt')
     model = YOLO('model_x.pt')
 except:
     print("error in model_x.pt or file not found.")
@@ -36,7 +36,7 @@ def checkIfInside(border, target):
     return Polygon(border).contains(Point(target[0], target[1]))
 
 
-def recognition(sectors, image):
+def recognition(sectors, image, taskID):
     """Recognition image and send the counter."""
 
     results = model.predict(source=image, imgsz=1920, conf=0.2, classes=[0])
@@ -67,7 +67,6 @@ def recognition(sectors, image):
                     checkIfInside(border, (box.xyxy[0][2].item(), box.xyxy[0][3].item())):
                 if (box.xyxy[0][0].item() not in points and box.xyxy[0][1].item() not in points and \
                         box.xyxy[0][2].item() not in points and box.xyxy[0][3].item() not in points):
-
                     points.add(round(box.xyxy[0][0].item()))
                     points.add(round(box.xyxy[0][1].item()))
                     points.add(round(box.xyxy[0][2].item()))
@@ -81,8 +80,18 @@ def recognition(sectors, image):
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
 
                     counter += 1
+            else:
+                # Only for debugging
+                cv2.rectangle(image, (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())),
+                              (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())), (0, 0, 255), 2)
+                cv2.putText(image, str(round(box.conf[0].item(), 2)),
+                            (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item()) - 5),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+
     cv2.putText(image, str(counter), (20, 60), cv2.FONT_HERSHEY_SIMPLEX,
-                1, (255, 255, 255), 2, cv2.LINE_AA)
+                1, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(image, str(taskID), (20, 100), cv2.FONT_HERSHEY_SIMPLEX,
+                1, (0, 255, 0), 2, cv2.LINE_AA)
 
     return counter, image  # image we should remove after debugging
 
@@ -199,7 +208,6 @@ class Analysis(Thread):
                         list_counter = []
 
                         for key_data in json.loads(msg.value)["data"]:
-                            
                             # Only for debugging
                             with open(self.path + '/counter.txt', 'r') as f:
                                 count_images = str(int(f.read()) + 1)
@@ -214,7 +222,7 @@ class Analysis(Thread):
                             decImg = cv2.imdecode(npImg, 1)
                             cv2.imwrite(f'{self.path}/received/image_received_' + count_images + '.jpg', decImg)
 
-                            cnt, image = recognition(key_data["sectors"], decImg)
+                            cnt, image = recognition(key_data["sectors"], decImg, json.loads(msg.value)["taskID"])
                             cv2.imwrite(f'{self.path}/detected/image_detected_' + count_images + '.jpg', image)
 
                             list_counter.append(cnt)
@@ -251,7 +259,7 @@ if __name__ == "__main__":
     analizer1.start()
     analizer2.start()
     analizer3.start()
-    
+
     # print('just print')
     '''
     # if not os.path.isdir('queue'):
