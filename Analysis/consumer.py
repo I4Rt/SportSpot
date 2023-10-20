@@ -246,9 +246,12 @@ class Analysis(Thread):
 if __name__ == "__main__":
     analizer1 = Analysis('fileData', 'SO1_data', 'SO1_receive')
     analizer2 = Analysis('streamData', 'SO1_local', 'SO1_receive')
+    analizer3 = Analysis('streamSideData', 'SO1_side', 'SO1_receive')
 
     analizer1.start()
     analizer2.start()
+    analizer3.start()
+    
     # print('just print')
     '''
     # if not os.path.isdir('queue'):
