@@ -1,5 +1,6 @@
 from kafka import KafkaConsumer, KafkaProducer
 import json
+import glob
 import cv2
 import base64
 import datetime
@@ -18,9 +19,10 @@ from threading import Thread
 from producer import KafkaProducerPlus, json_serializer
 
 try:
-    model = YOLO('model_n.pt')
+    #model = YOLO('model_n.pt')
+    model = YOLO('model_x.pt')
 except:
-    print("error in model_n.pt or file not found.")
+    print("error in model_x.pt or file not found.")
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
@@ -37,7 +39,7 @@ def checkIfInside(border, target):
 def recognition(sectors, image):
     """Recognition image and send the counter."""
 
-    results = model.predict(source=image, imgsz=1920, conf=0.5, classes=[0])
+    results = model.predict(source=image, imgsz=1920, conf=0.2, classes=[0])
     decImg_h, decImg_w = image.shape[:2]
 
     counter = 0
@@ -51,25 +53,36 @@ def recognition(sectors, image):
             border.append(border[0])
         else:
             border.append([0, 0])
-            border.append([decImg_w, 0])
-            border.append([decImg_w, decImg_h])
-            border.append([0, decImg_h])
+            border.append([decImg_w - 1, 0])
+            border.append([decImg_w - 1, decImg_h - 1])
+            border.append([0, decImg_h - 1])
+            border.append([0, 0])
 
+        # Set of points. We should check all points of previous boxes because it may be the same person
+        points = set()
         pts = np.array(border, np.int32)
-        #pts = pts.reshape((-1, 1, 2))
         cv2.polylines(image, [pts], True, (0, 255, 255))
         for box in boxes:
             if checkIfInside(border, (box.xyxy[0][0].item(), box.xyxy[0][3].item())) and \
                     checkIfInside(border, (box.xyxy[0][2].item(), box.xyxy[0][3].item())):
+                if (box.xyxy[0][0].item() not in points and box.xyxy[0][1].item() not in points and \
+                        box.xyxy[0][2].item() not in points and box.xyxy[0][3].item() not in points):
 
-                # Only for debugging
-                cv2.rectangle(image, (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())),
-                              (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())), (0, 255, 0), 2)
-                cv2.putText(image, str(round(box.conf[0].item(), 2)),
-                            (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item()) - 5),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2, cv2.LINE_AA)
+                    points.add(round(box.xyxy[0][0].item()))
+                    points.add(round(box.xyxy[0][1].item()))
+                    points.add(round(box.xyxy[0][2].item()))
+                    points.add(round(box.xyxy[0][3].item()))
 
-                counter += 1
+                    # Only for debugging
+                    cv2.rectangle(image, (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())),
+                                  (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())), (0, 255, 0), 2)
+                    cv2.putText(image, str(round(box.conf[0].item(), 2)),
+                                (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item()) - 5),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+
+                    counter += 1
+    cv2.putText(image, str(counter), (20, 60), cv2.FONT_HERSHEY_SIMPLEX,
+                1, (255, 255, 255), 2, cv2.LINE_AA)
 
     return counter, image  # image we should remove after debugging
 
@@ -139,29 +152,43 @@ class Analysis(Thread):
                 taskId = 0
                 res_counter = 0
 
-                # Only for debugging
-                with open(self.path + '/counter.txt', 'r') as f:
-                    count_images = str(int(f.read()) + 1)
-                    f.close()
-                count_images = "0"*(8 - len(count_images)) + count_images
-
-                threshold = 500
+                threshold_for_delete = 500
                 count_for_delete = 100
-                if len([filename for filename in os.listdir(self.path + "/received")]) > threshold:
+
+                if len([filename for filename in os.listdir(self.path + "/received")]) > threshold_for_delete:
                     count_deleted = 0
-                    for filename in os.listdir(self.path + "/received"):
+                    files = list(filter(os.path.isfile, glob.glob(self.path + "/received/" + "*")))
+                    files.sort(key=lambda x: os.path.getmtime(x))
+                    for filename in files:
                         if count_deleted < count_for_delete:
-                            os.remove(self.path + "/received/" + filename)
+                            os.remove(filename)
                             count_deleted += 1
                         else:
                             break
+
                     count_deleted = 0
-                    for filename in os.listdir(self.path + "/detected"):
+                    files = list(filter(os.path.isfile, glob.glob(self.path + "/detected/" + "*")))
+                    files.sort(key=lambda x: os.path.getmtime(x))
+                    for filename in files:
                         if count_deleted < count_for_delete:
-                            os.remove(self.path + "/detected/" + filename)
+                            os.remove(filename)
                             count_deleted += 1
                         else:
                             break
+
+                    # for filename in os.listdir(self.path + "/received"):
+                    #     if count_deleted < count_for_delete:
+                    #         os.remove(self.path + "/received/" + filename)
+                    #         count_deleted += 1
+                    #     else:
+                    #         break
+                    # count_deleted = 0
+                    # for filename in os.listdir(self.path + "/detected"):
+                    #     if count_deleted < count_for_delete:
+                    #         os.remove(self.path + "/detected/" + filename)
+                    #         count_deleted += 1
+                    #     else:
+                    #         break
 
                 for key_main in json.loads(msg.value):
                     if key_main == "taskId":
@@ -170,7 +197,18 @@ class Analysis(Thread):
                         aggregationMode = json.loads(msg.value)["aggregationMode"]
                     if key_main == "data":
                         list_counter = []
+
                         for key_data in json.loads(msg.value)["data"]:
+                            
+                            # Only for debugging
+                            with open(self.path + '/counter.txt', 'r') as f:
+                                count_images = str(int(f.read()) + 1)
+                                f.close()
+                            with open(self.path + '/counter.txt', 'w') as f:
+                                f.write(count_images)
+                                f.close()
+                            count_images = "0" * (8 - len(count_images)) + count_images
+
                             readImgBytes = base64.b64decode(key_data["img"])
                             npImg = frombuffer(readImgBytes, 'u1')
                             decImg = cv2.imdecode(npImg, 1)
@@ -189,14 +227,14 @@ class Analysis(Thread):
                 print('taskId', taskId)
 
                 # Only for debugging
-                image = cv2.imread(f'{self.path}/detected/image_detected_' + count_images + '.jpg', 1)
-                cv2.putText(image, str(res_counter), (20, 60), cv2.FONT_HERSHEY_SIMPLEX , 1,
-                            (255, 255, 255), 2, cv2.LINE_AA)
-                cv2.imwrite(f'{self.path}/detected/image_detected_' + count_images + '.jpg', image)
+                # image = cv2.imread(f'{self.path}/detected/image_detected_' + count_images + '.jpg', 1)
+                # cv2.putText(image, str(res_counter), (20, 60), cv2.FONT_HERSHEY_SIMPLEX , 1,
+                #            (255, 255, 255), 2, cv2.LINE_AA)
+                # cv2.imwrite(f'{self.path}/detected/image_detected_' + count_images + '.jpg', image)
                 # Only for debugging
-                with open(self.path + '/counter.txt', 'w') as f:
-                    f.write(count_images)
-                    f.close()
+                # with open(self.path + '/counter.txt', 'w') as f:
+                #     f.write(count_images)
+                #     f.close()
 
                 producer.sendMessage({"taskId": taskId, "counter": res_counter, "aggregationMode": aggregationMode,
                                       "datetime": str(datetime.datetime.now())})
@@ -208,11 +246,9 @@ class Analysis(Thread):
 if __name__ == "__main__":
     analizer1 = Analysis('fileData', 'SO1_data', 'SO1_receive')
     analizer2 = Analysis('streamData', 'SO1_local', 'SO1_receive')
-    analizer3 = Analysis('streamSideData', 'SO1_side', 'SO1_receive')
 
     analizer1.start()
     analizer2.start()
-    analizer3.start()
     # print('just print')
     '''
     # if not os.path.isdir('queue'):
