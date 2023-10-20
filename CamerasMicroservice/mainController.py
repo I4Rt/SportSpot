@@ -12,9 +12,13 @@ from datetime import datetime
 from random import randint
 from tools.FileUtil import *
 
+from tools.LastTimeRunnerHolder import LastTimeRunnerHolder as ltrh
+
+
 @cross_origin
 @app.route('/getFrame')
 def getFrame():
+    ltrh.setLastTime(datetime.now())
     try:
         route = request.args.get('route')
     except:
@@ -33,6 +37,7 @@ def getFrame():
 @cross_origin
 @app.route('/refreshVideo')
 def refreshVideo():
+    ltrh.setLastTime(datetime.now())
     try:
         route = request.args.get('route')
         duration = float(request.args.get('duration'))
@@ -44,6 +49,7 @@ def refreshVideo():
 @cross_origin
 @app.route('/initVideo')
 def initVideo():
+    ltrh.setLastTime(datetime.now())
     print('got fetch')
     try:
         b = time()

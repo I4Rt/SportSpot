@@ -58,8 +58,12 @@ class TaskProcessor(Thread, Jsonifyer):
                 connectCounter = 0
                 while connectCounter < self.__trys:
                     print('here')
-                
-                    framesIter = FrameGetter.getStream(camData["camera"].getRoute(), duration)
+                    try:
+                        framesIter = FrameGetter.getStream(camData["camera"].getRoute(), duration)
+                    except Exception as e:
+                        print('generator create exception', e)
+                        connectCounter += 1
+                        continue
                     # print(framesIter)
                     if framesIter is not None:
                         camData["generator"]  = framesIter

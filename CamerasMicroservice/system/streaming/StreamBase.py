@@ -4,6 +4,8 @@ from time import sleep
 class StreamBase:
     __initialized:bool = False
     __streams = []
+    __needContinue = True
+    __thread = None
     @classmethod
     def _getStreams(cls):
         if cls.__initialized:
@@ -19,7 +21,7 @@ class StreamBase:
     
     @classmethod
     def __checkStreams(cls):
-        while True:
+        while cls.__needContinue:
             sleep(2)
             # print(f'inside: {cls.__streams}')
             if len(cls.__streams) > 0:
@@ -31,8 +33,16 @@ class StreamBase:
     
     @classmethod
     def init(cls):
-        t = Thread(target=cls.__checkStreams)
-        t.start()
+        if cls.__thread:
+            try:
+                cls.__initialized = False
+                cls.__needContinue = False
+                cls.__thread.join()
+            except:
+                pass
+        cls.__needContinue = True
+        cls.__thread = Thread(target=cls.__checkStreams)
+        cls.__thread.start()
         cls.__initialized = True
     
     # @classmethod
