@@ -63,7 +63,7 @@ def recognition(sectors, image, taskId):
         pts = np.array(border, np.int32)
         cv2.polylines(image, [pts], True, (0, 255, 255))
         for box in boxes:
-            if checkIfInside(border, (box.xyxy[0][0].item(), box.xyxy[0][3].item())) and \
+            if checkIfInside(border, (box.xyxy[0][0].item(), box.xyxy[0][3].item())) or \
                     checkIfInside(border, (box.xyxy[0][2].item(), box.xyxy[0][3].item())):
                 if (box.xyxy[0][0].item() not in points and box.xyxy[0][1].item() not in points and \
                         box.xyxy[0][2].item() not in points and box.xyxy[0][3].item() not in points):
@@ -215,8 +215,11 @@ class Analysis(Thread):
                             decImg = cv2.imdecode(npImg, 1)
                             cv2.imwrite(f'{self.path}/received/image_received_' + count_images + '.jpg', decImg)
 
-                            cnt, image = recognition(key_data["sectors"], decImg, json.loads(msg.value)["taskId"])
-                            cv2.imwrite(f'{self.path}/detected/image_detected_' + count_images + '.jpg', image)
+                            try:
+                                cnt, image = recognition(key_data["sectors"], decImg, json.loads(msg.value)["taskId"])
+                                cv2.imwrite(f'{self.path}/detected/image_detected_' + count_images + '.jpg', image)
+                            except:
+                                print("Error during loading tag 'sectors' or 'taskId'")
 
                             list_counter.append(cnt)
                         # Sum the people, aggregationMode=1
