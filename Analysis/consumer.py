@@ -36,7 +36,7 @@ def checkIfInside(border, target):
     return Polygon(border).contains(Point(target[0], target[1]))
 
 
-def recognition(sectors, image, taskID):
+def recognition(sectors, image, taskId):
     """Recognition image and send the counter."""
 
     results = model.predict(source=image, imgsz=1920, conf=0.2, classes=[0])
@@ -80,6 +80,13 @@ def recognition(sectors, image, taskID):
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
 
                     counter += 1
+                else:
+                    # Only for debugging
+                    cv2.rectangle(image, (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())),
+                                  (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())), (255, 0, 0), 2)
+                    cv2.putText(image, str(round(box.conf[0].item(), 2)),
+                                (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item()) - 5),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
             else:
                 # Only for debugging
                 cv2.rectangle(image, (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())),
@@ -90,7 +97,7 @@ def recognition(sectors, image, taskID):
 
     cv2.putText(image, str(counter), (20, 60), cv2.FONT_HERSHEY_SIMPLEX,
                 1, (0, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(image, str(taskID), (20, 100), cv2.FONT_HERSHEY_SIMPLEX,
+    cv2.putText(image, str(taskId), (20, 100), cv2.FONT_HERSHEY_SIMPLEX,
                 1, (0, 255, 0), 2, cv2.LINE_AA)
 
     return counter, image  # image we should remove after debugging
@@ -185,20 +192,6 @@ class Analysis(Thread):
                         else:
                             break
 
-                    # for filename in os.listdir(self.path + "/received"):
-                    #     if count_deleted < count_for_delete:
-                    #         os.remove(self.path + "/received/" + filename)
-                    #         count_deleted += 1
-                    #     else:
-                    #         break
-                    # count_deleted = 0
-                    # for filename in os.listdir(self.path + "/detected"):
-                    #     if count_deleted < count_for_delete:
-                    #         os.remove(self.path + "/detected/" + filename)
-                    #         count_deleted += 1
-                    #     else:
-                    #         break
-
                 for key_main in json.loads(msg.value):
                     if key_main == "taskId":
                         taskId = json.loads(msg.value)["taskId"]
@@ -222,7 +215,7 @@ class Analysis(Thread):
                             decImg = cv2.imdecode(npImg, 1)
                             cv2.imwrite(f'{self.path}/received/image_received_' + count_images + '.jpg', decImg)
 
-                            cnt, image = recognition(key_data["sectors"], decImg, json.loads(msg.value)["taskID"])
+                            cnt, image = recognition(key_data["sectors"], decImg, json.loads(msg.value)["taskId"])
                             cv2.imwrite(f'{self.path}/detected/image_detected_' + count_images + '.jpg', image)
 
                             list_counter.append(cnt)
@@ -233,16 +226,6 @@ class Analysis(Thread):
                         else:
                             res_counter = max(list_counter)
                 print('taskId', taskId)
-
-                # Only for debugging
-                # image = cv2.imread(f'{self.path}/detected/image_detected_' + count_images + '.jpg', 1)
-                # cv2.putText(image, str(res_counter), (20, 60), cv2.FONT_HERSHEY_SIMPLEX , 1,
-                #            (255, 255, 255), 2, cv2.LINE_AA)
-                # cv2.imwrite(f'{self.path}/detected/image_detected_' + count_images + '.jpg', image)
-                # Only for debugging
-                # with open(self.path + '/counter.txt', 'w') as f:
-                #     f.write(count_images)
-                #     f.close()
 
                 producer.sendMessage({"taskId": taskId, "counter": res_counter, "aggregationMode": aggregationMode,
                                       "datetime": str(datetime.datetime.now())})
@@ -259,44 +242,3 @@ if __name__ == "__main__":
     analizer1.start()
     analizer2.start()
     analizer3.start()
-
-    # print('just print')
-    '''
-    # if not os.path.isdir('queue'):
-    #     os.mkdir('queue')
-
-    # consumer  = KafkaConsumerPlus("SO1_local",
-    #                               "localhost:9092",
-    #                               "earliest",
-    #                               "consumer-group-a")
-
-    # print("starting the consumer ImageReceiver")
-
-    # for msg in consumer.consumer:
-    #     aggregationMode = 1
-    #     taskId = 0
-    #     res_counter = 0
-    #     for key_main in json.loads(msg.value):
-    #         if key_main == "taskId":
-    #             taskId = json.loads(msg.value)["taskId"]
-    #         if key_main == "aggregationMode":
-    #             aggregationMode = json.loads(msg.value)["aggregationMode"]
-    #         if key_main == "data":
-    #             list_counter = []
-    #             for key_data in json.loads(msg.value)["data"]:
-    #                 readImgBytes = base64.b64decode(key_data["img"])
-    #                 npImg = frombuffer(readImgBytes, 'u1')
-    #                 decImg = cv2.imdecode(npImg, 1)
-    #                 cv2.imwrite("queue/image_receive.jpg", decImg)
-
-    #                 list_counter.append(recognition(key_data["sectors"]))
-    #             # Sum the people, aggregationMode=1
-    #             if aggregationMode == 1:
-    #                 res_counter = sum(list_counter)
-    #             # Find maximum, aggregationMode=2
-    #             else:
-    #                 res_counter = max(list_counter)
-
-    #     producer.sendMessage({"taskId":  taskId, "counter": res_counter, "aggregationMode": aggregationMode,
-    #                           "datetime": str(datetime.datetime.now())})
-    '''
