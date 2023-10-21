@@ -95,9 +95,9 @@ def recognition(sectors, image, taskId):
                             (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item()) - 5),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
 
-    cv2.putText(image, str(counter), (20, 100), cv2.FONT_HERSHEY_SIMPLEX,
+    cv2.putText(image, str(counter), (20, 120), cv2.FONT_HERSHEY_SIMPLEX,
                 1, (0, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(image, str(taskId), (20, 140), cv2.FONT_HERSHEY_SIMPLEX,
+    cv2.putText(image, str(taskId), (20, 160), cv2.FONT_HERSHEY_SIMPLEX,
                 1, (0, 255, 0), 2, cv2.LINE_AA)
 
     return counter, image  # image we should remove after debugging
