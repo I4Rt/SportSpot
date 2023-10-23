@@ -262,27 +262,28 @@ export default {
           });
       return returnResult
     },
-    getSectorsByCameraIDFromDB() {
+    async getSectorsByCameraIDFromDB() {
       let returnResult
-      fetch(`http://localhost:5000/getSectorsByCameraID?id=${this.camera.id}`, {
-        credentials: "include",
-        method: 'GET',
-        cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-      })
-          .then(response => response.json())
-          .then((response) => {
-            returnResult = response
-            // console.log('preload')
-            // let preloaderEl = document.getElementById('preloaded')
-            // preloaderEl.classList.add('hidden');
-            console.log('sectors ')
-            console.log(response[0])
-            this.$store.state.sectors = response
-            console.log(this.$store.state.sectors)
-          });
+      try{
+        returnResult = await fetch(`http://localhost:5000/getSectorsByCameraID?id=${this.camera.id}`, {
+          credentials: "include",
+          method: 'GET',
+          cors: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8',
+          },
+        })
+            .then(response => response.json())
+            .then((response) => {
+              console.log('sectors ')
+              console.log(response[0])
+              this.$store.state.sectors = response
+              console.log(this.$store.state.sectors)
+              return response
+            });
+      } catch (err){
+        console.log(err)
+      }
       return returnResult
     },
     async setCamera() {
@@ -580,7 +581,8 @@ export default {
   grid-gap: 10px;
   grid-template-columns: 1fr 1fr;
   &-sectors{
-    grid-template-columns: repeat(4, 1fr)
+    grid-template-columns: repeat(4, 1fr);
+    width: 90%;
   }
 }
 .short-name {

@@ -19,7 +19,6 @@
                     {{`${selectedDay.substr(3, 2)}/${selectedDay.substr(0, 2)}/${selectedDay.substr(6, 4)}`}}
                   </label>
                 </div>
-
               </div>
             </div>
             <div class="content content-end">
@@ -76,13 +75,15 @@
           </div>
           <div v-else-if="!roomSelected" class="row">
             <div class="col-12">
-              <div class="row window camera col-12" @click="chooseRoom(room)" v-for="(room, index) in getRooms"
-                   :key="index" style="margin-top: 10px; margin-left: 0; padding-bottom: 10px">
-                <span class="name short-name short-name-room" :title="room.name">{{room.name}}</span>
-                <div style="width: 100%" class="grid-default grid-default-squares">
-                  <div v-for="(square, index) in room.selectedTime" :key="index"
-                       style="width: 10px; height: 10px; border: 1px solid black"
-                       :style="square === 0 ? {'background-color': 'white'} : {'background-color': 'greenyellow'}">
+              <div class="scroll scroll-rooms">
+                <div class="row window camera col-12" @click="chooseRoom(room)" v-for="(room, index) in getRooms"
+                     :key="index" style="margin-top: 10px; margin-left: 0; padding-bottom: 10px">
+                  <span class="name short-name short-name-room" :title="room.name">{{room.name}}</span>
+                  <div style="width: 100%" class="grid-default grid-default-squares">
+                    <div v-for="(square, index) in room.selectedTime" :key="index"
+                         style="width: 10px; height: 10px; border: 1px solid black"
+                         :style="square === 0 ? {'background-color': 'white'} : {'background-color': 'greenyellow'}">
+                    </div>
                   </div>
                 </div>
               </div>
@@ -933,6 +934,9 @@ export default {
   overflow-y: auto;
   &-tasks{
     height: 250px;
+  }
+  &-rooms{
+    height: 500px;
   }
 }
 ::-webkit-scrollbar {
