@@ -43,8 +43,10 @@ def recognition(sectors, image, taskId):
     decImg_h, decImg_w = image.shape[:2]
 
     counter = 0
+    points = set()
     for sector in sectors:
         border = []
+        points.clear()
         boxes = results[0].boxes
 
         if sector["mode"] == 1:
@@ -59,18 +61,19 @@ def recognition(sectors, image, taskId):
             border.append([0, 0])
 
         # Set of points. We should check all points of previous boxes because it may be the same person
-        points = set()
         pts = np.array(border, np.int32)
         cv2.polylines(image, [pts], True, (0, 255, 255))
         for box in boxes:
             if checkIfInside(border, (box.xyxy[0][0].item(), box.xyxy[0][3].item())) or \
                     checkIfInside(border, (box.xyxy[0][2].item(), box.xyxy[0][3].item())):
-                if (box.xyxy[0][0].item() not in points and box.xyxy[0][1].item() not in points and \
-                        box.xyxy[0][2].item() not in points and box.xyxy[0][3].item() not in points):
-                    points.add(round(box.xyxy[0][0].item()))
-                    points.add(round(box.xyxy[0][1].item()))
-                    points.add(round(box.xyxy[0][2].item()))
-                    points.add(round(box.xyxy[0][3].item()))
+                if ((round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())) not in points and \
+                        (round(box.xyxy[0][2].item()), round(box.xyxy[0][1].item())) not in points and\
+                        (round(box.xyxy[0][0].item()), round(box.xyxy[0][3].item())) not in points and \
+                        (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())) not in points):
+                    points.add((round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())))
+                    points.add((round(box.xyxy[0][2].item()), round(box.xyxy[0][1].item())))
+                    points.add((round(box.xyxy[0][0].item()), round(box.xyxy[0][3].item())))
+                    points.add((round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())))
 
                     # Only for debugging
                     cv2.rectangle(image, (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())),
@@ -229,6 +232,12 @@ class Analysis(Thread):
                         else:
                             res_counter = max(list_counter)
                 print('taskId', taskId)
+
+                # Only for debugging
+                if str(taskId)[:4] == "side":
+                    with open(self.path + "/" + str(taskId) + ".txt", "a") as f:
+                        f.write(str(res_counter) + " - " + str(datetime.datetime.now()) + "\n")
+                        f.close()
 
                 producer.sendMessage({"taskId": taskId, "counter": res_counter, "aggregationMode": aggregationMode,
                                       "datetime": str(datetime.datetime.now())})
