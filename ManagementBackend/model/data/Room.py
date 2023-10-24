@@ -22,9 +22,7 @@ class Room(db.Model, BaseData):
     
     
     
-    """
-    BAD CODE
-    """ 
+
     def getCameras(self) -> List[modules.Camera.Camera]:
         exist = []
         result = []

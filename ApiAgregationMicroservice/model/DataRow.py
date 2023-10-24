@@ -29,7 +29,7 @@ class DataRow(db.Model, BaseData):
         self.plan = plan
         self.real = real
     
-    # too bad: do not update - replaced by 2 operations
+    
     def update(self):
         with app.app_context():
             # print('to delete is ', len(db.session.query(DataRow).filter(
@@ -55,15 +55,11 @@ class DataRow(db.Model, BaseData):
             ).update({DataRow.real: self.real})
             
                     
-            # print('delete is set')
+            
             db.session.commit()
             
             return result
             
-                
-            # print('delete is done')
-            # self.save()
-            # db.session.commit()
     
     @classmethod  
     def getInInterval(cls, bd, bt, ed, et, id = None) -> List[DataRow]:

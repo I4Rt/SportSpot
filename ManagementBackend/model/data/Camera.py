@@ -14,7 +14,7 @@ class Camera(db.Model, BaseData):
     login = db.Column(db.String(150), unique=False)
     password = db.Column(db.String(150), unique=False)
     fullRoute = db.Column(db.Text(), unique = True)
-    # TODO: make the rest of the fields
+    # TODO: in future project make the rest of the fields
     
     def __init__(self, name:str, ip:str = None, port:int = None, chanel:int = None, codec:str = None, login:str = None, password:str = None, fullRoute: str | int | None= None):
         db.Model.__init__(self)
@@ -41,6 +41,7 @@ class Camera(db.Model, BaseData):
             ).delete()
          
 
+    # TODO: in future project change this method
     def getRoute(self):
         route = None
         # Bad route

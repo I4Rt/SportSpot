@@ -73,14 +73,7 @@ class Task(db.Model, BaseData):
                 return True
         return False
     
-    # def __save(self):
-    #     engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
-    #     Session = sessionmaker(engine)
-    #     with Session() as localSession:
-    #         localSession.add(self)
-    #         localSession.commit()
-    #         localSession.close()
-    #         localSession.remove()
+
         
     @sessionly
     def save(self, needValid = True):
@@ -92,7 +85,6 @@ class Task(db.Model, BaseData):
         if self.__getResult() == None:
             result = Result(self.id)
             db.session.add(result)
-        #print(f'saved, statis is {self.__status}')
     
     @classmethod
     def getStatused(cls):
@@ -127,7 +119,7 @@ class Task(db.Model, BaseData):
     def getTasksToRun(cls, datetime:type(datetime.now())):
         res =  db.session.query(Task).filter(
             and_(
-                 datetime < cls.end,                           # TODO: проверить таски с 23.30 до 00.00
+                 datetime < cls.end,         
                  datetime >= cls.begin, 
                  cls.__status == 0,
             ) 
@@ -159,6 +151,7 @@ class Task(db.Model, BaseData):
         result = self.__getResult()
         result.setPeopleCount(newCount)
         result.save()
+        
     '''
     select * from tasks 
     where searchId == searchId and 

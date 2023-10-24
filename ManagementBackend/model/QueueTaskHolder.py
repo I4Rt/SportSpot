@@ -18,7 +18,6 @@ class QueueTaskHolder(Jsonifyer):
         return self.__queue
     
     def addToQueue(self, id:str, taksId:int):
-        #check the o
         self.__queue.append({'identifyer': id, 'taksId': id})
         
     def addTaskToSave(self, task):

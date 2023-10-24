@@ -25,9 +25,7 @@ def getFrame():
         return json.dumps({"frame":None, 'answer': 'Add params correctly'})
     try:
         frame = StreamInterface.getFrame(route)
-        # print(frame)
         imgBytes = FileUtil.convertImageToBytes(frame)
-        # print(imgBytes)
         return json.dumps({"route": route, "frame": imgBytes})
     except:
         return json.dumps({"route": route, "frame": None})
@@ -63,11 +61,3 @@ def initVideo():
     print('work t', time() - b)
     return json.dumps({'init': True})
     
-# @cross_origin
-# @app.route('/test')
-# def test():
-#     try:
-#         p = request.args.get('p')
-#     except:
-#         return json.dumps({'answer': 'Add params correctly'})
-#     return json.dumps({'answer': 'ok', 'param': p})

@@ -67,7 +67,7 @@ class KafkaPublicSender(KafkaBasics):
             if not self._topicIsChecked:
                 self._createTopic()
         except:
-            pass # can be bad configured
+            pass 
         if self.__producer is not None:
             try:
                 future = self.__producer.send(self._topic, bytes(message, 'utf-8'))
@@ -114,7 +114,6 @@ class KafkaPublicReciever(KafkaBasics):
                 for msg in self.__consumer:
                     yield msg
             except Exception as e:
-                # print(e)
                 raise Exception('Message recieving error')
         else:
             raise Exception('No consumer')

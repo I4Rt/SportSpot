@@ -56,17 +56,15 @@ class Stream:
         self.__generator = self.__getFrames()
 
     def __updateFrame(self):
-        while not self._checkDelete(): # checkDelete?
-            # print('getter thread')
+        while not self._checkDelete(): 
             try:
                 result, frame = self.__streaming.read()
-                #print('getting result is:', frame)
                 if result:
                     self.__image = frame
                     sleep(0.2)
             except:
                 pass
-            # print(self.__image)
+            
             
     def getStream(self):
         return self.__generator
@@ -74,10 +72,9 @@ class Stream:
     def __getFrames(self):
         if self.__streaming == None:
             raise Exception('First try to connect the camera')
-        while not self._checkDelete(): # or _checkDelete
+        while not self._checkDelete(): 
             if not self.__finished:
                 try:
-                    # print('getting result is:', self.__image)
                     if self.__image is None:
                         yield None
                     else:
@@ -93,19 +90,17 @@ class Stream:
         self.__lastAskTime = time()
         
     def _checkFinished(self):
-        # print(self.__finished)
-        # if not self.__finished:
-            if self.__timeLimit < time() - self.__lastAskTime:
-                self.__finished = True
-                return True
-            return False
-        # return True
+       
+        if self.__timeLimit < time() - self.__lastAskTime:
+            self.__finished = True
+            return True
+        return False
+    
     
     def _checkDelete(self):
         if self._checkFinished():
             if self.__timeLimit + self.__deleteTime < time() - self.__lastAskTime:
                 self._release()
-                #self.__generator.close()
                 return True
             return False
         return False

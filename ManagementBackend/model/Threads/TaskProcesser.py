@@ -26,7 +26,6 @@ class TaskProcessor(Thread, Jsonifyer):
 
     def run(self):
         with app.app_context():
-            # sender = KafkaSender.getInstance()
             self.task.setStatusInProgress()
             self.task.save(False)
             tzDateStr = str(self.task.end)
@@ -40,7 +39,6 @@ class TaskProcessor(Thread, Jsonifyer):
                 raise Exception(f'In thread #{get_native_id()}: time is out, duration < 0')
             room = Room.getByID(self.task.roomId)
             sectors = room.getSectors()
-            # print(f"sectprs {len(sectors)}")
             cameras = []
             for sector in sectors:
                 camId = sector.camId
@@ -53,7 +51,6 @@ class TaskProcessor(Thread, Jsonifyer):
                     data = {"camId": camId, "generator": None, "sectors": [sector], "camera": sector.getCamera()}
                     cameras.append(data)
             
-            # print(cameras)
             for camData in cameras:
                 connectCounter = 0
                 while connectCounter < self.__trys:
@@ -64,7 +61,6 @@ class TaskProcessor(Thread, Jsonifyer):
                         print('generator create exception', e)
                         connectCounter += 1
                         continue
-                    # print(framesIter)
                     if framesIter is not None:
                         camData["generator"]  = framesIter
                         break
@@ -78,11 +74,11 @@ class TaskProcessor(Thread, Jsonifyer):
                     self.task.setStatusDone()
                     self.task.save(False)
                     raise Exception(f'In thread #{get_native_id()}: no cameras or unable to connect to them')
-            # print(cameras)
+            
             
             while date > datetime.now():   
                 dataToSend = {"taskId": self.task.id,
-                              "agregationMode": room.classId, # CHECK
+                              "agregationMode": room.classId,
                               "data": []}
                 for camData in cameras:
                     try: 
@@ -94,13 +90,12 @@ class TaskProcessor(Thread, Jsonifyer):
                         print(f'camera  {camData["camId"]} task {self.task.id} generator error', e, 'time to task finish is', self.task.end, 'now is', datetime.now())
                         continue
                     if frame is not None:
-                        output = frame # cv2.resize(frame, (600, 400))
+                        output = frame
                         localData = {
                             "img": FileUtil.convertImageToBytes(output),
                             "sectors": [{"points": sector.getPointList(), 
                                          "mode": sector.typeId} 
                                         for sector in camData["sectors"]],
-                            # "mode": camData['sectors'][].typeId
                         }
                         
                         dataToSend["data"].append(localData)
@@ -112,28 +107,19 @@ class TaskProcessor(Thread, Jsonifyer):
                         with open('tasks.log', 'a') as file:
                             file.write(st)
                 if len(dataToSend["data"]) > 0:
-                    # print("sending:")
-                    #
-                    # for data in dataToSend["data"]:
-                    #     print(f'img: {data["img"][:10]}')
-                    #     for sec in data["sectors"]:
-                    #         print(f'    points: {sec["points"]}')
-                    #         print(f'    mode: {sec["mode"]}')
-                    #         print()
-                    #
+                    
                     with open('senderData.json', 'w') as file:
                         file.write(json.dumps(dataToSend))
                     try:
                         url = 'http://localhost:4998/appendDataToRoute'
                         myobj = {'query': f'SO{int(app.config["SPORT_OBJECT_ID"])}_data', 'data': dataToSend}
                         responcedata = requests.post(url, json = myobj, timeout=10)
-                        print('inner sending result',responcedata.text)
+                        
                     except Exception as e:
                         print('tmisot')
                         continue
-                    # print('data to send is ', sendData)
                     print(f'In thread #{get_native_id()}: task id {self.task.id}, analizer sent')
-                    # add wait param to kafka reciever  
+                    
                 sleep(self.task.interval)
             self.task.setStatusDone()
             self.task.save(False)

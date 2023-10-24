@@ -44,8 +44,11 @@ class DataReciever(Thread):
                     continue
                 #save
                 
-                if str(data["taskId"]).isdigit():
+                if str(data["taskId"]).isdigit():  
+                    if data["taskId"] == 0:
+                        print('handling zero taks')
                     task = Task.getByID(int(data["taskId"]))
+                    
                     if task is not None:
                         if int(data["counter"]) > task.getCount():
                             task.setCount(int(data["counter"]))

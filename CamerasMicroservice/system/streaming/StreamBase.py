@@ -23,10 +23,8 @@ class StreamBase:
     def __checkStreams(cls):
         while cls.__needContinue:
             sleep(2)
-            # print(f'inside: {cls.__streams}')
             if len(cls.__streams) > 0:
                 for stream in cls.__streams:
-                    #print(f'has data: {stream.getParams()}')
                     if Stream._checkDelete(stream):
                         cls.__streams.remove(stream)
                         
@@ -45,10 +43,5 @@ class StreamBase:
         cls.__thread.start()
         cls.__initialized = True
     
-    # @classmethod
-    # def deleteStream(cls, route):
-    #     for stream in cls.__streams:
-    #         if stream.checkDelete():
-    #             cls.__streams.remove(stream)
-    
+
 

@@ -25,9 +25,7 @@ class AgregatedDataSender(Thread, Jsonifyer):
     def __init__(self):
         Thread.__init__(self)
         self.dataHolder = SideDataHolder.getInstance()
-        #self.sender = KafkaSender.getInstance()
-        
-        
+
         with open('lastResultativeTime.txt', 'w') as file:
             file.write(str(datetime.now()))
         
@@ -51,11 +49,6 @@ class AgregatedDataSender(Thread, Jsonifyer):
             timeToRun = lastTime + timedelta(minutes= interval // 2)
               
             while True:
-                # 2023-10-03 16:48:21.011302
-                # print('rooms data is', SideDataHolder.getInstance().rooms)
-                
-                        
-                        
                 
                 sleep(1 * 60)
                 nt = datetime.now()
@@ -90,6 +83,7 @@ class AgregatedDataSender(Thread, Jsonifyer):
                             result[str(roomId)] = {'real':SideDataHolder.getInstance().rooms[roomId], 'plan': 0}
                         except:
                             pass
+                        
                     for task in tasks:
                         unmathcedRooms.remove(task.roomId)
                         result[str(task.roomId)] = {'real':task.getCount(), 'plan':task.targetCount}
@@ -101,7 +95,7 @@ class AgregatedDataSender(Thread, Jsonifyer):
                             if _ == task.id:
                                 changedData.remove(_)
                                 setData.append(_)
-                                #SideDataHolder.getInstance().removeTask(_)
+                                
                     
                     # sending
                     dateToAgregate = timeToRun
@@ -125,7 +119,7 @@ class AgregatedDataSender(Thread, Jsonifyer):
                     for taskId in changedData:
                         
                         task = Task.getById(taskId)
-                        #SideDataHolder.getInstance().removeTask(taskId)
+                        
                         begining = task.begin
                         ending = task.end
                         
@@ -134,7 +128,7 @@ class AgregatedDataSender(Thread, Jsonifyer):
                         while curDate < ending:
                             print(curDate)
                             noTZDate = datetime.strptime(str(curDate)[:-6], '%Y-%m-%d %H:%M:%S')
-                            #noTZDate -= timedelta(hours= tz)
+                            
                             print(noTZDate)
                             
                             mins = noTZDate.minute
@@ -160,7 +154,7 @@ class AgregatedDataSender(Thread, Jsonifyer):
                                     resultToSend[dateStr][timeStr] = {task.roomId: {'real':task.getCount(), 'plan':task.targetCount}}
                                 except:
                                     resultToSend[dateStr] = {timeStr: {task.roomId: {'real':task.getCount(), 'plan':task.targetCount}}}
-                            #print('after Append data is ', resultToSend)
+                            
                             curDate += timedelta(minutes=30)
                         setData.append(taskId)
                         

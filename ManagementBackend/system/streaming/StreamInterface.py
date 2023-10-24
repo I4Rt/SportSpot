@@ -15,7 +15,6 @@ class StreamInterface:
                 return stream.getStream()
         stream = Stream(camera, timeLimit)
         stream.init()
-        # print(f'inited in time {stream.getLastAskTime()}')
         StreamBase._addStream(stream)
         return stream.getStream()
     

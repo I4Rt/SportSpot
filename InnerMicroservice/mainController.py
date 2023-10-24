@@ -20,8 +20,8 @@ def testDecorator(foo):
             return {request.path[1:]: False, 'data': {'description': 'Identy error, such outerId already exist'}}, 200
         except KeyError as jsone:
             return {request.path[1:]: False, 'data': {'description': f'Json error, lost {str(jsone.args[0]).upper()} param', 'param': jsone.args[0]}}, 200
-        # except Exception as e:
-        #     return {request.path[1:]: False, 'data': {'description': 'Unmatched error', "error": type(e).__name__}}, 200
+        except Exception as e:
+            return {request.path[1:]: False, 'data': {'description': 'Unmatched error', "error": type(e).__name__}}, 200
     inner.__name__ = "inner" + str(index)
     index += 1
     return inner
@@ -58,12 +58,10 @@ def appendDataToRoute():
 def readDataFromRoute():
     global localReceiverStorage
     topicName = request.args.get('topic')
-    # data = request.json['data'] # data
+    
     if not (topicName in localReceiverStorage):
         localReceiverStorage[topicName] = KafkaPublicReciever.getKafkaReciever(topicName, app.config["kafkaServer"], True).recieve()
-    
     try:
-        # in outer Thread
         taskData = next(localReceiverStorage[topicName])
     except Exception as e:
         print('got exception', e)
@@ -84,21 +82,9 @@ def teardown(exception=None):
         print(f'exception is {exception}')
     
 
-# @app.after_request
-# def afterRequest(response):
-#     print(type(response.get_data(True)), response.get_data(True))
-#     if response.get_data(True) == 'ok':
-#         print(f'after {response.headers}')
-#     return response
+
     
 
 
-@app.route('/test', methods=['get'])
-@testDecorator      
-@cross_origin()
-def test():
-    time.sleep(1)
-    return 'test', 200
-    
     
     

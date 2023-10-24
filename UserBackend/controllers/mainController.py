@@ -16,8 +16,7 @@ from model.data.Task import Task
 from tools.TaskArchiveRunner import TaskArchiveRunner
 import os
 
-# from system.streaming.Stream import Stream
-# from system.streaming.StreamInterface import StreamInterface
+
 
 from tools.FrameGetter import *
 
@@ -27,19 +26,7 @@ from datetime import datetime
 
 from system.DataHodler import *
 from random import randint
-# import cv2
 
-# def authorize(foo):
-#     def inner(*args,**kwargs):
-#         verify_jwt_in_request()
-#     identy = get_jwt_identity()
-#         if identy:
-#             foo(*args,**kwargs)
-#         else:
-#             resp = make_response({'answer': "Bad token"})
-#             resp.headers['Content-Type'] = "application/json"
-#             return resp
-#     return inner
 
 
 DataHolder.getInstance().setParam("cameraNumber", 60)
@@ -122,7 +109,6 @@ def refresh():
     identity = get_jwt_identity()
     if identity:
         access_token = create_access_token(identity=identity, fresh=True)
-        # set_access_cookies(resp, access_token)
         resp = jsonify({'refresh': True})
         set_access_cookies(resp, access_token)
         return resp, 200
@@ -450,13 +436,12 @@ def getUnusedCameraSectorsByRoomId():
             data = []
             print(f'i found {len(unusedSectors)} sectors')
             for sec in unusedSectors:
-                # print(sec)
-                #print(sec)
+                
                 camera = Camera.getByID(sec.camId)
                 if camera != None:
-                    # print("camera for sector is found")
+                    
                     if not (camera.id in exist):
-                        # print(cam)
+                        
                         exist.append(camera.id)
                         camParams = camera.getParamsList()
                         camParams["sectors"] = []
@@ -464,15 +449,11 @@ def getUnusedCameraSectorsByRoomId():
                     sectorInfo = sec.getParamsList()
                     sectorInfo["points"] = sec.getPointList()
                     sectorInfo["sectorType"] = sec.getSectorType().getParamsList()["name"]
-                    #print('Info: ' + str(sectorInfo))
+                    
                     for cam in data:
                         if cam['id'] == sec.camId:
                             cam["sectors"].append(sectorInfo)
-                    # print(data)
-                # else:
-                    # sec.remove()
-                    # print(camera)
-                # print(exist)
+
             resp = make_response({'camerasList': data})
         except Exception as e:
             resp = make_response({'answer': data})
@@ -687,7 +668,7 @@ def setTask():
                     task.save()
                 else:
                     task.save(False)
-            # print(str(task.begin))
+            
             
             data = task.getParamsList()
         except Exception as e:
@@ -839,131 +820,6 @@ def removeTask():
         resp.headers['Content-Type'] = "application/json"
         return resp
     
-# not ness
-@cross_origin
-@app.route('/', methods=['GET'])
-def main():
-    print(verify_jwt_in_request())
-    print(get_jwt())
-    #user = get_jwt_identity()
-    #print(user)
-    return "OK"
-
-# @cross_origin()
-# @app.route('/test', methods=['get', 'post'])
-# def test():
-#     print(request.json)
-#     return {'answer': 'ok'}
-      
-# @cross_origin()
-# @app.route('/getTestData', methods=['get', 'post',])
-# def getTestData():
-#     testData = Camera.getAll()
-#     result = {"data": []}
-#     for data in testData:
-#         result["data"].append(data.getParamsList())
-#     resp = make_response(result)
-#     resp.headers['Content-Type'] = "application/json"
-#     return resp
-
-
-# @app.route('/testSave', methods=['get', 'post'])
-# def testSave():
-#     obj = Camera('Вторая камера')
-#     obj.save()
-#     return make_response("ok")
-@cross_origin
-@app.route('/example', methods=['get', 'post'])
-def dbWorkExample():
-    room = Room(f'Помещение {DataHolder.getInstance().getParam("roomNumber")}', randint(0,3))
-    room.save()
-    for i in range(randint(1, 3)):
-        cam = Camera(f'камера {DataHolder.getInstance().getParam("cameraNumber")}', 
-                     f'192.168.0.{DataHolder.getInstance().getParam("cameraNumber")}',
-                     5678,
-                     '.vmf8',
-                     'login',
-                     'password111')
-        cam.save()
-        for j in range(randint(1, 5)):
-            sec = Sector(f'Сектор {DataHolder.getInstance().getParam("cameraNumber")}-{j}', randint(1, 2), cam.id, room.id)
-            sec.save()
-        DataHolder.getInstance().setParam("cameraNumber", DataHolder.getInstance().getParam("cameraNumber") + 1)  
-    DataHolder.getInstance().setParam("roomNumber", DataHolder.getInstance().getParam("roomNumber") + 1)
-    
-    result = {'room': room.getParamsList(), 'cameras': [], }
-    for camera in room.getCameras():
-        result['cameras'].append({'data':camera.getParamsList(), 'sectors': []})
-        for sector in camera.getSectors():
-            result['cameras'][-1]['sectors'].append(sector.getParamsList())
-    resp = make_response(result)
-    resp.headers['Content-Type'] = "application/json"
-    return resp
-
-@cross_origin
-@app.route('/getUnusedTest', methods=['get', 'post'])
-def getUnusedTest():
-    rId = request.args.get('roomId')
-    unusedSectors = Sector.getUnusedSectors(int(rId))
-    data = [sec.getParamsList() for sec in unusedSectors]
-    resp = make_response(data)
-    resp.headers['Content-Type'] = "application/json"
-    return resp
-
-# cam stream
-# stream = None
-# stream = cv2.VideoCapture(0)
-# def getFrame(stream):
-#     i = 0
-#     while True:
-#         i += 1
-#         success, image = stream.read()
-#         ret, jpeg = cv2.imencode('.jpg', image)
-#         frame = jpeg.tobytes()
-#         if i < 10:
-#             yield (b'--frame\r\n'
-#                     b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-#         else:
-#             yield (b'--frame\r\n'
-#                     b'Content-Type: image/jpeg\r\n\r\n'+ b'\r\n')
-#         time.sleep(0.2)
-
-# @cross_origin
-# @app.route('/videoStream')
-# def video_feed():
-#     global stream
-#     stream = cv2.VideoCapture(0)
-#     data = getFrame(stream)
-#     print('i\'v been asked for photo')
-#     return Response(data,
-#                     mimetype='multipart/x-mixed-replace; boundary=frame')
-    
-# @cross_origin
-# @app.route('/stopVideo')
-# def stopVideo():
-#     stream.release()
-#     return make_response('OK')
-    
-
- 
-# # cam = Camera('test', fullRoute='0')
-# # stream = Stream(cam, timeLimit = 20)
-    
-# # @cross_origin
-# # @app.route('/testVideo')
-# # def testVideo():
-# #     global stream
-# #     stream.init()
-# #     return Response(stream.getStream(),
-# #                     mimetype='multipart/x-mixed-replace; boundary=frame')
-    
-# # @cross_origin
-# # @app.route('/testRefreshVideo')
-# # def testRefreshVideo():
-# #     global stream
-# #     stream.resetTime()
-# #     return 'ok'
-
 
 # video stream branch
 @cross_origin
@@ -1072,8 +928,6 @@ def sendForAnalize():
         try:
             route = request.json['route']
             dir = os.path.normpath(route)
-
-            #test access
             
             name = request.json['name']
             comment = request.json['comment']

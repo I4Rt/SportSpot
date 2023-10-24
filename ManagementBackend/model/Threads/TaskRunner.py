@@ -38,14 +38,13 @@ class TaskRunner(Thread, Jsonifyer):
             while not TaskRunner.__getStopMark():
                 sleep(5)
                 
-                # print(f'status in progress is {Task.getStatused()}')
+                
                 tasks = Task.getTasksToRun(datetime.now())
                 print(f'now tasks are: {tasks}')
                 if tasks != None:
                     for task in tasks:
                         task.setStatusInProgress()
                         task.save(False)
-                        # print(f'now status is {task.getStatus()}')
                         TaskProcessor(task).start()
                 
             

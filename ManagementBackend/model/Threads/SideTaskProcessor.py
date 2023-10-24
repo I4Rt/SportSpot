@@ -24,7 +24,7 @@ class SideTaskProcessor(Thread, Jsonifyer):
     def __init__(self):
         Thread.__init__(self)
         self.dataHolder = SideDataHolder.getInstance()
-        # self.sender = KafkaSender.getInstance()
+        
         
     
 
@@ -34,26 +34,26 @@ class SideTaskProcessor(Thread, Jsonifyer):
                 try:
                     self.dataHolder.updateRoomList()
                     maxedTime = 5 + 3 * self.__duration + self.__interval
-                    expectedTime = len(self.dataHolder.rooms) * maxedTime
-                    # needSleep = expectedTime < self.__rootTime
+                    # expectedTime = len(self.dataHolder.rooms) * maxedTime
+                    
                     localTime = 0
                     beginAllCams = time()
                     for roomId in self.dataHolder.rooms:
                         begin = time()
                         room = Room.getByID(roomId)
                         sectors = room.getSectors()
-                        # print(f"sectprs {len(sectors)}")
+                        
                         cameras = []
-                        # b1 = time()
+                        
                         for sector in sectors:
-                            # print(sector)
+                            
                             camId = sector.camId
                             isSet = False
                             for camData in cameras:
                                 if camData["camId"] == camId:
                                     camData["sectors"].append(sector)
                                     isSet = True
-                                    break # TODO: check it
+                                    break 
                                     
                             if not isSet:
                                 try:
@@ -65,21 +65,18 @@ class SideTaskProcessor(Thread, Jsonifyer):
                                     print('generator create exception', e)
                         
                         dataToSend = {'taskId': f'side_{room.id}',
-                                "agregationMode": room.classId, # CHECK
+                                "agregationMode": room.classId, 
                                 "data": []}     
-                        # print('here', len(cameras))
-                        # print('agregation part 1 t', time() - b1, 'camLen', len(cameras))
-                        # b2 = time()
+                        
                         for camData in cameras:
-                            # print(camData)
+                            
                             try:
-                                # b = time()
+                                
                                 frame = next(camData["generator"])
-                                # print(camData['camera'].getRoute(), 'getting t', time() - b)
-                                # print(camData['camera'].getRoute(), len(str(frame)))
+                                
                                 if not ( frame is None ):
                                     
-                                    output = frame # cv2.resize(frame, (600, 400))
+                                    output = frame 
                                     
                                     localData = {
                                         "img": FileUtil.convertImageToBytes(output),
@@ -88,16 +85,15 @@ class SideTaskProcessor(Thread, Jsonifyer):
                                                     for sector in camData["sectors"]]
                                         
                                     }
-                                    # print('mode is',  sector.typeId)
+                                    
                                     dataToSend["data"].append(localData)
                             except Exception as e: 
                                 print(type(e), e)
-                            # print('agregation part 2 t', time() - b2)
+                            
                                 
                         if len(dataToSend['data']) > 0:
                             try:
-                                # b = time()
-                                # print('side data to send', dataToSend['taskId'])
+                                
                             
                                 url = 'http://localhost:4998/appendDataToRoute'
                                 myobj = {'query': f'SO{int(app.config["SPORT_OBJECT_ID"])}_side', 'data': dataToSend}
@@ -105,18 +101,11 @@ class SideTaskProcessor(Thread, Jsonifyer):
                                 print('inner sending result',responcedata.text)
                             
                                 
-                                #sendData = self.sender.sendMessage(json.dumps(dataToSend))
-                                
-                                # with open('errorSending.txt', 'w') as file:
-                                #     file.write(json.dumps(dataToSend))
-                                # print(camData['camera'].getRoute(), 'sending t', time() - b)
-                                # print('here2 message is ', sendData)
-                                # print('side analize', sendData)
+                               
                             except requests.exceptions.ConnectionError:
                                 print('can not send message: connection error')
                             except Exception as e:
                                 print( 'inner send error ', type(e) )
-                                # continue # test removed
                         end = time()
                         print('time to process', end - begin)
                         maxedTime = max(maxedTime, end - begin)

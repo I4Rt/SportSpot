@@ -33,7 +33,7 @@ class FrameGetter:
     def getStream(cls, route, duration):
         if FrameGetter.initStream(route, duration):
             frame = FrameGetter.getFrame(route)
-            # print(f'frame is {frame}')
+
             while frame is not None:
                 print('here')
                 yield frame

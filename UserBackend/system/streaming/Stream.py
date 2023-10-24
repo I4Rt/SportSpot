@@ -58,18 +58,16 @@ class Stream:
 
 
     def __updateFrame(self):
-        while not self._checkDelete(): # checkDelete?
-            # print('getter thread')
+        while not self._checkDelete():
             try:
                 result, frame = self.__streaming.read()
                 if result:
                     ret, jpeg = cv2.imencode('.jpg', frame)
-                    self.__image = jpeg.tobytes()
-                    # self.__generator = self.__getFrames()
+                    self.__image = jpeg.tobytes()                    
                     sleep(0.2)
             except:
                 pass
-            # print(self.__image)
+            
             
             
     

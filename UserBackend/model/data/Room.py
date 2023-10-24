@@ -24,9 +24,7 @@ class Room(db.Model, BaseData):
     
     
     
-    """
-    BAD CODE
-    """ 
+ 
     def getCameras(self) -> List[modules.Camera.Camera]:
         exist = []
         result = []
@@ -47,7 +45,7 @@ class Room(db.Model, BaseData):
         
     def delete(self):
         Task.__table__.delete().where(Task.roomId == self.id)
-        # db.session.delete(db.session.query(Task).filter(Task.roomId == self.id).all())
+        
         db.session.delete(self)
         db.session.commit()
         

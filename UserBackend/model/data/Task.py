@@ -65,18 +65,14 @@ class Task(db.Model, BaseData):
     def _isValid(self, checkFuture=True):
         if self.begin < self.end:
                 
-            # if self.id != None:
-                cond1 = datetime.strptime(str(self.begin)[:19], '%Y-%m-%d %H:%M:%S') > datetime.now()
-                print('dt is ', datetime.strptime(str(self.begin)[:19], '%Y-%m-%d %H:%M:%S'))
-                print('cdt is ', datetime.now())
-                print('here', 'f is', checkFuture, 'c1 is', cond1)
-                if (cond1 and checkFuture) or (not cond1 and not checkFuture):
-                    existCoveredTasks = Task.getCoveredTasksByRoomId(self.id, self.roomId, self.begin, self.end)
-                    print('covered tasks', len (existCoveredTasks))
-                    if len(existCoveredTasks) == 0:
-                        return True
-                # return False # past/future check or cover tasks
-            # return True # because is already checked
+            
+            cond1 = datetime.strptime(str(self.begin)[:19], '%Y-%m-%d %H:%M:%S') > datetime.now()
+            if (cond1 and checkFuture) or (not cond1 and not checkFuture):
+                existCoveredTasks = Task.getCoveredTasksByRoomId(self.id, self.roomId, self.begin, self.end)
+                print('covered tasks', len (existCoveredTasks))
+                if len(existCoveredTasks) == 0:
+                    return True
+                
         return False
     
     def save(self, needCheckFuture=True):

@@ -12,10 +12,9 @@ if __name__ == "__main__":
     def mainTask():
         ltrh.setLastTime(datetime.now())
         print('App is running')
-        #warnings.simplefilter('ignore')
         with app.app_context():
             StreamBase.init()
-            app.run(host='0.0.0.0', port=5002, debug=False) # how to use model with out running app at host?
+            app.run(host='0.0.0.0', port=5002, debug=False) 
     while True:
         t1 = Thread(target=mainTask, args=())
         t1.start()
@@ -24,18 +23,6 @@ if __name__ == "__main__":
             print(interval)
             sleep(20)
             interval = ltrh.getTimeInterval()
-        # must rerun the flask app
-        # try:
-        #     with app.app_context():
-        #         app.stop()
-        # except Exception as e:
-        #     print('error on stopping app', e)
-        
-        
-            
-        
-    # cv2.CAP_PROP_OPEN_TIMEOUT_MSEC = 10000
-    # cv2.LIBAVFORMAT_INTERRUPT_OPEN_TIMEOUT_MS = 10000
-    
+
         
         

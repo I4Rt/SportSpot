@@ -14,7 +14,6 @@ class StreamInterface:
                 return stream.getStream()
         stream = Stream(route, timeLimit)
         stream.init()
-        # print(f'inited in time {stream.getLastAskTime()}')
         StreamBase._addStream(stream)
         
     
@@ -23,8 +22,6 @@ class StreamInterface:
         if route.isdigit():
             route = int(route)
         for stream in StreamBase._getStreams():
-            # print('stream is exist')
-            # print(stream._checkFinished(), type(stream.getRoute()), type(route))
             if not stream._checkFinished() and stream.getRoute() == route:
                 print('get frame is here')
                 return next(stream.getStream())

@@ -52,7 +52,7 @@ def exceptionProcessing(foo):
     inner.__name__ = "inner" + str(index)
     index += 1
     return inner
-# wtf with decorator?
+
 
 @app.route('/management/getTest', methods=['get'])
 @auth.login_required
@@ -93,17 +93,7 @@ def appendData():
     
     with open('roomsData.txt', 'w') as file:
         file.write(json.dumps(actualRoomsInfo))
-    '''
-    
-    {
-        day:{
-            time: {
-                plan: plan,
-                counter: counter
-            }
-        }
-    }
-    '''
+
     print(list(data.keys()))
     
     counter = 0
@@ -164,17 +154,17 @@ def getData():
             sideObjId = elem.getSideSOId()
             if not (sideObjId in resultData):
                 resultData[sideObjId] = {}
-            # print(str(elem.date.date()), resultData[elem.sportObjectId])
+            
             
             if str(elem.date.date()) in resultData[sideObjId]:
-                # print('here')
+                
                 if str(elem.timeInterval) in resultData[sideObjId][str(elem.date.date())]:
                     resultData[sideObjId][str(elem.date.date())][str(elem.timeInterval)][str(elem.roomId)] = {'plan': elem.plan, 'real': elem.real}
                 else:
                     resultData[sideObjId][str(elem.date.date())][str(elem.timeInterval)] = {str(elem.roomId): {'plan': elem.plan, 'real': elem.real}}
                     
             else:
-                # print('here 2')
+                
                 resultData[sideObjId][str(elem.date.date())] = { str(elem.timeInterval) : {str(elem.roomId): {'plan': elem.plan, 'real': elem.real}}}
             
         
