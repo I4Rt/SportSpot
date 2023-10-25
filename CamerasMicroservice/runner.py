@@ -10,7 +10,8 @@ while True:
     sleep(10)
     try:
         nowTime = time()
-        if nowTime - os.path.getmtime(fileName) > 180:
+        print(nowTime - os.path.getmtime(fileName))
+        if nowTime - os.path.getmtime(fileName) > 40:
             try:
                 proc.terminate()
             except Exception as e:
