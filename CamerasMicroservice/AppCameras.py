@@ -15,14 +15,17 @@ if __name__ == "__main__":
         with app.app_context():
             StreamBase.init()
             app.run(host='0.0.0.0', port=5002, debug=False) 
-    while True:
-        t1 = Thread(target=mainTask, args=())
-        t1.start()
-        interval = ltrh.getTimeInterval()
-        while interval < 180:
-            print(interval)
-            sleep(20)
-            interval = ltrh.getTimeInterval()
+            
+            
+    mainTask()
+    # while True:
+    #     t1 = Thread(target=mainTask, args=())
+    #     t1.start()
+    #     interval = ltrh.getTimeInterval()
+    #     while interval < 180:
+    #         print(interval)
+    #         sleep(20)
+    #         interval = ltrh.getTimeInterval()
 
         
         
