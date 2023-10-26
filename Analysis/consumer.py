@@ -39,7 +39,7 @@ def checkIfInside(border, target):
 def recognition(sectors, image, taskId):
     """Recognition image and send the counter."""
 
-    results = model.predict(source=image, imgsz=1920, conf=0.1, classes=[0])
+    results = model.predict(source=image, imgsz=1920, conf=0.2, classes=[0])
     decImg_h, decImg_w = image.shape[:2]
 
     # Check gray or color image
