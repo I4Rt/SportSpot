@@ -2,7 +2,7 @@
 <div class="container login">
       <form @submit.prevent="created">
         <div class="">
-            <label>Login: </label>
+            <label>Логин: </label>
             <input type="text" v-model.trim="user.login" class="form-control"
              :class="v$.user.login.$error ? 'is-invalid' : ''">
              <p v-if="v$.user.login.$dirty && v$.user.login.required.$invalid" class="invalid-feedback">
@@ -13,7 +13,7 @@
             </p>
         </div>
         <div class="form-group">
-            <label >Password: </label>
+            <label >Пароль: </label>
             <input type="password" v-model.trim="user.password" class="form-control"
             :class="v$.user.password.$error ? 'is-invalid' : ''">
             <p v-if="v$.user.password.$dirty && v$.user.password.required.$invalid" class="invalid-feedback">

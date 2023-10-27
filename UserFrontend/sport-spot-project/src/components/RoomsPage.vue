@@ -46,16 +46,16 @@
                 Обязательное поле
               </p>
             </div>
-            <div class="form-group" >
+            <div id="buttons" class="grid-default" style="margin-bottom: 10px">
               <button type="submit" class="btn btn-success" >Сохранить</button>
+              <button
+                  type="button"
+                  class="btn btn-primary"
+                  @click="selectFunction(removeRoom, room.id); resetRoom()">
+                Удалить
+              </button>
             </div>
           </form>
-          <button
-              class="btn btn-primary"
-              @click="removeRoom(room.id); resetRoom()"
-              style="position: absolute; top: 0; right: 0; margin-right: 15px; margin-top: 116px">
-            Удалить
-          </button>
 
           <label style="font-weight: 700">Сектора</label>
           <div class="row" v-if="roomSelected">
@@ -65,16 +65,18 @@
                 <table >
                   <tr  v-for="(camera, index) in getUsedCameras" :key="index">
                     <td style="width: 200px" >
+                      <div style="height: 26px">
                       <span
                           style="margin-left: 5px"
                           class="short-name short-name-camera"
                           :title="camera.name">
                         {{ camera.name }}
                       </span>
+                      </div>
                       <table>
                         <tr v-for="(cameraSector, index) in camera.sectors" :key="index" >
                           <td style="padding: 0">
-                            <div id="td-height-used" class="grid-default" style="height: 26px">
+                            <div id="td-height-used" class="grid-default grid-default-sector" style="height: 26px">
                               <div style="margin-left: 20px">
                                 <span class="short-name short-name-sector" :title="cameraSector.name">{{ cameraSector.name }}</span>
                               </div>
@@ -102,18 +104,29 @@
                 <table >
                   <tr v-for="(camera, index) in getUnusedCameras" :key="index">
                     <td style="width: 200px" >
+                      <div style="height: 26px">
                       <span
                           style="margin-left: 5px"
                           class="short-name short-name-camera"
                           :title="camera.name">
                         {{ camera.name }}
                       </span>
+                      </div>
                       <table>
                         <tr v-for="(cameraSector, index) in camera.sectors" :key="index" >
                           <td style="padding: 0">
-                            <div id="td-height-unused" class="grid-default" style="height: 26px">
-                              <div style="margin-left: 20px">
-                                <span class="short-name short-name-sector" :title="cameraSector.name">{{ cameraSector.name }}</span>
+                            <div id="td-height-unused" class="grid-default grid-default-sector" style="height: 26px">
+                              <div :style="cameraSector.typeId === 1 && cameraSector.points.length === 0 ? '' : 'margin-left: 20px'">
+                                <div class="grid-default">
+                                  <div style="display: flex; flex-wrap: wrap; align-content: center; margin-left: 5px">
+                                    <img
+                                        v-if="cameraSector.typeId === 1 && cameraSector.points.length === 0"
+                                        :src="require('../assets/icons/danger16.png')"
+                                        alt=""
+                                        title="У сектора данного типа отсутствует область анализа">
+                                  </div>
+                                  <span class="short-name short-name-sector" :title="cameraSector.name">{{ cameraSector.name }}</span>
+                                </div>
                               </div>
                               <div class="content content-end">
                                 <button class="hidden-button swipe-sector" @click="selectFunction(setSectorToRoom,cameraSector)">
@@ -288,55 +301,73 @@ export default {
       return returnResult
     },
     async getUnusedCameraSectorsByRoomIdFromDB() {
-      console.log('getUnused')
-      return await fetch(`http://localhost:5000/getUnusedCameraSectorsByRoomId?roomId=${this.room.id}`, {
-        credentials: "include",
-        method: 'GET',
-        cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-      })
-          .then(response => response.json())
-          .then((response) => {
-            console.log('unused rooms ')
-            console.log(response)
-            this.$store.state.unusedCameras = response
-            console.log(this.getUnusedCameras)
-            return response
-          });
+      let returnResult
+      try{
+        console.log('getUnused')
+        returnResult = await fetch(`http://localhost:5000/getUnusedCameraSectorsByRoomId?roomId=${this.room.id}`, {
+          credentials: "include",
+          method: 'GET',
+          cors: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8',
+          },
+        })
+            .then(response => response.json())
+            .then((response) => {
+              console.log('unused rooms ')
+              console.log(response)
+              this.$store.state.unusedCameras = response
+              console.log(this.getUnusedCameras)
+              return response
+            });
+      } catch (err) {
+        console.log(err)
+      }
+      return returnResult
     },
     async getUsedCameraSectorsByRoomIdFromDB() {
-      return await fetch(`http://localhost:5000/getCameraSectorsByRoomId?roomId=${this.room.id}`, {
-        credentials: "include",
-        method: 'GET',
-        cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-      })
-          .then(response => response.json())
-          .then((response) => {
-            console.log(response)
-            this.$store.state.usedCameras = response
-            return response
-          });
+      let returnResult
+      try{
+        returnResult = await fetch(`http://localhost:5000/getCameraSectorsByRoomId?roomId=${this.room.id}`, {
+          credentials: "include",
+          method: 'GET',
+          cors: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8',
+          },
+        })
+            .then(response => response.json())
+            .then((response) => {
+              console.log(response)
+              this.$store.state.usedCameras = response
+              return response
+            });
+      } catch (err) {
+        console.log(err)
+      }
+      return returnResult
     },
-    getRoomsFromDB() {
-      return fetch('http://localhost:5000/getRooms', {
-        credentials: "include",
-        method: 'GET',
-        cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-      })
-          .then(response => response.json())
-          .then((response) => {
-            console.log(response)
-            this.$store.state.rooms = response
-            return response
-          });
+    async getRoomsFromDB() {
+      let returnResult
+      try{
+        returnResult = await fetch('http://localhost:5000/getRooms', {
+          credentials: "include",
+          method: 'GET',
+          cors: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8',
+          },
+        })
+            .then(response => response.json())
+            .then((response) => {
+              console.log(response)
+              this.$store.state.rooms = response
+              return response
+            });
+      } catch (err) {
+        console.log(err)
+      }
+      return returnResult
     },
     chooseRoom(room) {
       console.log(room.id)
@@ -410,7 +441,7 @@ export default {
       console.log('reload')
       this.selectFunction(this.getUsedCameraSectorsByRoomIdFromDB)
       this.selectFunction(this.getUnusedCameraSectorsByRoomIdFromDB).then(() => {
-        let tdHeight = 28.8
+        let tdHeight = 26
         // try{
         //   tdHeight = document.getElementById("td-height-unused").offsetHeight
         // } catch (err) {
@@ -423,37 +454,49 @@ export default {
         })
       })
     },
-    setSectorToRoom(sector){
-      return fetch(`http://localhost:5000/setSectorToRoom?sectorId=${sector.id}&roomId=${this.room.id}`, {
-        credentials: "include",
-        method: 'GET',
-        cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-      })
-          .then(response => response.json())
-          .then((response) => {
-            console.log(response)
-            this.reloadCameraSectors()
-            return response
-          });
+    async setSectorToRoom(sector){
+      let returnResult
+      try{
+        returnResult = await fetch(`http://localhost:5000/setSectorToRoom?sectorId=${sector.id}&roomId=${this.room.id}`, {
+          credentials: "include",
+          method: 'GET',
+          cors: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8',
+          },
+        })
+            .then(response => response.json())
+            .then((response) => {
+              console.log(response)
+              this.reloadCameraSectors()
+              return response
+            });
+      } catch (err) {
+        console.log(err)
+      }
+      return returnResult
     },
-    removeSectorFromRoom(sector){
-      return fetch(`http://localhost:5000/removeSectorFromRoomLsit?sectorId=${sector.id}&roomId=${this.room.id}`, {
-        credentials: "include",
-        method: 'GET',
-        cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-      })
-          .then(response => response.json())
-          .then((response) => {
-            console.log(response)
-            this.reloadCameraSectors()
-            return response
-          });
+    async removeSectorFromRoom(sector){
+      let returnResult
+      try{
+        returnResult = await fetch(`http://localhost:5000/removeSectorFromRoomLsit?sectorId=${sector.id}&roomId=${this.room.id}`, {
+          credentials: "include",
+          method: 'GET',
+          cors: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8',
+          },
+        })
+            .then(response => response.json())
+            .then((response) => {
+              console.log(response)
+              this.reloadCameraSectors()
+              return response
+            });
+      } catch (err) {
+        console.log(err)
+      }
+      return returnResult
     },
     ...mapActions([
         'addRoom',
@@ -565,8 +608,12 @@ export default {
 }
 .grid-default{
   display: grid;
-  grid-gap: 50px;
-  grid-template-columns: 50px 1fr;
+  grid-gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  &-sector{
+    grid-gap: 30px;
+    grid-template-columns: 70px 1fr;
+  }
 }
 ::-webkit-scrollbar {
   width: 6px;
@@ -601,6 +648,9 @@ export default {
   &-sector{
     width: 4em;
   }
+}
+td{
+  padding: 0;
 }
 //:root{
 //  --td-height: 52px;

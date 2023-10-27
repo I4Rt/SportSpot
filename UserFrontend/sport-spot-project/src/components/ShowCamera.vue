@@ -107,6 +107,10 @@ export default {
     },
     drawLine(x, y){
       if (this.sectorSelected){
+        if (this.sector.typeId === 2) {
+          alert('Нельзя задать координаты сектору указанного типа')
+          return
+        }
         let targetCoords = document.getElementById('canvas').getBoundingClientRect()
         let newX = x - targetCoords.left
         let newY = y - targetCoords.top

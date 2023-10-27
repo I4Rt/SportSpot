@@ -103,7 +103,7 @@
               <button
                   type="button"
                   class="btn btn-primary"
-                  @click="removeCamera(camera.id); resetCamera()">
+                  @click="selectFunction(removeCamera, camera.id); resetCamera()">
                 Удалить
               </button>
             </div>
@@ -114,13 +114,24 @@
             <template v-if="cameraSelected && getSectorsByCameraID(this.camera.id) === null">
               <img :src="require('../assets/gifs/black-spinner.svg')" style="width: 100px; height: 100px" alt="">
             </template>
+
             <template v-else>
               <div v-if="cameraSelected" class="scroll scroll-sectors">
                 <div
                     v-for="(cameraSector, index) in getSectorsByCameraID(this.camera.id)"
-                    style="margin-top: 5px; margin-left: 5px"
+                    style=" margin-top: 5px; margin-left: 40px"
+                    class="grid-default grid-default-sectors"
+                    :class="cameraSector.typeId === 1 && cameraSector.points.length === 0 ? 'grid-default-sectors-danger' : ''"
                     :key="index">
-                  <div class="grid-default grid-default-sectors">
+                    <div class="content content-start"
+                         v-if="cameraSector.typeId === 1 && cameraSector.points.length === 0">
+                      <img
+                          :src="require('../assets/icons/danger24.png')"
+                          alt=""
+                          title="У сектора данного типа отсутствует область анализа">
+                    </div>
+
+
                     <input class="input-field-sector" type="text" v-model.trim="cameraSector.name" placeholder="Название">
                     <select v-model="cameraSector.typeId">
                       <option v-for="(sectorType, index) in getSectorTypes" :value="sectorType.id" :key="index">
@@ -139,7 +150,6 @@
                         $refs.showCamera.drawClear()">
                       <img style="margin-bottom: 5px" :src="require('../assets/icons/delete.png')" alt="">
                     </button>
-                  </div>
                 </div>
               </div>
             </template>
@@ -245,21 +255,25 @@ export default {
   methods: {
     async getSectorTypesFromDB() {
       let returnResult
-      fetch(`http://localhost:5000/getSectorTypes`, {
-        credentials: "include",
-        method: 'GET',
-        cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-      })
-          .then(response => response.json())
-          .then((response) => {
-            returnResult = response
-            console.log('sectorTypes ')
-            this.$store.state.sectorTypes = response
-            console.log(this.$store.state.sectorTypes)
-          });
+      try{
+        returnResult = await fetch(`http://localhost:5000/getSectorTypes`, {
+          credentials: "include",
+          method: 'GET',
+          cors: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8',
+          },
+        })
+            .then(response => response.json())
+            .then((response) => {
+              console.log('sectorTypes ')
+              this.$store.state.sectorTypes = response
+              console.log(this.$store.state.sectorTypes)
+              return response
+            });
+      } catch (err) {
+        console.log(err)
+      }
       return returnResult
     },
     async getSectorsByCameraIDFromDB() {
@@ -287,64 +301,70 @@ export default {
       return returnResult
     },
     async setCamera() {
-      return fetch('http://localhost:5000/setCamera', {
-        credentials: "include",
-        method: 'POST',
-        // cors: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-        },
-        body: JSON.stringify({
-          "chanel": this.camera.chanel,
-          "codec": this.camera.codec,
-          "id": this.camera.id,
-          "ip": this.camera.ip,
-          "port": this.camera.port,
-          "login": this.camera.login,
-          "name": this.camera.name,
-          "password": this.camera.password,
-          "fullRoute": this.camera.fullRoute
+      let returnResult
+      try {
+        returnResult = await fetch('http://localhost:5000/setCamera', {
+          credentials: "include",
+          method: 'POST',
+          // cors: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json;charset=utf-8',
+          },
+          body: JSON.stringify({
+            "chanel": this.camera.chanel,
+            "codec": this.camera.codec,
+            "id": this.camera.id,
+            "ip": this.camera.ip,
+            "port": this.camera.port,
+            "login": this.camera.login,
+            "name": this.camera.name,
+            "password": this.camera.password,
+            "fullRoute": this.camera.fullRoute
+          })
         })
-      })
-          .then(response => response.json())
-          .then((response) => {
-            console.log('setCameraResponse ' + response)
-            console.log(response)
-            if (response.answer === 'Save error, check identy if values (full route may be)'){
-              alert('Данные не сохранены. Возможно, камера с указанным путем уже существует')
-              // try {
-              //   this.camera.fullRoute = this.getCameraByID(this.camera.id).fullRoute
-              // }
-            }
-
-            if (response.id) {
-              this.camera.id = response.id
-              let cameraCopy = Object.assign({}, this.camera)
-              console.log('check')
-              if (this.getCameraByID(cameraCopy.id) === undefined) {
-                this.addCamera(cameraCopy)
-                console.log('yesCheck')
+            .then(response => response.json())
+            .then((response) => {
+              console.log('setCameraResponse ' + response)
+              console.log(response)
+              if (response.answer === 'Save error, check identy if values (full route may be)'){
+                alert('Данные не сохранены. Возможно, камера с указанным путем уже существует')
               }
-              console.log('noCheck')
-              try {
-                this.getSectors.forEach((sector) => {
-                  sector.camId = this.camera.id
-                  this.selectFunction(this.setSectorToDB, sector)
-                })
-              } catch (err) {
-                console.log(err)
+              if (response.id) {
+                this.camera.id = response.id
+                let cameraCopy = Object.assign({}, this.camera)
+                console.log('check')
+                if (this.getCameraByID(cameraCopy.id) === undefined) {
+                  this.addCamera(cameraCopy)
+                  console.log('yesCheck')
+                }
+                console.log('noCheck')
+                try {
+                  this.getSectors.forEach((sector) => {
+                    sector.camId = this.camera.id
+                    this.selectFunction(this.setSectorToDB, sector)
+                  })
+                } catch (err) {
+                  console.log(err)
+                }
               }
-            }
-            return response
-          });
+              return response
+            })
+      } catch (err) {
+        console.log(err)
+      }
+      return returnResult
     },
     save() {
       this.v$.camera.$touch()
       console.log('save')
       if (!this.v$.camera.$error) {
         console.log('Валидация прошла успешно')
-        this.selectFunction(this.setCamera).then(() => {
-          if (!this.cameraSelected) this.resetCamera()
+        this.selectFunction(this.setCamera).then((response) => {
+          if (!this.cameraSelected && response.id){
+            this.resetCamera().then(() =>{
+              this.chooseCamera(this.getCameraByID(response.id))
+            })
+          }
         })
       }
       else console.log('Валидация не прошла')
@@ -406,32 +426,36 @@ export default {
         }
       }
     },
-    resetCamera(){
-      // this.$refs.showCamera.changeImgPath('@/assets/images/background.png')
-      console.log('reset')
-      this.cameraSelected = false
-      this.$store.state.sectors = null
-      let cameraCopy = Object.assign({}, this.camera)
-      this.camera = cameraCopy
-      this.camera.id = null
-      this.camera.roomID = null
-      this.camera.name = null
-      this.camera.ip = null
-      this.camera.codec = null
-      this.camera.port = null
-      this.camera.chanel = null
-      this.camera.login = null
-      this.camera.password = null
-      this.camera.fullRoute = ''
-      this.$refs.showCamera.changeImgPath("data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=")
-      this.v$.camera.$reset()
-      this.resetSector()
-      this.$refs.showCamera.drawClear()
+    async resetCamera(){
+      new Promise((resolve) =>{
+        console.log('reset')
+        this.cameraSelected = false
+        this.$store.state.sectors = null
+        let cameraCopy = Object.assign({}, this.camera)
+        this.camera = cameraCopy
+        this.camera.id = null
+        this.camera.roomID = null
+        this.camera.name = null
+        this.camera.ip = null
+        this.camera.codec = null
+        this.camera.port = null
+        this.camera.chanel = null
+        this.camera.login = null
+        this.camera.password = null
+        this.camera.fullRoute = ''
+        this.$refs.showCamera.changeImgPath("data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=")
+        this.v$.camera.$reset()
+        this.resetSector()
+        this.$refs.showCamera.drawClear()
 
-      if (this.getRefreshInterval){
-        console.log('clean')
-        this.$store.commit('clearRefreshInterval')
-      }
+        if (this.getRefreshInterval){
+          console.log('clean')
+          this.$store.commit('clearRefreshInterval')
+        }
+        resolve('ok')
+      })
+      // this.$refs.showCamera.changeImgPath('@/assets/images/background.png')
+
     },
     resetSector() {
       this.$refs.showCamera.drawClear()
@@ -512,7 +536,7 @@ export default {
 }
 .input-field-sector{
   outline: none;
-  width: 150px;
+  width: 100px;
   height: 25px;
   font-size: 14px;
   margin-right: 15px;
@@ -582,7 +606,10 @@ export default {
   grid-template-columns: 1fr 1fr;
   &-sectors{
     grid-template-columns: repeat(4, 1fr);
-    width: 90%;
+    width: 80%;
+    &-danger{
+    grid-template-columns: repeat(5, 1fr);
+    }
   }
 }
 .short-name {

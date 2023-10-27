@@ -5,9 +5,11 @@
         <label class="field">Календарь</label>
       </div>
         <div class="col-6">
-          <div class="grid-default" :class="roomSelected ? 'grid-default-room-label' : ''">
-            <div class="content content-start">
-              <label v-if="!roomSelected" class="field">Помещения</label>
+          <div class="grid-default grid-default-room-label" :class="roomSelected ? 'grid-default-room-label' : ''">
+              <div v-if="!roomSelected" class="grid-default grid-default-room-label">
+                <label class="field">Помещения</label>
+                <div></div>
+              </div>
               <div v-if="roomSelected" class="grid-default grid-default-room-label" style="margin-left: 5px">
                 <label
                     class="field short-name short-name-room-label"
@@ -20,13 +22,21 @@
                   </label>
                 </div>
               </div>
-            </div>
-            <div class="content content-end">
-              <button v-if="roomSelected"
-                      class="btn btn-primary"
-                      style="margin-right: 5px; padding: 3px 8px"
-                      @click="roomSelected = false; busyTimesArray = []; selectFunction(getRoomsForDayFromDB, selectedDay)">Назад</button>
-              <label v-if="getFile !== null" class="field">Выбран архивный файл</label>
+            <div class="grid-default">
+              <div class="content content-end">
+                <div v-if="getFile !== null">
+                  <transition name="archive">
+                    <img title="Выбран архивный файл для анализа" v-if="showArchive" :src="require('../assets/icons/archive32.png')" alt="">
+                  </transition>
+                </div>
+              </div>
+              <div class="content content-end">
+                <button v-if="roomSelected"
+                        class="btn btn-primary"
+                        style="margin-right: 5px; padding: 3px 8px"
+                        @click="roomSelected = false; busyTimesArray = []; selectFunction(getRoomsForDayFromDB, selectedDay)">Назад</button>
+<!--                <label v-if="getFile !== null" class="field">Выбран архивный файл</label>-->
+              </div>
             </div>
           </div>
         </div>
@@ -172,10 +182,10 @@
                   <label> Комментарий: </label>
                   <input class="input-field" type="text" v-model.trim="task.comment">
                 </div>
-                <div>
-<!--                  <input v-model="duplicateTask" type="checkbox">-->
-<!--                  <span style="font-size: 14px">  Сохранять мероприятие каждый день до:</span>-->
-<!--                  <input v-model.trim="duplicateDate" type="date">-->
+                <div v-if="getFile === null">
+                  <input v-model="duplicateTask" type="checkbox">
+                  <span style="font-size: 14px">  Сохранять мероприятие каждый день до:</span>
+                  <input v-model.trim="duplicateDate" type="date">
 <!--                  <button @click="checkToDuplicate">Dupl</button>-->
                 </div>
                 <div style="width: 100%; margin-bottom: 10px; margin-top: 10px" class="grid-default">
@@ -213,13 +223,12 @@
                     </div>
                     <div class="">
                       <button class="hidden-button"
-                              @click="removeTask(selectedTask.id); resetTask(); clearTimesArray(selectedTask.timesArray)">
+                              @click="selectFunction(removeTask, selectedTask.id); resetTask(); clearTimesArray(selectedTask.timesArray)">
                         <img src="../assets/icons/delete.png" alt="">
                       </button>
                     </div>
                   </div>
                 </div>
-
             </div>
           </div>
         </div>
@@ -258,6 +267,8 @@ export default {
         interval: 5,
         statistics: 0
       },
+      showArchive: false,
+
       duplicateTask: false,
       duplicateDate: '',
 
@@ -308,6 +319,7 @@ export default {
         'getTaskByID',
         'getTasksByRoomID',
         'getRefreshInterval',
+        'getArchiveInterval',
         'getRoomByID',
         'getFile'
     ])
@@ -317,7 +329,12 @@ export default {
       console.log('clean')
       this.$store.commit('clearRefreshInterval')
     }
+    if (this.getArchiveInterval){
+      console.log('clean')
+      this.$store.commit('clearArchiveInterval')
+    }
     this.setCurrentDay()
+    this.archiveInterval()
     // this.selectFunction(this.getRoomsFromDB)
     this.createTimesArray()
   },
@@ -333,79 +350,63 @@ export default {
         for (let i = 0; i < dates; i++){
           console.log('nextDay')
           console.log(date1)
-          date1 = this.nextDay(date1)
+          date1 = new Date(this.nextDay(date1))
           console.log(date1)
-          let finalDate = this.getCorrectFormatDate(new Date(date1))
+          let finalDate = this.getCorrectFormatDate(date1)
           console.log(finalDate)
+          task.id = null
           let resp = await this.setTaskToDB(task, finalDate)
           if (resp === 'error') returnResult = false
         }
-        this.repaintTimesArray(task.timesArray, task.color + this.alphaChannel).then((value => {
-            console.log(value)
-            if (!this.taskSelected) this.resetTask()
-            this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
-              this.paintTasks()
-              this.$store.state.file = null
-            })
-          })
-      )
+        this.resetAfterSetTask(task)
         if (!returnResult) alert('Мероприятия записались не полностью. Возможно, произошло наложение времени')
     },
-
     save(saveTask){
       let task = this.task
       if (arguments.length === 1) task = saveTask
       else this.v$.task.$touch()
       console.log('save')
-      if (this.getFile !== null) {
-        if (new Date(this.selectedDay + ' ' + this.indexStart + ':00') >= new Date()) alert("Нельзя задать дату и время после текущего")
-        else if (this.duplicateDate){
-          this.setTaskToDB(task, this.selectedDay).then(() => {
-            this.checkToDuplicate(task)
-          })
+      if (new Date(this.duplicateDate) < new Date(this.selectedDay)) {
+        alert("Нельзя задать дату ранее текущей")
+        return
+      }
+      if (task.timesArray.length < 1) {
+        alert("Выберите диапазон времени")
+        return
+      }
+        if (this.getFile !== null) {
+          if (new Date(this.selectedDay + ' ' + this.indexStart + ':00') >= new Date())
+            alert("Нельзя задать дату и время после текущего")
+          else this.setTask(task)
         }
         else {
-          this.setTaskToDB(task, this.selectedDay).then(() => {
-            this.repaintTimesArray(task.timesArray, task.color + this.alphaChannel).then((value => {
-                  console.log(value)
-                  if (!this.taskSelected) this.resetTask()
-                  this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
-                    this.paintTasks()
-                    this.$store.state.file = null
-                  })
-                })
-            )
-          })
+          if (new Date(this.selectedDay + ' ' + this.indexStart + ':00') < new Date())
+            alert("Нельзя задать дату и время до текущего")
+          else this.setTask(task)
         }
-      }
-      else {
-        if (new Date(this.selectedDay + ' ' + this.indexStart + ':00') < new Date()) alert("Нельзя задать дату и время до текущего")
-        else if (this.duplicateDate) {
-          this.setTaskToDB(task, this.selectedDay).then(() => {
-            this.checkToDuplicate(task)
-          })
-        }
-        else {
-          this.setTaskToDB(task, this.selectedDay).then(() => {
-            this.repaintTimesArray(task.timesArray, task.color + this.alphaChannel).then((value => {
-                  console.log(value)
-                  if (!this.taskSelected) this.resetTask()
-                  this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
-                    this.paintTasks()
-                    this.$store.state.file = null
-                  })
-                })
-            )
-          })
-        }
-      }
     },
-
+    setTask(task){
+      this.setTaskToDB(task, this.selectedDay).then((response) => {
+        if (response === 'error') return
+        if (this.duplicateDate) this.checkToDuplicate(task)
+        else {
+          this.resetAfterSetTask(task)
+        }
+      })
+    },
+    resetAfterSetTask(task){
+      this.repaintTimesArray(task.timesArray, task.color + this.alphaChannel).then((value) => {
+        console.log(value)
+        if (!this.taskSelected) this.resetTask()
+        this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
+          this.paintTasks()
+          this.$store.state.file = null
+        })
+      })
+    },
     async setTaskToDB(task, date) {
       let returnResult
       console.log('\nsetDate ' + date)
-
-      if(task.timesArray.length >= 1){
         if (!this.v$.task.$error) {
           let request
           let dataBody = {
@@ -473,11 +474,26 @@ export default {
             console.log(err)
           }
         }
-      }
-      else alert("Выберите диапазон времени")
       return returnResult
     },
-
+    archiveInterval(){
+      let archiveIntervalStart = false
+      let interval = setInterval(() => {
+        // console.log('fileCheck')
+        if (this.getFile !== null && !archiveIntervalStart){
+          archiveIntervalStart = true
+          let archiveInterval = setInterval(() => {
+              if (this.getFile === null){
+                this.showArchive = false
+                archiveIntervalStart = false
+                clearInterval(archiveInterval)
+            }
+            this.showArchive = !this.showArchive
+          }, 1000)
+        }
+      }, 500)
+      this.$store.commit('setRefreshInterval', interval)
+    },
     chooseTask(task) {
       console.log('choose')
       // this.resetTask()
@@ -560,6 +576,27 @@ export default {
       )
       return 'repaintTimesArray'
     },
+    paintTasks() {
+      console.log('paintTasks')
+      this.tasksLoaded = true
+      console.log(`roomSelected ${this.roomSelectedId}`)
+      for (let task of this.getTasksByRoomID(this.roomSelectedId)){
+        // console.log(`\n tasks: ${task.begin}; ${task.end}`)
+        // console.log(task)
+        let indexStart = this.getTimeIndex(task.begin)
+        let indexEnd = this.getTimeIndex(task.end)-1 // чтобы не занимать ячейку, не подходящую по id
+        let sliceArray = this.$data.timesArray.slice(indexStart, indexEnd+1) // $data - копирование без реактивности
+        // console.log(`\ncheck: ${indexStart}; ${indexEnd}; ${sliceArray}`)
+        task.timesArray = sliceArray.length === 0 ? ['23:30'] : sliceArray
+        // console.log('color ' + task.color)
+        this.paintTimesArray(task.timesArray, task.color + this.alphaChannel)
+        for (let time of task.timesArray){
+          this.busyTimesArray.push(time)
+        }
+      }
+      this.task.timesArray = ''
+      if (this.taskSelected) this.resetTask()
+    },
     async paintTimesArray(sliceArray, selectedColor){
       console.log('newPaint')
       let color = this.task.color + this.alphaChannel
@@ -570,7 +607,7 @@ export default {
         if (!this.busyTimesArray.includes(i)){
           try {
             if (sliceArray.includes(i)){
-              console.log(sliceArray)
+              // console.log(sliceArray)
               // console.log('include ' + i)
               document.getElementById(i).style.setProperty('--color', color)
               document.getElementById(i).classList.add('linear-table-td-painted')
@@ -678,7 +715,7 @@ export default {
       this.prevCalendarIndex = index
 
       if (this.roomSelected){
-        this.resetTask()
+        if (this.taskSelected) this.resetTask()
         this.busyTimesArray = []
         for (let i of this.timesArray) document.getElementById(i).classList.remove('linear-table-td-painted')
         this.tasksLoaded = false
@@ -697,25 +734,6 @@ export default {
       this.selectFunction(this.getTasksFromDB, this.selectedDay).then(() => {
         this.paintTasks()
       })
-    },
-    paintTasks() {
-      this.tasksLoaded = true
-      console.log(`roomSelected ${this.roomSelectedId}`)
-      for (let task of this.getTasksByRoomID(this.roomSelectedId)){
-        console.log(`\n tasks: ${task.begin}; ${task.end}`)
-        console.log(task)
-        let indexStart = this.getTimeIndex(task.begin)
-        let indexEnd = this.getTimeIndex(task.end)-1 // чтобы не занимать ячейку, не подходящую по id
-        let sliceArray = this.$data.timesArray.slice(indexStart, indexEnd+1) // $data - копирование без реактивности
-        console.log(`\ncheck: ${indexStart}; ${indexEnd}; ${sliceArray}`)
-        task.timesArray = sliceArray.length === 0 ? ['23:30'] : sliceArray
-        console.log('color ' + task.color)
-        this.paintTimesArray(task.timesArray, task.color + this.alphaChannel)
-        for (let time of task.timesArray){
-          this.busyTimesArray.push(time)
-        }
-        if (!this.taskSelected) this.resetTask()
-      }
     },
     setCurrentDay(){
       this.setCorrectMonth().then((value => {
@@ -816,6 +834,9 @@ export default {
   display: grid;
   grid-gap: 10px;
   grid-template-columns: 1fr 1fr;
+  &-archive-label{
+    grid-template-columns: 50% 40%;
+  }
   &-room-label{
     grid-template-columns: 60% 40%;
   }
@@ -986,6 +1007,16 @@ export default {
   &-room-label{
     width: 100%;
   }
+}
+
+.archive-enter-active,
+.archive-leave-active{
+  transition: opacity 1s ease;
+}
+
+.archive-enter-from,
+.archive-leave-to{
+  opacity: 0;
 }
 
 </style>

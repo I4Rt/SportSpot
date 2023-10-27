@@ -38,7 +38,8 @@
       :openExplorer="openExplorer"
       :selectFunction="selectFunction"
       @closeExplorer="openExplorer = false"
-      @openCalendar="$refs.navBar.showPage('Calendar'); openExplorer = false">
+      @openCalendar="$refs.navBar.showPage('Calendar'); openExplorer = false"
+      ref="explorerPage">
   </explorer-page>
 <!--  <explorer-page-->
 <!--      v-if="page === 'Explorer'">-->
