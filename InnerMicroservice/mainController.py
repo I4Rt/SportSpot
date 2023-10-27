@@ -4,6 +4,7 @@ from flask import request
 from sqlalchemy.exc import DatabaseError
 from tools.KafkaFactory import *
 
+
 from datetime import datetime
 
 
@@ -74,6 +75,7 @@ def readDataFromRoute():
         return {request.path[1:]: True, 'data':{'message': json.loads(taskData.value)}}, 200
     except:
         raise Exception('error was here')
+
 
 
 @app.teardown_request

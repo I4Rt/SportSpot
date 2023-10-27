@@ -2,6 +2,8 @@ from config import *
 from model.SportObject import *
 from model.DataRow import *
 from model.OutUser import *
+from tools.SystemTimeHolder import SystemTimeHolder
+
 from werkzeug.exceptions import *
 from flask import request
 from sqlalchemy.exc import DatabaseError
@@ -42,13 +44,13 @@ def exceptionProcessing(foo):
             return foo(*args, **kwargs)
         except HTTPException as httpe:
             return {request.path.split('/')[-1]: False, 'data': {'description': 'HTTP error'}}, httpe.code
-        except DatabaseError as de:
-            return {request.path.split('/')[-1]: False, 'data': {'description': 'Identy error, such outerId already exist'}}, 200
+        # except DatabaseError as de:
+        #     return {request.path.split('/')[-1]: False, 'data': {'description': 'Identy error, such outerId already exist'}}, 200
         except KeyError as jsone:
             return {request.path.split('/')[-1]: False, 'data': {'description': f'Json error, lost {str(jsone.args[0]).upper()} param', 'param': jsone.args[0]}}, 200
-        except Exception as e:
-            print(e)
-            return {request.path.split('/')[-1]: False, 'data': {'description': 'Unmatched error', "error": type(e).__name__}}, 200
+        # except Exception as e:
+        #     print(e)
+        #     return {request.path.split('/')[-1]: False, 'data': {'description': 'Unmatched error', "error": type(e).__name__}}, 200
     inner.__name__ = "inner" + str(index)
     index += 1
     return inner
@@ -105,9 +107,11 @@ def appendData():
                 date = datetime.strptime(dayStamp, '%Y-%m-%d').date()
                 timeInterval = datetime.strptime(timeStamp, '%H-%M-%S').time()
                 print('rooms len is', len(data[dayStamp][timeStamp]))
+                print(data[dayStamp][timeStamp])
                 for roomId in data[dayStamp][timeStamp]:
                     try:
                         elemData = data[dayStamp][timeStamp][roomId]
+                        print(elemData)
                         element = DataRow(soId, int(roomId), date, timeInterval, elemData['plan'], elemData['real'])
                         res = element.update()
                         if res < 1:
@@ -164,7 +168,6 @@ def getData():
                     resultData[sideObjId][str(elem.date.date())][str(elem.timeInterval)] = {str(elem.roomId): {'plan': elem.plan, 'real': elem.real}}
                     
             else:
-                
                 resultData[sideObjId][str(elem.date.date())] = { str(elem.timeInterval) : {str(elem.roomId): {'plan': elem.plan, 'real': elem.real}}}
             
         
@@ -242,3 +245,22 @@ def getUsersToChangePassword():
     return {'permitChangePassword': True, 'data': {'logins': userData}}
     
 
+
+
+
+@app.route('/setDataToUpdateFrom', methods=['get', 'post'])
+@exceptionProcessing 
+@cross_origin()
+def setDataToUpdateFrom():
+    dt = datetime.strptime(request.args.get('datetime'), '%Y-%m-%d')
+    soId = int(request.args.get('soId'))
+    print(dt)
+    SystemTimeHolder.setTimeToUpdateFrom(soId, dt)
+    return {request.path[1:]: True}, 200
+    
+@app.route('/getDataToUpdateFrom', methods=['get', 'post'])
+@exceptionProcessing 
+@cross_origin()   
+def getDataToUpdateFrom():
+    soId = int(request.args.get('soId'))
+    return {request.path[1:]: True, 'data': {'datetime': str(SystemTimeHolder.popTimeToUpdateFrom(soId))}}, 200

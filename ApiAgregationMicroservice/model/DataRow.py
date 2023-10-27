@@ -43,6 +43,7 @@ class DataRow(db.Model, BaseData):
             #     ),
             # ).all()))
             # try:
+            print('updating', self)
             result = db.session.query(DataRow).filter(
                 and_
                 (

@@ -74,6 +74,7 @@ class AgregatedDataSender(Thread, Jsonifyer):
                     rooms = Room.getAll()
                     unmathcedRooms = [room.id for room in rooms]
                     
+                    print('current tasks are', len(tasks), tasks)
                     
                     result = {}
                     
@@ -89,6 +90,7 @@ class AgregatedDataSender(Thread, Jsonifyer):
                         result[str(task.roomId)] = {'real':task.getCount(), 'plan':task.targetCount}
                         
                     changedData = SideDataHolder.getInstance().changedTasks.copy()
+                    
                     setData = []
                     for task in tasks:
                         for _ in changedData:
@@ -116,7 +118,7 @@ class AgregatedDataSender(Thread, Jsonifyer):
                         sendDate: {timeInterval: result},
                     }
                     print(changedData)
-                    for taskId in changedData:
+                    for taskId in changedData: # check this may be not working (plan setting). anyway can be easier
                         
                         task = Task.getById(taskId)
                         
@@ -147,7 +149,7 @@ class AgregatedDataSender(Thread, Jsonifyer):
                             dateStr = str(localDate)
                             timeStr = str(localTime).replace(':', '-')
                             try:
-                                print('setting real-plan', {'real':task.getCount(), 'plan':task.targetCount})
+                                # print('setting real-plan', {'real':task.getCount(), 'plan':task.targetCount})
                                 resultToSend[dateStr][timeStr][task.roomId] = {'real':task.getCount(), 'plan':task.targetCount}
                             except:
                                 try:

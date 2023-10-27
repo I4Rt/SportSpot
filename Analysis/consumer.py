@@ -219,9 +219,11 @@ class Analysis(Thread):
                             cv2.imwrite(f'{self.path}/received/image_received_' + count_images + '.jpg', decImg)
 
                             try:
-                                cnt, image = recognition(key_data["sectors"], decImg, json.loads(msg.value)["taskId"])
+                                cnt, image = recognition(key_data["sectors"], decImg, str(taskId))
                                 cv2.imwrite(f'{self.path}/detected/image_detected_' + count_images + '.jpg', image)
                             except:
+                                # with open('data.txt', 'w') as f:
+                                #     f.write(str(msg.value))
                                 print("Error during loading tag 'sectors' or 'taskId'")
 
                             list_counter.append(cnt)
