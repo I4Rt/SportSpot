@@ -7,10 +7,12 @@ import os
 import sys
 import signal
 
+from tools.Jsonifyer import Jsonifyer
+
 def streamStop( eMsg):
         raise Exception(eMsg)
     
-class Stream:
+class Stream(Jsonifyer):
     
     __camRoute:str|int = 0
     __streaming:cv2.VideoCapture | None = None
@@ -18,6 +20,7 @@ class Stream:
     __deleteTime = 5
     __isRan = False
     def __init__(self, route:str, timeLimit = 120):
+        Jsonifyer.__init__(self)
         self.__timeLimit = timeLimit
         print('initing: adding ' + str(self.__timeLimit) + 'more seconds')
         # BAD routing
@@ -30,6 +33,7 @@ class Stream:
         self._lastAskTime = None
         self.__image = None
         self.__isRan = False
+        
     
     def getParams(self):
         return [self.__camRoute, self._lastAskTime, self.__finished, self.__streaming]
@@ -91,10 +95,8 @@ class Stream:
 
     def __updateFrame(self):
         while not self._checkDelete():
-            
             try:
                 result, frame = self.__streaming.read()
-                
                 if result:
                     self.__image = frame
                     self.__isRan = True
@@ -120,13 +122,14 @@ class Stream:
             
     def _resetTime(self, newTime):
         if newTime + time() > self.__timeLimit + self.__lastAskTime:
+            print(f'stream {threading.currentThread().ident} of', self.__camRoute, 'reseting time')
             self.__timeLimit = newTime
             self.__finished = False
             self.__lastAskTime = time()
             print('reseting: adding ' + str(newTime) + ' more seconds')
         
     def _checkFinished(self):
-
+            # print('stream of', self.__camRoute, 'rest time is', time() - self.__lastAskTime - self.__timeLimit, self.__timeLimit < time() - self.__lastAskTime, )
             if self.__timeLimit < time() - self.__lastAskTime:
                 self.__finished = True
                 return True
@@ -134,7 +137,9 @@ class Stream:
     
     def _checkDelete(self):
         if self._checkFinished():
+            
             if self.__timeLimit + self.__deleteTime < time() - self.__lastAskTime:
+                print(f'stream {threading.currentThread().ident} of', self.__camRoute, 'rest time is', time() - self.__lastAskTime - self.__timeLimit - self.__deleteTime, self.__timeLimit + self.__deleteTime < time() - self.__lastAskTime )
                 self._release()
                 return True
             return False
@@ -150,8 +155,8 @@ class Stream:
             self.pid = None
         
         def run(self):
-            print(threading.currentThread().ident)
-            self.pid = os.getpid( ) 
+            # print(threading.currentThread().ident)
+            self.pid = os.getpid() 
             try:
                 camera = cv2.VideoCapture()
                 camera.setExceptionMode(True)

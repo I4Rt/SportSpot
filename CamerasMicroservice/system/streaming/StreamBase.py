@@ -1,6 +1,7 @@
 from threading import Thread
 from system.streaming.Stream import Stream
 from time import sleep
+from datetime import datetime
 class StreamBase:
     __initialized:bool = False
     __streams = []
@@ -24,9 +25,16 @@ class StreamBase:
         while cls.__needContinue:
             sleep(2)
             if len(cls.__streams) > 0:
+                print('threads lenght is', len(cls.__streams), [s.getRoute() for s in cls.__streams])
                 for stream in cls.__streams:
                     if Stream._checkDelete(stream):
                         cls.__streams.remove(stream)
+                        routes = [s.getRoute() for s in cls.__streams]
+                        stilContain = stream.getRoute() in routes
+                        if stilContain:
+                            with open('StreamQueue.txt', 'a') as f:
+                                f.write(f'{datetime.now()}\nremoved: {stream.getRoute()}\nroute now is: {routes}\n\n')
+                        print('removing thread', stream.getRoute(), stilContain)
                         
     
     @classmethod

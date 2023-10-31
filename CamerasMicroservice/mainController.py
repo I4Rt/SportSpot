@@ -56,7 +56,7 @@ def initVideo():
         duration = int(request.args.get('duration'))
         StreamInterface.initStream(route, duration)
     except Exception as e:
-        print('Exception is ' + str(e))
+        print('Exception here is ' + str(e))
         print('work t', time() - b)
         return json.dumps({'init': False, 'answer':'Add params correctly'})
     print('work t', time() - b)
