@@ -42,66 +42,82 @@ def recognition(sectors, image, taskId):
     results = model.predict(source=image, imgsz=1920, conf=0.2, classes=[0])
     decImg_h, decImg_w = image.shape[:2]
 
+    # Check gray or color image
+    r,g,b=cv2.split(image)
+    #spliting b,g,r and getting differences between them
+    r_g = np.count_nonzero(abs(r-g))
+    r_b = np.count_nonzero(abs(r-b))
+    g_b = np.count_nonzero(abs(g-b))
+    diff_sum = float(r_g+r_b+g_b)
+    #finding ratio of diff_sum with respect to size of image
+    ratio = diff_sum/image.size
     counter = 0
     points = set()
-    for sector in sectors:
-        border = []
-        points.clear()
-        boxes = results[0].boxes
 
-        if sector["mode"] == 1:
-            for coord in sector["points"]:
-                border.append((round(coord[0] * decImg_w / 100), round(coord[1] * decImg_h / 100)))
-            border.append(border[0])
-        else:
-            border.append([0, 0])
-            border.append([decImg_w - 1, 0])
-            border.append([decImg_w - 1, decImg_h - 1])
-            border.append([0, decImg_h - 1])
-            border.append([0, 0])
+    if ratio > 0.005:
+        for sector in sectors:
+            border = []
+            points.clear()
+            boxes = results[0].boxes
 
-        # Set of points. We should check all points of previous boxes because it may be the same person
-        pts = np.array(border, np.int32)
-        cv2.polylines(image, [pts], True, (0, 255, 255))
-        for box in boxes:
-            if checkIfInside(border, (box.xyxy[0][0].item(), box.xyxy[0][3].item())) or \
-                    checkIfInside(border, (box.xyxy[0][2].item(), box.xyxy[0][3].item())):
-                if ((round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())) not in points and \
-                        (round(box.xyxy[0][2].item()), round(box.xyxy[0][1].item())) not in points and\
-                        (round(box.xyxy[0][0].item()), round(box.xyxy[0][3].item())) not in points and \
-                        (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())) not in points):
-                    points.add((round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())))
-                    points.add((round(box.xyxy[0][2].item()), round(box.xyxy[0][1].item())))
-                    points.add((round(box.xyxy[0][0].item()), round(box.xyxy[0][3].item())))
-                    points.add((round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())))
+            if sector["mode"] == 1:
+                for coord in sector["points"]:
+                    border.append((round(coord[0] * decImg_w / 100), round(coord[1] * decImg_h / 100)))
+                border.append(border[0])
+            else:
+                border.append([0, 0])
+                border.append([decImg_w - 1, 0])
+                border.append([decImg_w - 1, decImg_h - 1])
+                border.append([0, decImg_h - 1])
+                border.append([0, 0])
 
-                    # Only for debugging
-                    cv2.rectangle(image, (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())),
-                                  (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())), (0, 255, 0), 2)
-                    cv2.putText(image, str(round(box.conf[0].item(), 2)),
-                                (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item()) - 5),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+            # Set of points. We should check all points of previous boxes because it may be the same person
+            pts = np.array(border, np.int32)
+            cv2.polylines(image, [pts], True, (0, 255, 255))
+            for box in boxes:
+                if checkIfInside(border, (box.xyxy[0][0].item(), box.xyxy[0][3].item())) or \
+                        checkIfInside(border, (box.xyxy[0][2].item(), box.xyxy[0][3].item())):
+                    if ((round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())) not in points and \
+                            (round(box.xyxy[0][2].item()), round(box.xyxy[0][1].item())) not in points and\
+                            (round(box.xyxy[0][0].item()), round(box.xyxy[0][3].item())) not in points and \
+                            (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())) not in points):
+                        points.add((round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())))
+                        points.add((round(box.xyxy[0][2].item()), round(box.xyxy[0][1].item())))
+                        points.add((round(box.xyxy[0][0].item()), round(box.xyxy[0][3].item())))
+                        points.add((round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())))
 
-                    counter += 1
+                        # Only for debugging
+                        cv2.rectangle(image, (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())),
+                                      (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())), (0, 255, 0), 2)
+                        cv2.putText(image, str(round(box.conf[0].item(), 2)),
+                                    (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item()) - 5),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+
+                        counter += 1
+                    else:
+                        # Only for debugging
+                        cv2.rectangle(image, (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())),
+                                      (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())), (255, 0, 0), 2)
+                        cv2.putText(image, str(round(box.conf[0].item(), 2)),
+                                    (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item()) - 5),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
                 else:
                     # Only for debugging
                     cv2.rectangle(image, (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())),
-                                  (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())), (255, 0, 0), 2)
+                                  (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())), (0, 0, 255), 2)
                     cv2.putText(image, str(round(box.conf[0].item(), 2)),
                                 (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item()) - 5),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
-            else:
-                # Only for debugging
-                cv2.rectangle(image, (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item())),
-                              (round(box.xyxy[0][2].item()), round(box.xyxy[0][3].item())), (0, 0, 255), 2)
-                cv2.putText(image, str(round(box.conf[0].item(), 2)),
-                            (round(box.xyxy[0][0].item()), round(box.xyxy[0][1].item()) - 5),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
 
-    cv2.putText(image, str(counter), (20, 120), cv2.FONT_HERSHEY_SIMPLEX,
-                1, (0, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(image, str(taskId), (20, 160), cv2.FONT_HERSHEY_SIMPLEX,
-                1, (0, 255, 0), 2, cv2.LINE_AA)
+        cv2.putText(image, str(counter), (20, 120), cv2.FONT_HERSHEY_SIMPLEX,
+                    1, (0, 255, 0), 2, cv2.LINE_AA)
+        cv2.putText(image, str(taskId), (20, 160), cv2.FONT_HERSHEY_SIMPLEX,
+                    1, (0, 255, 0), 2, cv2.LINE_AA)
+    else:
+        cv2.putText(image, "light is off", (20, 120), cv2.FONT_HERSHEY_SIMPLEX,
+                    1, (0, 255, 0), 2, cv2.LINE_AA)
+        cv2.putText(image, str(taskId), (20, 160), cv2.FONT_HERSHEY_SIMPLEX,
+                    1, (0, 255, 0), 2, cv2.LINE_AA)
 
     return counter, image  # image we should remove after debugging
 
@@ -171,7 +187,7 @@ class Analysis(Thread):
                 taskId = 0
                 res_counter = 0
 
-                threshold_for_delete = 500
+                threshold_for_delete = 1000
                 count_for_delete = 100
 
                 if len([filename for filename in os.listdir(self.path + "/received")]) > threshold_for_delete:

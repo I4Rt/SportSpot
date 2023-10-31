@@ -17,6 +17,7 @@ export default createStore({
             unusedCameras: {},
             usedCameras: {},
             refreshInterval: null,
+            archiveInterval: null,
             authorized: false,
             user: {}
         }
@@ -88,6 +89,13 @@ export default createStore({
         clearRefreshInterval (state) {
             clearInterval(state.refreshInterval)
             state.refreshInterval = null
+        },
+        setArchiveInterval (state, interval) {
+            state.archiveInterval = interval
+        },
+        clearArchiveInterval (state) {
+            clearInterval(state.archiveInterval)
+            state.archiveInterval = null
         }
     },
     actions: {
@@ -95,70 +103,98 @@ export default createStore({
             commit('setCamera', newCamera)
         },
         async removeCamera({commit}, id) {
-            console.log('remove')
-            await fetch(`http://localhost:5000/removeCamera?id=${id}`, {
-                credentials: "include",
-                method: 'GET',
-                cors: 'no-cors',
-                headers: {
-                    'Content-Type': 'application/json;charset=utf-8',
-                },
-            })
-                .then(response => response.json())
-                .then((response) => {
-                    if (response.OperationStatus === "Done"){
-                        commit('removeCamera', id)
-                    }
+            let returnResult
+            try{
+                console.log('remove')
+                returnResult =  await fetch(`http://localhost:5000/removeCamera?id=${id}`, {
+                    credentials: "include",
+                    method: 'GET',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
                 })
+                    .then(response => response.json())
+                    .then((response) => {
+                        if (response.OperationStatus === "Done"){
+                            commit('removeCamera', id)
+                        }
+                        return response
+                    })
+            } catch (err){
+                console.log(err)
+            }
+            return returnResult
         },
-        removeRoom({commit}, id) {
-            fetch(`http://localhost:5000/removeRoom?id=${id}`, {
-                credentials: "include",
-                method: 'GET',
-                cors: 'no-cors',
-                headers: {
-                    'Content-Type': 'application/json;charset=utf-8',
-                },
-            })
-                .then(response => response.json())
-                .then((response) => {
-                    if (response.OperationStatus === "Done"){
-                        commit('removeRoom', id)
-                    }
+        async removeRoom({commit}, id) {
+            let returnResult
+            try{
+                returnResult = await fetch(`http://localhost:5000/removeRoom?id=${id}`, {
+                    credentials: "include",
+                    method: 'GET',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
                 })
+                    .then(response => response.json())
+                    .then((response) => {
+                        if (response.OperationStatus === "Done"){
+                            commit('removeRoom', id)
+                        }
+                        return response
+                    })
+            } catch (err){
+                console.log(err)
+            }
+            return returnResult
+
         },
-        removeTask({commit}, id) {
-            fetch(`http://localhost:5000/removeTask?id=${id}`, {
-                credentials: "include",
-                method: 'GET',
-                cors: 'no-cors',
-                headers: {
-                    'Content-Type': 'application/json;charset=utf-8',
-                },
-            })
-                .then(response => response.json())
-                .then((response) => {
-                    if (response.OperationStatus === "Done"){
-                        commit('removeTask', id)
-                    }
+        async removeTask({commit}, id) {
+            let returnResult
+            try{
+                returnResult = await fetch(`http://localhost:5000/removeTask?id=${id}`, {
+                    credentials: "include",
+                    method: 'GET',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
                 })
+                    .then(response => response.json())
+                    .then((response) => {
+                        if (response.OperationStatus === "Done"){
+                            commit('removeTask', id)
+                        }
+                        return response
+                    })
+            } catch (err) {
+                console.log(err)
+            }
+            return returnResult
         },
-        removeSector({commit}, id) {
-            return fetch(`http://localhost:5000/removeSector?id=${id}`, {
-                credentials: "include",
-                method: 'GET',
-                cors: 'no-cors',
-                headers: {
-                    'Content-Type': 'application/json;charset=utf-8',
-                },
-            })
-                .then(response => response.json())
-                .then((response) => {
-                    if (response.OperationStatus === "Done") {
-                        commit('removeSector', id)
-                    }
-                    return response
+        async removeSector({commit}, id) {
+            let returnResult
+            try{
+                returnResult = await fetch(`http://localhost:5000/removeSector?id=${id}`, {
+                    credentials: "include",
+                    method: 'GET',
+                    cors: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8',
+                    },
                 })
+                    .then(response => response.json())
+                    .then((response) => {
+                        if (response.OperationStatus === "Done") {
+                            commit('removeSector', id)
+                        }
+                        return response
+                    })
+            } catch (err) {
+                console.log(err)
+            }
+            return returnResult
         },
         async setSectorToDB({commit}, sector) {
             console.log('setSectorToDB')
@@ -435,6 +471,9 @@ export default createStore({
         getRefreshInterval(state){
             return state.refreshInterval
         },
+        getArchiveInterval(state){
+            return state.archiveInterval
+        },
         getCameras(state) {
             return state.cameras
         },
@@ -467,6 +506,7 @@ export default createStore({
             return state.files
         },
         getFilesByDay: (state) => (date) => {
+            console.log('day')
             return state.files.filter(file => {
                 if (!file.createTime) return true
 
@@ -477,6 +517,10 @@ export default createStore({
                 // console.log(`${fullFileDate === fullDate}  ${new Date(fullFileDate)}  ${new Date(fullDate)}`)
                 return fullFileDate === fullDate
             })
+        },
+        getFilesByName: (state) => (name) => {
+            console.log('name')
+            return state.files.filter(file => file.name.toLowerCase().includes(name.toLowerCase()))
         },
         getRoomByID: (state) => (id) => {
             return state.rooms.find(room => room.id === id)

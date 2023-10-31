@@ -3,7 +3,11 @@
     <div class="explorer container window">
       <div class="grid-default">
         <div style="margin-top: 5px" class="content content-start">
-          <input @keydown.enter="getByRoutesCall(null); resetFile()" v-model.trim="routeToFile" class="input-field input-field-file" type="text" placeholder="Путь до папки с архивными файлами">
+          <input @keydown.enter="getByRoutesCall(null); resetFile()"
+                 v-model.trim="routeToFile"
+                 class="input-field input-field-file"
+                 type="text"
+                 placeholder="Путь до папки с архивными файлами">
           <button @click="getByRoutesCall(null); resetFile()" class="btn btn-success">Открыть</button>
         </div>
         <div class="content content-end">
@@ -12,7 +16,7 @@
       </div>
       <div style="margin: 10px 0" class="grid-default">
         <div class="content content-start">
-          <div style="width: 245px;" class="grid-default">
+          <div style="width: 245px;" class="grid-default grid-default-folderParams">
             <div style="font-size: 12px">
               <div class="grid-default" style="width: 60px">
                 <div class="content content-start">
@@ -45,8 +49,24 @@
                      :src="require(`../assets/icons/${imgPath}`)">
               </div>
             </div>
-            <div class="content content-end">
-              <input v-model.trim="explorerFilterDay" @change="sortByDay" type="date">
+            <div style="display: flex; align-items: center">
+              <div >
+                <div>
+                  <input
+                      class="input-field input-field-fileName"
+                      v-model.trim="explorerFilterName"
+                      @input="sortByDayName"
+                      type="text"
+                      placeholder="Поиск по названию">
+                </div>
+                <div>
+                  <input
+                      class="input-field input-field-fileName"
+                      v-model.trim="explorerFilterDay"
+                      @change="sortByDayName"
+                      type="date">
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -118,7 +138,8 @@ export default {
       },
       fileRoute: '',
       fileSelected: false,
-      explorerFilterDay: null,
+      explorerFilterDay: '',
+      explorerFilterName: '',
       routeToFile: null,
 
       filterDefault: true,
@@ -135,7 +156,8 @@ export default {
     ...mapGetters([
       'getFiles',
       'getFile',
-      'getFilesByDay'
+      'getFilesByDay',
+      'getFilesByName'
     ])
   },
   methods: {
@@ -207,14 +229,21 @@ export default {
       }
       this.getFiles.sort((a, b) => a['type'] > b['type'] ? 1 : -1)
     },
-    sortByDay(){
+    sortByDayName(){
       this.getByRoutesCall(null).then(() => {
+        console.log('1')
         if (this.explorerFilterDay !== '') this.$store.state.files = this.getFilesByDay(new Date(this.explorerFilterDay))
+        console.log('2')
+        if (this.explorerFilterName !== '') this.$store.state.files = this.getFilesByName(this.explorerFilterName)
         // for (let file in this.getFiles)
         // else this.getByRoutesCall(null)
       })
-
     },
+    // sortByName(){
+    //   this.getByRoutesCall(null).then(() => {
+    //     if (this.explorerFilterName !== '') this.$store.state.files = this.getFilesByName(this.explorerFilterName)
+    //   })
+    // },
     prevNextFolder() {
       let path = ''
       for (let i = 0; i < this.foldersInfo.page; i++){
@@ -240,6 +269,8 @@ export default {
       }
     },
     resetFile(){
+      this.explorerFilterName = ''
+      this.explorerFilterDay = ''
       this.file.name = ''
       this.file.createTime = ''
       this.file.type = ''
@@ -281,7 +312,7 @@ export default {
 }
 .explorer{
   width: 600px;
-  height: 450px;
+  height: 500px;
   background-color: #ffffff;
 }
 .camera:hover{
@@ -296,6 +327,9 @@ export default {
   display: grid;
   grid-gap: 10px;
   grid-template-columns: 1fr 1fr;
+  &-folderParams{
+    grid-template-columns: 2fr 1fr;
+  }
 }
 .content{
   display: flex;
@@ -323,6 +357,11 @@ export default {
   &-file {
     margin-top: 10px;
     width: 300px;
+    position: relative;
+  }
+  &-fileName {
+    margin: 5px;
+    width: auto;
     position: relative;
   }
 }
