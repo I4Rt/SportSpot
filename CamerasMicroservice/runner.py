@@ -2,11 +2,14 @@ import subprocess
 import os
 from time import time, sleep, ctime
 
+from multiprocessing import Process
+
 fileName = 'tempFile.txt'
 
 proc = subprocess.Popen(['python', 'AppCameras.py'], shell=True)
 sleep(10)
 while True:
+    
     sleep(10)
     try:
         nowTime = time()

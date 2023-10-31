@@ -44,13 +44,13 @@ def exceptionProcessing(foo):
             return foo(*args, **kwargs)
         except HTTPException as httpe:
             return {request.path.split('/')[-1]: False, 'data': {'description': 'HTTP error'}}, httpe.code
-        # except DatabaseError as de:
-        #     return {request.path.split('/')[-1]: False, 'data': {'description': 'Identy error, such outerId already exist'}}, 200
+        except DatabaseError as de:
+            return {request.path.split('/')[-1]: False, 'data': {'description': 'Identy error, such outerId already exist'}}, 200
         except KeyError as jsone:
             return {request.path.split('/')[-1]: False, 'data': {'description': f'Json error, lost {str(jsone.args[0]).upper()} param', 'param': jsone.args[0]}}, 200
-        # except Exception as e:
-        #     print(e)
-        #     return {request.path.split('/')[-1]: False, 'data': {'description': 'Unmatched error', "error": type(e).__name__}}, 200
+        except Exception as e:
+            print(e)
+            return {request.path.split('/')[-1]: False, 'data': {'description': 'Unmatched error', "error": type(e).__name__}}, 200
     inner.__name__ = "inner" + str(index)
     index += 1
     return inner
@@ -248,19 +248,24 @@ def getUsersToChangePassword():
 
 
 
-@app.route('/setDataToUpdateFrom', methods=['get', 'post'])
+@app.route('/api/setDataToUpdateFrom', methods=['get', 'post'])
+@auth.login_required
 @exceptionProcessing 
 @cross_origin()
 def setDataToUpdateFrom():
     dt = datetime.strptime(request.args.get('datetime'), '%Y-%m-%d')
-    soId = int(request.args.get('soId'))
-    print(dt)
+    so = SportObject.getBySideId(request.args.get('soId'))
+    if so:
+        soId = so.id
+    else:
+        return {request.path[1:]: False, 'data':{'answer': 'No such id'}}, 200
+    # print(dt)
     SystemTimeHolder.setTimeToUpdateFrom(soId, dt)
     return {request.path[1:]: True}, 200
     
-@app.route('/getDataToUpdateFrom', methods=['get', 'post'])
+@app.route('/management/getDataToUpdateFrom', methods=['get', 'post'])
 @exceptionProcessing 
 @cross_origin()   
 def getDataToUpdateFrom():
-    soId = int(request.args.get('soId'))
+    soId = int(request.json['soId'])
     return {request.path[1:]: True, 'data': {'datetime': str(SystemTimeHolder.popTimeToUpdateFrom(soId))}}, 200

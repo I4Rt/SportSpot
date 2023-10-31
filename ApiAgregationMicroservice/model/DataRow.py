@@ -43,7 +43,7 @@ class DataRow(db.Model, BaseData):
             #     ),
             # ).all()))
             # try:
-            print('updating', self)
+            # print('updating', self)
             result = db.session.query(DataRow).filter(
                 and_
                 (
@@ -53,9 +53,9 @@ class DataRow(db.Model, BaseData):
                     DataRow.timeInterval == self.timeInterval,
                     DataRow.real <= self.real
                 ),
-            ).update({DataRow.real: self.real})
+            ).update({"real": self.real}, synchronize_session = 'fetch')
             
-                    
+            
             
             db.session.commit()
             

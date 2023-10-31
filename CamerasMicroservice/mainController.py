@@ -19,6 +19,7 @@ from tools.LastTimeRunnerHolder import LastTimeRunnerHolder as ltrh
 @app.route('/getFrame')
 def getFrame():
     ltrh.setLastTime(datetime.now())
+    print('outside: ', ltrh.getTimeInterval())
     try:
         route = request.args.get('route')
     except:

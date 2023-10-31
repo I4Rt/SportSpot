@@ -70,7 +70,28 @@ class AgregatedDataSender(Thread, Jsonifyer):
                     
                     # interval = datetime.now() - date     # to get lost time 
                     # minutes = interval.total_seconds() // 60
-                    tasks = Task.getLastInInterval(30) #Task.getLastInInterval(minutes)
+                    minutesToLoad = 30
+                    try:
+                        url = 'http://localhost:4999/management/getDataToUpdateFrom'            # TODO: change IP
+                        bodyData = {'soId': app.config['SPORT_OBJECT_ID']}
+                        data = requests.post(url, json = bodyData)
+                        
+                        answer = data.json()
+                        
+                        try:
+                            dateFrom = answer["data"]["datetime"].split('.')[0]
+                            print('date to load from is', dateFrom)
+                            dt = datetime.strptime(dateFrom, '%Y-%m-%d %H:%M:%S')
+                            dif = datetime.now() - dt
+                            minutesToLoad =  dif.total_seconds() // 60
+                            print("total minutes fr update from", minutesToLoad)
+                        except Exception as e:
+                            print('last datetime to load from exception recieve error', e)
+                            pass
+                    except:
+                        print ('last datetime to load from exception connection error')
+                        
+                    tasks = Task.getLastInInterval(minutesToLoad) #Task.getLastInInterval(minutes) # add get time to check from here
                     rooms = Room.getAll()
                     unmathcedRooms = [room.id for room in rooms]
                     
