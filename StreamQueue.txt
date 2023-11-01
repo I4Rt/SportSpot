@@ -6,3 +6,219 @@ route now is: [0]
 removed: 0
 route now is: [0]
 
+2023-10-31 14:53:03.544301
+removed: 0
+route now is: [0]
+
+2023-10-31 14:54:51.619126
+removed: 0
+route now is: [0]
+
+2023-10-31 14:58:03.757615
+removed: 0
+route now is: [0]
+
+2023-10-31 14:58:27.778050
+removed: 0
+route now is: [0]
+
+2023-10-31 15:00:51.881324
+removed: 0
+route now is: [0]
+
+2023-10-31 15:02:15.938436
+removed: 0
+route now is: [0]
+
+2023-10-31 15:02:39.961863
+removed: 0
+route now is: [0]
+
+2023-10-31 15:03:03.980250
+removed: 0
+route now is: [0]
+
+2023-10-31 15:04:28.047911
+removed: 0
+route now is: [0]
+
+2023-10-31 15:05:16.076344
+removed: 0
+route now is: [0]
+
+2023-10-31 15:06:04.110909
+removed: 0
+route now is: [0]
+
+2023-10-31 15:06:28.130121
+removed: 0
+route now is: [0]
+
+2023-10-31 15:08:52.219545
+removed: 0
+route now is: [0]
+
+2023-10-31 15:10:16.267777
+removed: 0
+route now is: [0]
+
+2023-10-31 15:10:52.295169
+removed: 0
+route now is: [0]
+
+2023-10-31 15:11:16.308634
+removed: 0
+route now is: [0]
+
+2023-10-31 15:11:40.326486
+removed: 0
+route now is: [0]
+
+2023-10-31 15:12:04.338994
+removed: 0
+route now is: [0]
+
+2023-10-31 15:30:05.162026
+removed: 0
+route now is: [0]
+
+2023-10-31 15:44:04.668753
+removed: 0
+route now is: [0]
+
+2023-11-01 12:43:48.709071
+removed: 0
+route now is: [0]
+
+2023-11-01 12:44:12.722729
+removed: 0
+route now is: [0]
+
+2023-11-01 12:44:36.738605
+removed: 0
+route now is: [0]
+
+2023-11-01 12:45:48.783341
+removed: 0
+route now is: [0]
+
+2023-11-01 12:46:12.797965
+removed: 0
+route now is: [0]
+
+2023-11-01 12:47:24.840009
+removed: 0
+route now is: [0]
+
+2023-11-01 13:32:48.849009
+removed: 0
+route now is: [0]
+
+2023-11-01 13:33:03.858621
+removed: 0
+route now is: [0]
+
+2023-11-01 13:33:53.168943
+removed: 0
+route now is: [0]
+
+2023-11-01 13:34:17.183410
+removed: 0
+route now is: [0]
+
+2023-11-01 13:34:41.198545
+removed: 0
+route now is: [0]
+
+2023-11-01 13:35:05.213456
+removed: 0
+route now is: [0]
+
+2023-11-01 13:35:29.229038
+removed: 0
+route now is: [0]
+
+2023-11-01 13:35:53.245103
+removed: 0
+route now is: [0]
+
+2023-11-01 13:36:17.258785
+removed: 0
+route now is: [0]
+
+2023-11-01 13:36:41.274321
+removed: 0
+route now is: [0]
+
+2023-11-01 13:37:05.291727
+removed: 0
+route now is: [0]
+
+2023-11-01 13:37:29.307200
+removed: 0
+route now is: [0]
+
+2023-11-01 13:38:17.338287
+removed: 0
+route now is: [0]
+
+2023-11-01 13:38:41.353651
+removed: 0
+route now is: [0]
+
+2023-11-01 13:39:05.365268
+removed: 0
+route now is: [0]
+
+2023-11-01 13:41:05.435927
+removed: 0
+route now is: [0]
+
+2023-11-01 13:41:29.449741
+removed: 0
+route now is: [0]
+
+2023-11-01 13:41:53.461685
+removed: 0
+route now is: [0]
+
+2023-11-01 13:42:17.477471
+removed: 0
+route now is: [0]
+
+2023-11-01 13:42:41.491014
+removed: 0
+route now is: [0]
+
+2023-11-01 13:43:05.504531
+removed: 0
+route now is: [0]
+
+2023-11-01 13:43:29.515473
+removed: 0
+route now is: [0]
+
+2023-11-01 13:43:53.527451
+removed: 0
+route now is: [0]
+
+2023-11-01 13:44:17.540221
+removed: 0
+route now is: [0]
+
+2023-11-01 13:44:41.552587
+removed: 0
+route now is: [0]
+
+2023-11-01 13:45:05.568178
+removed: 0
+route now is: [0]
+
+2023-11-01 13:45:29.582144
+removed: 0
+route now is: [0]
+
+2023-11-01 13:45:53.595746
+removed: 0
+route now is: [0]
+

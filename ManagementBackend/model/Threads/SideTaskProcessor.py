@@ -110,12 +110,12 @@ class SideTaskProcessor(Thread, Jsonifyer):
                         print('time to process', end - begin)
                         maxedTime = max(maxedTime, end - begin)
                         rest = 5 + len(cameras) * self.__duration + self.__interval - (end - begin) 
-                        print('sleep before the next camera', rest)
-                        sleep(rest if rest > 0 else 0)
+                        print('sleep before the next room', rest)
+                        # sleep(rest if rest > 0 else 0)
                         localTime += maxedTime
                         
                     if time() - beginAllCams < self.__rootTime :
-                        print('sleep before all camera loop', self.__rootTime - (time() - beginAllCams) )
+                        print('sleep before all room loop', self.__rootTime - (time() - beginAllCams) )
                         sleep(self.__rootTime - (time() - beginAllCams))
                 except Exception as e:
                     print('side task thread error in loop: ', e)

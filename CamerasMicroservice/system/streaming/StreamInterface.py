@@ -2,19 +2,21 @@ from system.streaming.StreamBase import StreamBase
 from system.streaming.Stream import Stream
 from time import sleep
 class StreamInterface:
+    '''
+    в случае попадания в интервал финиш - удаление, 
+    производится принудительное закрытие и удаление стрима,
+    далее создание нового
+    '''
     
     @classmethod
     def initStream(cls, route, timeLimit = 120):
         if route.isdigit():
             route = int(route)
-        for stream in StreamBase._getStreams():
-            print(stream._checkFinished(), route, stream.getRoute())
-            if not stream._checkFinished() and stream.getRoute() == route:
-                stream._resetTime(timeLimit)
-                return stream.getStream()
-        stream = Stream(route, timeLimit)
-        stream.init()
-        StreamBase._addStream(stream)
+        stream = StreamBase.initStream(route, timeLimit)
+        
+        return stream.getStream()
+    
+   
         
     
     @classmethod
@@ -31,10 +33,5 @@ class StreamInterface:
     
     @classmethod
     def refreshStream(cls, route:str, newTime: float | int):
-        for stream in StreamBase._getStreams():
-            print('compare', stream.getRoute(), type(stream.getRoute()), route, type(route))
-            if not stream._checkFinished() and str(stream.getRoute()) == route:
-                stream._resetTime(newTime)
-                return True
-        return False
+        return StreamBase.refreshStream(route, newTime)
     

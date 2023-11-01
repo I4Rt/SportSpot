@@ -3,6 +3,7 @@ import requests
 from tools.FileUtil import FileUtil
 from time import sleep
 
+from datetime import datetime
 import cv2
 
 class FrameGetter:
@@ -25,7 +26,12 @@ class FrameGetter:
         frame = r.json()['frame']
         try:
             img = FileUtil.convertBytesToImg(frame)
+            
+            # with open('statistics.txt', 'a') as f:
+            #     f.write(str(datetime.now()) + f' getting from {route} result: True\n' )
         except:
+            # with open('statistics.txt', 'a') as f:
+            #     f.write(str(datetime.now()) + f' getting from {route} result: False\n' )
             img = None
         return img
     
