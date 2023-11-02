@@ -21,6 +21,10 @@ while True:
                 print('can not terminate', e)
             print('rerunnung')
             os.remove(fileName)
+            os.system('python close.py')
+            log = open('log.txt', 'a')
+            log.write('rerunning')
+            log.close()
             proc = subprocess.Popen(['python', 'AppCameras.py'], shell=True)
         sleep(10)
     except Exception as e:
