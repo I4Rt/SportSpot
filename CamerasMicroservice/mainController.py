@@ -26,9 +26,11 @@ def getFrame():
         return json.dumps({"frame":None, 'answer': 'Add params correctly'})
     try:
         frame = StreamInterface.getFrame(route)
+        print('type of frame is', type(frame) )
         imgBytes = FileUtil.convertImageToBytes(frame)
         return json.dumps({"route": route, "frame": imgBytes})
-    except:
+    except Exception as e:
+        print('get framer error in controller ', e)
         return json.dumps({"route": route, "frame": None})
 
                     

@@ -7,10 +7,11 @@ import os
 import sys
 import signal
 
+
 from tools.Jsonifyer import Jsonifyer
 
 from system.streaming.StopableThread import StopableThread
-
+from system.streaming.StreamBase import StreamBase
     
 class Stream(Jsonifyer):
     
@@ -33,6 +34,8 @@ class Stream(Jsonifyer):
         self._lastAskTime = None
         self._image = None
         self._isRan = False
+        
+        self.__needStop = False
         
         self.__deleted = False
         
@@ -60,38 +63,41 @@ class Stream(Jsonifyer):
     
     
     def _connect(self):
-        b = time()
         try:
             if self._streaming == None:
                 print('connecting', self.__camRoute)
                 # print('ppid', os.getpid())
-                connectionThread = Stream.ThreadConnector(self.__camRoute)
-                connectionThread.start()
-                connectionThread.join(timeout=10)
-                if not connectionThread.result:
-                    connectionThread.stop()
+                try:
+                    camera = cv2.VideoCapture()
+                    camera.setExceptionMode(True)
+                    camera.open(self.__camRoute)
+                except:
+                    try:
+                        camera.close()
+                    except Exception as e:
+                        print('close in connectiong error', e)
                     raise Exception(self.__camRoute, 'connection timeout exception')
-                self._streaming = connectionThread.result
                 
-                # print('time of initing videocapture is', time() - b)
-                # print('getting stream resilt', self._streaming)
+                self._streaming = camera
                 
         except Exception as e:
             self._streaming = None
-            # print('time of initing videocapture is', time() - b)
             raise Exception('Can not capture the video', type(e), e)
     
     def _release(self):
-        print('releasing', threading.currentThread().ident)
+        print('releasing', self.__cameraRoute)
         self.getterThread.stop()
         sleep(0.1)
         if self._streaming != None:
             try:
                 self._streaming.release()
+                StreamBase._removeStream(self)         # check it
+                print('releasing', self.__cameraRoute, 'done')
+                self._streaming = None
             except:
-                print('not released')
+                print('releasing', self.__cameraRoute, 'error')
             
-            
+            '''
             # try:
             #     self.getterThread.terminate()
             #     self.getterThread.kill()
@@ -100,6 +106,8 @@ class Stream(Jsonifyer):
             #     print('closing thread exception', e)
             
             # self.getterThread.stop()
+            '''
+            
             
     
     def getId(self):
@@ -112,13 +120,7 @@ class Stream(Jsonifyer):
         
         self.getterThread = StopableThread(target=self.__updateFrame, args=(), looped=True)
         self.getterThread.start()
-        print('initing', threading.currentThread().ident)
-        
-        # self.getterThread = multiprocessing.Process(target=self.__updateFrame)
-        # self.getterThread.start()
-        
-        # self.getterThread = self.ThreadReader(target=self)
-        # self.getterThread.start()
+
         
         for _ in range(10):
             sleep(0.4)
@@ -129,17 +131,22 @@ class Stream(Jsonifyer):
     def __updateFrame(self):
         # while not self._checkDelete(): #TODO: test
             try:
-                if not self._checkDelete():
+                if not self.__needStop and self.streaming:
+                    if not self._checkDelete():
                         
-                    result, frame = self._streaming.read()
-                    if result:
-                        self._image = frame
-                        self._isRan = True
+                        result, frame = self._streaming.read()
+                        if result:
+                            self._image = frame
+                            self._isRan = True
+                        else:
+                            self._release()
+                            self.__needStop = True
                     else:
                         self._release()
                 else:
-                    sleep(1)
+                    sleep(0.2)
             except Exception as e:
+                self._release()
                 print('test', e)
             
             
@@ -149,7 +156,7 @@ class Stream(Jsonifyer):
     def __getFrames(self):
         if self._streaming == None:
             raise Exception('First try to connect the camera')
-        while not self._checkDelete():
+        while True:                                                # check it
             if not self.__finished:
                 try:
                     if self._image is None:
@@ -167,7 +174,6 @@ class Stream(Jsonifyer):
             self.__timeLimit = newTime
             self.__finished = False
             self.__lastAskTime = time()
-            
             print('reseting: adding ' + str(newTime) + ' more seconds')
         
     def _checkFinished(self):
@@ -187,35 +193,35 @@ class Stream(Jsonifyer):
         return False
         
             
-    class ThreadConnector(threading.Thread):
+    # class ThreadConnector(threading.Thread):
         
-        def __init__(self, route):
-            threading.Thread.__init__(self)
-            self.route = route
-            self.result = None
-            self.pid = None
+    #     def __init__(self, route):
+    #         threading.Thread.__init__(self)
+    #         self.route = route
+    #         self.result = None
+    #         self.pid = None
         
-        def run(self):
-            # print(threading.currentThread().ident)
-            self.pid = os.getpid() 
-            try:
-                camera = cv2.VideoCapture()
-                camera.setExceptionMode(True)
-                camera.open(self.route)
-                self.result = camera
-            except:
-                try:
-                    camera.close()
-                    try:
-                        self.result.close()
-                    except:
-                        pass
-                except:
-                    pass
+    #     def run(self):
+    #         # print(threading.currentThread().ident)
+    #         self.pid = os.getpid() 
+    #         try:
+    #             camera = cv2.VideoCapture()
+    #             camera.setExceptionMode(True)
+    #             camera.open(self.route)
+    #             self.result = camera
+    #         except:
+    #             try:
+    #                 camera.close()
+    #                 try:
+    #                     self.result.close()
+    #                 except:
+    #                     pass
+    #             except:
+    #                 pass
                 
         
-        def stop(self):
-            raise Exception('timeout')
+    #     def stop(self):
+    #         raise Exception('timeout')
             
         
 

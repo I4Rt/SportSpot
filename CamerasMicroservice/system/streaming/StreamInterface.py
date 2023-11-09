@@ -1,5 +1,4 @@
 from system.streaming.StreamBase import StreamBase
-from system.streaming.Stream import Stream
 from time import sleep
 class StreamInterface:
     '''
@@ -12,21 +11,31 @@ class StreamInterface:
     def initStream(cls, route, timeLimit = 120):
         if route.isdigit():
             route = int(route)
-        stream = StreamBase.initStream(route, timeLimit)
+        ident = StreamBase.appendToQueue(route, timeLimit)
+        if ident:
+            for i in range(100):
+                if StreamBase.checkCreated(ident):
+                    return True
+                sleep(1)
+        return False
         
-        return stream.getStream()
     
    
         
     
     @classmethod
     def getFrame(cls, route:str|int):
-        if route.isdigit():
-            route = int(route)
+        # if route.isdigit():
+        #     route = int(route)
+        print( 'getting frame', route)
         for stream in StreamBase._getStreams():
-            if not stream._checkFinished() and stream.getRoute() == route:
-                print('get frame is here')
-                return next(stream.getStream())
+            if str(stream.getRoute()) == str(route):
+                if not stream._checkFinished():
+                    print('get frame is here')
+                    return next(stream.getStream())
+                # else:                              # TODO: check if ness
+                #     stream._release()
+        
         print('not HEre')
         
         

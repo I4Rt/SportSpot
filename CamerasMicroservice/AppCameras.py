@@ -30,7 +30,7 @@ if __name__ == '__main__':
         sleep(10)
         nowTime = time()
         print('interval', nowTime - os.path.getmtime(fileName))
-        while nowTime - os.path.getmtime(fileName) < 40:                
+        while nowTime - os.path.getmtime(fileName) < 120:                
             sleep(10)
             nowTime = time()
         
