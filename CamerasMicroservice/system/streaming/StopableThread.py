@@ -1,4 +1,4 @@
-from threading import Thread, Event
+from threading import Thread, Event, currentThread
 
 
 class StopableThread(Thread):
@@ -18,6 +18,8 @@ class StopableThread(Thread):
         else:
             self._target(self._args, **self._kwargs)
     
+    def __del__(self):
+        print("deleted StopableThread object", currentThread().ident)
     
     
 

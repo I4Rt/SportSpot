@@ -11,7 +11,7 @@ from time import time, sleep
 class SideTaskProcessor(Thread, Jsonifyer):
     __trys = 3
     
-    __duration = 2
+    __duration = 5
     __interval = 5
     
     __rootTime = 1 * 60

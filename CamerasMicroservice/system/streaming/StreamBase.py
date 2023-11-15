@@ -7,162 +7,104 @@ from tools.FileUtil import *
 
 from tools.Jsonifyer import Jsonifyer
 from system.streaming.StopableThread import StopableThread
+import gc
 
 class StreamBase:
     __initialized:bool = False
-    __streams = []
+    __streams : list[Stream] = []
     __readyStreamsList = []
     __queue = []
-    __needContinue = True
+
     __thread = None
-    __index = 0
+
     
     @classmethod
     def appendToQueue(cls, route, timeLimit):
-        try:
-            
-            id = f'{threading.currentThread().ident}_{time()%10000}'
-            
-            data = {'route':route, 'timeLimit': int(timeLimit), 'id': id} #  may be float
-            cls.__queue.append(data)
-            print('got to queue', id)
-            return id
-        except:
-            return None
+        id = f'{threading.currentThread().ident}_{time()%10000}'
+        cls.__queue.append([route, timeLimit, id])
+        return id
+        
         
     @classmethod
     def checkCreated(cls, ident):
-        if ident in cls.__readyStreamsList:
-            return True
-        return False
+        return ident in cls.__readyStreamsList
     
     
     @classmethod
-    def releaseQueue(cls):
+    def releaseQueues(cls):
+        i = 0
+        while i < len(cls.__streams):
+            if cls.__streams[i].isFinished():
+                try:
+                    cls.__streams[i]._release()
+                except Exception as e:
+                    print('err0r', e)
+                del cls.__streams[i]
+            else:
+                i += 1
+        # if len(cls.__streams) > 0:
+        #     print(cls.__streams)
         try:
-            needPrint = len(cls.__queue) > 0
-            if needPrint:
-                print('queue before:', cls.__queue)
-            
             data = cls.__queue.pop(0)
-            cls.initStream(data['route'], data['timeLimit'])
-            cls.__readyStreamsList.append(data['id'])
-            cls.__readyStreamsList = cls.__readyStreamsList[-400:]
-            if needPrint:
-                print('queue after:', cls.__queue)
-            
+            res = cls.initStream(data[0], data[1], data[2])
+            if res:
+                cls.__readyStreamsList.append(res)
+                cls.__readyStreamsList = cls.__readyStreamsList[-400:]
         except IndexError:
             pass
         except Exception as e:
-            print('queue exception is', e)
-    
+            print('releasing queue error:', e)
+        finally:
+            sleep(0.2)
+            
+        
+                    
     @classmethod
     def init(cls):
-        cls.__thread = StopableThread(target=cls.releaseQueue, looped=True)
+        cls.__thread = StopableThread(target=cls.releaseQueues, looped=True)
         cls.__thread.start()
         cls.__initialized = True
-            
         
     @classmethod
-    def _getStreams(cls):
-        for stream in cls.__streams:
-            if stream._checkDelete():
-                print('p1 deleting', stream.getId())
-                cls.__streams.remove(stream)
+    def initStream(cls, route, timeLimit, initing_id=f'{time()}'):
         
-        return cls.__streams
-    
-    @classmethod
-    def _addStream(cls, stream:Stream):
-        # if cls.__initialized:
-        cls.__streams.append(stream)
-        # print('inited')
-        return True
-        
-        
-    @classmethod
-    def _removeStream(cls, stream:Stream):
-        try:
-            cls.__streams.remove(stream)
-        except Exception as e: 
-            print('can not remove by streamBase._removeStream', e)
-    
-    
-
-        
-    @classmethod
-    def initStream(cls, route, timeLimit):
-        # found = False
-        for stream in cls.__streams:                   # exist
-            if stream.getRoute() == route:             # found
-                # found = True
-                if not stream._checkFinished():        # not finished
-                    print('refreshing time on init')
-                    stream._resetTime(timeLimit)       # refresh    
-                    return stream
-                else:                                  # exist but finished
+        for i in range(len(cls.__streams)):
+            if str(cls.__streams[i].getRoute()) == str(route):
+                if not cls.__streams[i].isFinished():
                     try:
-                        stream._release()              # stopping old one
-                        # cls.__streams.remove(stream)   # remove from queue
+                        cls.__streams[i]._resetTime(timeLimit)
+                        cls.__streams[i].setNewId(initing_id)
+                        return cls.__streams[i].getId()
                     except Exception as e:
-                        print('deleting stream in interval failed', e)
-                    break
-        # if not found:
-        sleep(0.5)                                 # wait to make shure it has been stopped
-            
-        stream = Stream(route, timeLimit)              # new stream
-        stream.init()                                  # init new stream
+                        print('break on ', e)
+                        break
+    
+        cls.__streams.append(Stream(route, timeLimit, initing_id))
         
-        cls._addStream(stream)                 # add stream to queue
-        print('after init array is', cls.__streams)
-        return stream                                  # return the link to stream
-        
+        return initing_id
     
     @classmethod
     def refreshStream(cls, route, newTime):
-        for stream in cls.__streams:
-            if not stream._checkFinished() and str(stream.getRoute()) == str(route):
-                print('refreshing time on refresh') 
-                stream._resetTime(newTime)
+        for i in range(len(cls.__streams)):
+            if str(cls.__streams[i].getRoute()) == route:
+                cls.__streams[i]._resetTime(newTime)
                 return True
         return False
+                   
+    '''
+        не безопасная ссылка на объект по индексу, длина списка может измениться
+    '''
+    @classmethod
+    def getNext(cls, route):
+        try:
+            for i in range(len(cls.__streams)):
+                if not cls.__streams[i].isFinished() and str(cls.__streams[i].getRoute()) == str(route):
+                    return next(cls.__streams[i].getStream())
+            return None
+        except:
+            print('can not get frame from generator exception')
+            return None
 
-    # @classmethod
-    # def __checkStreams(cls):
-    #     while cls.__needContinue:
-    #         sleep(2)
-    #         if len(cls.__streams) > 0:
-    #             print('threads lenght is', len(cls.__streams), [s.getRoute() for s in cls.__streams])
-    #             for stream in cls.__streams:
-    #                 if stream._checkDelete():
-    #                     print('p1 deleting', stream.getId())
-    #                     # stream._release()                                   # TODO: check if ness
-    #                     try:
-    #                         cls.__streams.remove(stream)
-    #                     except:
-    #                         pass
-    #                     # routes = [s.getRoute() for s in cls.__streams]
-    #                     # stilContain = stream.getRoute() in routes
-    #                     # if stilContain:
-    #                     #     with open('StreamQueue.txt', 'a') as f:
-    #                     #         f.write(f'{datetime.now()}\nremoved: {stream.getRoute()}\nroute now is: {routes}\n\n')
-    #                     print('removing thread', stream.getRoute())
-    #                     # del stream
-                        
-    
-    # @classmethod
-    # def init(cls):
-    #     if cls.__thread:
-    #         # try:
-    #         #     cls.__initialized = False
-    #         #     cls.__needContinue = False
-    #         #     cls.__thread.join()
-    #         # except:
-    #         #     pass
-    #     cls.__needContinue = True
-    #     # cls.__thread = Thread(target=cls.__checkStreams)
-    #     # cls.__thread.start()
-    #     cls.__initialized = True
 
 
 
@@ -170,143 +112,120 @@ class StreamBase:
     
 class Stream(Jsonifyer):
     
+    
     __camRoute:str|int = 0
     _streaming:cv2.VideoCapture | None = None
     __timeLimit = 120
-    __deleteTime = 5
-    _isRan = False
-    def __init__(self, route:str, timeLimit = 120):
+    __deleteTime = 1
+    def __init__(self, route:str, timeLimit = 120, id=f'{time()}'):
         Jsonifyer.__init__(self)
         self.__timeLimit = timeLimit
         # print('initing: adding ' + str(self.__timeLimit) + 'more seconds')
         # BAD routing
+        self.__id = id
         if type(route) == str:
             if route.isdigit():
                 route = int(route)
         self.__camRoute = route
         self.__generator = None
         self.__finished = False
-        self._lastAskTime = None
+        self.__lastAskTime = None
         self._image = None
-        self._isRan = False
-        
-        self.__needStop = False
         
         self.__deleted = False
+        self.getterThread = None
+        self.init()                           # TODO: check it
         
     
     def isDeleted(self):
         return self.__deleted
     
-    def getParams(self):
-        return [self.__camRoute, self._lastAskTime, self.__finished, self._streaming]
-    
+    def isFinished(self):
+        return self.__finished    
+
+    def setNewId(self, newId):
+        self.__id = newId
+        
     def getRoute(self):
         return self.__camRoute    
     
-    def isFinished(self):
-        return self.__finished    
-    
-    def getTimeDelta(self):
-        return self.__timeLimit + self.__deleteTime - ( time() - self.__lastAskTime )
-    
-    def getLastAskTime(self):
-        return self.__lastAskTime
-    
-    
-    
+    def getId(self):
+        return self.__id
+
     
     def _connect(self):
         try:
             if self._streaming == None:
                 print('connecting', self.__camRoute)
                 # print('ppid', os.getpid())
-                try:
-                    camera = cv2.VideoCapture()
-                    camera.setExceptionMode(True)
-                    camera.open(self.__camRoute)
-                except:
-                    try:
-                        camera.release()
-                        
-                    except Exception as e:
-                        print('close in connectiong error', e)
-                    raise Exception(self.__camRoute, 'connection timeout exception')
-                
-                self._streaming = camera
-                
+                self._streaming = cv2.VideoCapture(self.__camRoute)
         except Exception as e:
-            self._streaming = None
+            try:
+                self._release()
+            except Exception as e:
+                print('bad initing exception release:', e)
             raise Exception('Can not capture the video', type(e), e)
     
     def _release(self):
-        print('releasing', self.__camRoute)
-        self.getterThread.stop()
-        sleep(0.1)
-        if self._streaming:
+        print('releasing')
+        self.finished = True
+        
+        try:
+            self.getterThread.stop()
+            sleep(1)
             try:
-                self._streaming.release()
-                StreamBase._removeStream(self)         # check it
-                print('releasing', self.__camRoute, 'done')
-                self._streaming = None
+                self.getterThread.join()
             except Exception as e:
-                print('releasing', self.__camRoute, 'error', e)
-            
-            '''
-            # try:
-            #     self.getterThread.terminate()
-            #     self.getterThread.kill()
-            #     self.getterThread.close()
-            # except Exception as e:
-            #     print('closing thread exception', e)
-            
-            # self.getterThread.stop()
-            '''
-            
-            
-    
-    def getId(self):
-        return threading.currentThread().ident
-    
+                print('r1', e)
+            sleep(0.5)
+            del self.getterThread
+            print('thread deleted')
+        except Exception as e:
+            print('release delete thread exception', e)
+        try:
+            del self._image
+            print('image deleted')
+        except Exception as e:
+            print('release delete image exception', e)
+        try:
+            self._streaming.release()
+            del self._streaming
+        except Exception as e:
+            print('releasing streaming exception', e)
+        self.__deleted = True
+        
     def init(self):
-        self._connect()
-        self.__finished = False
+        try:
+            self._connect()
+        except:
+            return False
         self.__lastAskTime = time()
-        
-        self.getterThread = StopableThread(target=self.__updateFrame, args=(), looped=True)
+        self.getterThread = StopableThread(target=self.__updateFrame, looped=True)
         self.getterThread.start()
-
-        
-        for _ in range(10):
-            sleep(0.4)
-            if self._isRan:
-                break
+        sleep(0.5)
         self.__generator = self.__getFrames()
-
+        return True
+        
+        
+    '''добавить попытку получения первых кадров'''
     def __updateFrame(self):
         # while not self._checkDelete(): #TODO: test
-            try:
-                if not self.__needStop and self._streaming:
-                    if not self._streaming.isOpened():
-                        self.__needStop = True
+        
+        try:
+            if self._streaming:
+                if not self._checkDelete():
+                    result, frame = self._streaming.read()
+                    if result:
+                        self._image = frame
+                        sleep(0.5)
                         return
-                    if not self._checkDelete():
-                        
-                        result, frame = self._streaming.read()
-                        if result:
-                            self._image = frame
-                            self._isRan = True
-                        else:
-                            self._release()
-                            self.__needStop = True
-                    else:
-                        print('releasing p1')
-                        self._release()
-                else:
-                    sleep(0.2)
-            except Exception as e:
-                self._release()
-                print('test', e)
+            # self._release()
+            sleep(0.5)
+            return
+        except Exception as e:
+            # self._release()
+            sleep(0.5)
+            print('test', e)
             
             
     def getStream(self):
@@ -329,7 +248,7 @@ class Stream(Jsonifyer):
     #TODO: bug
     def _resetTime(self, newTime):
         if newTime + time() > self.__timeLimit + self.__lastAskTime:
-            print(f'stream {threading.currentThread().ident} of', self.__camRoute, 'reseting time')
+            # print(f'stream {threading.currentThread().ident} of', self.__camRoute, 'reseting time')
             self.__timeLimit = newTime
             self.__finished = False
             self.__lastAskTime = time()
@@ -344,9 +263,13 @@ class Stream(Jsonifyer):
     def _checkDelete(self):
         if self._checkFinished():
             if self.__timeLimit + self.__deleteTime < time() - self.__lastAskTime:
-                print(f'stream {threading.currentThread().ident} of', self.__camRoute, 'rest time is', time() - self.__lastAskTime - self.__timeLimit - self.__deleteTime, self.__timeLimit + self.__deleteTime < time() - self.__lastAskTime )
-                self._release()
-                self.__deleted = True
                 return True
             return False
         return False
+    
+    def __del__(self):
+        try:
+            self._release()
+        except: 
+            pass
+        print("deleted stream object", self.getId())

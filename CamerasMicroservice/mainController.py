@@ -5,7 +5,7 @@ import json
 
 import cv2
 
-from system.streaming.Stream import Stream
+from system.streaming.StreamBase import Stream
 from system.streaming.StreamInterface import StreamInterface
 
 from datetime import datetime
@@ -26,7 +26,7 @@ def getFrame():
         return json.dumps({"frame":None, 'answer': 'Add params correctly'})
     try:
         frame = StreamInterface.getFrame(route)
-        print('type of frame is', type(frame) )
+        print('type of frame is', type(frame) )   
         imgBytes = FileUtil.convertImageToBytes(frame)
         return json.dumps({"route": route, "frame": imgBytes})
     except Exception as e:
@@ -51,7 +51,6 @@ def refreshVideo():
 @app.route('/initVideo')
 def initVideo():
     ltrh.setLastTime(datetime.now())
-    print('got fetch')
     try:
         b = time()
         route = request.args.get('route')

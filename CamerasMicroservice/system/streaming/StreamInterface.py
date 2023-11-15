@@ -1,5 +1,5 @@
-from system.streaming.StreamBase import StreamBase
-from time import sleep
+from system.streaming.PermanentStreamer import PermanentStreamer
+from time import sleep, time
 class StreamInterface:
     '''
     в случае попадания в интервал финиш - удаление, 
@@ -9,38 +9,29 @@ class StreamInterface:
     
     @classmethod
     def initStream(cls, route, timeLimit = 120):
-        if route.isdigit():
-            route = int(route)
-        ident = StreamBase.appendToQueue(route, timeLimit)
-        if ident:
-            for i in range(100):
-                if StreamBase.checkCreated(ident):
-                    return True
-                sleep(1)
+        ident = PermanentStreamer.appendToQueue(route, timeLimit)
+        
+        for i in range(900):       # 3 min
+            res = PermanentStreamer.checkCreated(ident)
+            if type(res) == bool:
+                return res
+            sleep(0.2)
         return False
         
     
    
         
-    
+    '''route будет приведен к строке'''
     @classmethod
     def getFrame(cls, route:str|int):
-        # if route.isdigit():
-        #     route = int(route)
-        print( 'getting frame', route)
-        for stream in StreamBase._getStreams():
-            if str(stream.getRoute()) == str(route):
-                if not stream._checkFinished():
-                    print('get frame is here')
-                    return next(stream.getStream())
-                # else:                              # TODO: check if ness
-                #     stream._release()
+        return PermanentStreamer.getNext(route)
+
         
-        print('not HEre')
+        
         
         
     
     @classmethod
     def refreshStream(cls, route:str, newTime: float | int):
-        return StreamBase.refreshStream(route, newTime)
+        return PermanentStreamer.refreshStream(route, newTime)
     
