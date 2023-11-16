@@ -30,9 +30,10 @@ class PermanentStreamer(Jsonifyer):
         cls.__startTime = startTime
         cls.__timeLimit = timeLimit
         cls.__stopped = False
-        
+        print('fields inited')
         cls.__thread = StopableThread(target=cls.releaseQueues, looped=True)
         cls.__thread.start()
+        print('thread started')
         
     
     
@@ -40,6 +41,8 @@ class PermanentStreamer(Jsonifyer):
     def appendToQueue(cls, route, timeLimit):
         id = f'{threading.currentThread().ident}_{time()%10000}'
         cls.__queue.append({id:route})
+        
+        print(cls.__startTime,'append', cls.__queue)
         return id
         
         
@@ -54,15 +57,21 @@ class PermanentStreamer(Jsonifyer):
     @classmethod
     def releaseQueues(cls):
         
+        if len(cls.__queue):
+            print(len(cls.__queue), cls.__queue)
         # for key in cls.__streams:
         #     if not 0 < cls.__streams[key].getTimeSinceUpdateFrom() < 10:
         #         del cls.__streams[key]
+        # print('stopped release', cls.__stopped, time() - cls.__startTime > cls.__timeLimit - 30)
         if not cls.__stopped:
             if time() - cls.__startTime > cls.__timeLimit - 30:
+                print('camera recieve stops')
                 cls.__thread.stop()
-                cls.__thread.join()
+                print('signal sent')
+                # cls.__thread.join()
+                # print('joined')
                 cls.__stopped = True
-                pass
+                return
             try:
                 if len(cls.__queue):
                     print(len(cls.__queue), cls.__queue)
@@ -82,13 +91,13 @@ class PermanentStreamer(Jsonifyer):
     # must be single executed  (from queue only)
     @classmethod
     def initStream(cls, route):
-        
+        print('init asked')
         if str(route) in list(cls.__streams.keys()):
             if 0 < cls.__streams[str(route)].getTimeSinceUpdateFrom() < 10:
                 return True
             del cls.__streams[str(route)]
 
-        stream = Stream(str(route))
+        stream = Stream(str(route), cls.__startTime, cls.__timeLimit)
         if stream.init():
             cls.__streams[route] = stream
             return True
@@ -125,7 +134,7 @@ class Stream(Jsonifyer):
     __camRoute:str|int = 0
     _streaming:cv2.VideoCapture | None = None
 
-    def __init__(self, route:str):
+    def __init__(self, route:str, startTime, timeLimit):
         Jsonifyer.__init__(self)
         # print('initing: adding ' + str(self.__timeLimit) + 'more seconds')
         # BAD routing
@@ -136,7 +145,9 @@ class Stream(Jsonifyer):
         self.__generator = None
         self.__lastTime = None
         self._image = None
-        
+        self.__startTime = startTime
+        self.__timeLimit = timeLimit
+        self._stoped = False
         self.getterThread = None
         # self.init()                           # TODO: check it
     
@@ -175,20 +186,30 @@ class Stream(Jsonifyer):
     '''добавить попытку получения первых кадров'''
     def __updateFrame(self):
         # while not self._checkDelete(): #TODO: test
-        try:
-            if self._streaming:
+        # print('update frame stop', self._stoped, time() - self.__startTime > self.__timeLimit - 30)
+        if not self._stoped:
+            if time() - self.__startTime > self.__timeLimit - 30:
+                print(f'videocapture {self.__camRoute} stream is stopping')
+                self._release()
+                print(f'videocapture {self.__camRoute} stop signal sent')
+                self._stoped = True
                 
-                result, frame = self._streaming.read()
-                if result:
-                    self.__lastTime = datetime.now()
-                    self._image = frame
-                    sleep(0.5)
-                    return
+            try:
+                if self._streaming:
+                    
+                    result, frame = self._streaming.read()
+                    if result:
+                        self.__lastTime = datetime.now()
+                        self._image = frame
+                        sleep(0.5)
+                        return
+                sleep(0.5)
+                return
+            except Exception as e:
+                sleep(0.5)
+                print('test', e)
+        else:
             sleep(0.5)
-            return
-        except Exception as e:
-            sleep(0.5)
-            print('test', e)
             
             
     def __getFrames(self):

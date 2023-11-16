@@ -4,4 +4,4 @@ try:
     command = "taskkill /IM WerFault.exe"
     os.system(command)
 except Exception as e:
-    print(e)
+    print('close.py exception:', e)

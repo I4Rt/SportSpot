@@ -18,6 +18,7 @@ from tools.LastTimeRunnerHolder import LastTimeRunnerHolder as ltrh
 @cross_origin
 @app.route('/getFrame')
 def getFrame():
+    print('getFrame Promt')
     ltrh.setLastTime(datetime.now())
     print('outside: ', ltrh.getTimeInterval())
     try:
@@ -38,6 +39,7 @@ def getFrame():
 @cross_origin
 @app.route('/refreshVideo')
 def refreshVideo():
+    print('refreshVideo Promt')
     ltrh.setLastTime(datetime.now())
     try:
         route = request.args.get('route')
@@ -50,6 +52,7 @@ def refreshVideo():
 @cross_origin
 @app.route('/initVideo')
 def initVideo():
+    print('initPromt')
     ltrh.setLastTime(datetime.now())
     try:
         b = time()

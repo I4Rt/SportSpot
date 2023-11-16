@@ -825,6 +825,7 @@ def removeTask():
 @cross_origin
 @app.route('/getVideo')
 def getVideo():
+    print('getVideo promt')
     try:
         camId = request.args.get('camId')
     except:

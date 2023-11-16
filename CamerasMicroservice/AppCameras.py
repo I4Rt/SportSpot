@@ -16,43 +16,45 @@ def mainTask(time, timeLimit):
     ltrh.setLastTime(datetime.now())
     print('App is running')
     with app.app_context():
-        PermanentStreamer.init()
+        PermanentStreamer.init(time, timeLimit)
         app.run(host='0.0.0.0', port=5002, debug=False) 
         
 FILE_NAME = 'tempFile.txt'
-TIME_LIMIT = 4 * 60 * 60 # 4 hours
+TIME_LIMIT = 1 * 60 # 4 hours
 
 if __name__ == '__main__':
-    # mainTask()
-    
-    while True:
-        runTime = time()
-        nowTime = time()
-        t1 = Process(target=mainTask, args=(runTime, TIME_LIMIT))
-        t1.start()
-        sleep(10)
+    # mainTask(time(), TIME_LIMIT)
+    runTime = time()
+    t1 = Process(target=mainTask, args=(runTime, TIME_LIMIT))
+    t1.start()
+    while time() - runTime < TIME_LIMIT - 10:
+        sleep(5)
+    t1.terminate()
+    t1.join()
+    print('terminated inside')
         
-        print('interval', nowTime - os.path.getmtime(FILE_NAME))
-        while nowTime - os.path.getmtime(FILE_NAME) < 120:                
-            sleep(10)
-            nowTime = time()
-            if nowTime - runTime > TIME_LIMIT: 
-                break
         
-        try:
-            t1.terminate()
-            print('terminated')
-            t1.join(10)
-            print('joined')
-            t1.kill()
-            print('killed')
+    #     while nowTime - os.path.getmtime(FILE_NAME) < 120:        
+    #         print('interval', nowTime - os.path.getmtime(FILE_NAME))        
+    #         sleep(10)
+    #         nowTime = time()
+    #         if nowTime - runTime > TIME_LIMIT: 
+    #             break
+        
+    #     try:
+    #         t1.terminate()
+    #         print('terminated')
+    #         t1.join(10)
+    #         print('joined')
+    #         t1.kill()
+    #         print('killed')
             
-        except Exception as e:
-            print('kill exception', e)
-        try:
-            t1.close()
-        except Exception as e:
-            print('close exception', e)
+    #     except Exception as e:
+    #         print('kill exception', e)
+    #     try:
+    #         t1.close()
+    #     except Exception as e:
+    #         print('close exception', e)
 
         
         

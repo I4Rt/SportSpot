@@ -16,7 +16,7 @@ class StreamBase:
     __queue = []
 
     __thread = None
-
+    
     
     @classmethod
     def appendToQueue(cls, route, timeLimit):
