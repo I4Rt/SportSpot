@@ -607,6 +607,7 @@ export default {
   &-sectors{
     grid-template-columns: repeat(4, 1fr);
     width: 80%;
+    justify-content: end;
     &-danger{
     grid-template-columns: repeat(5, 1fr);
     }

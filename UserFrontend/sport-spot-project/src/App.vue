@@ -55,7 +55,11 @@ export default {
     async checkRefresh(){
       console.log('checkRefresh')
       let refreshResp = await this.refreshToken()
-      if (refreshResp.refresh === true) this.authorized = true
+      try{
+        if (refreshResp.refresh === true) this.authorized = true
+      } catch (err) {
+        console.log(err)
+      }
     },
     async refreshToken(){
       let returnResult
@@ -82,8 +86,6 @@ export default {
 </script>
 
 <style>
-
-
 /* #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

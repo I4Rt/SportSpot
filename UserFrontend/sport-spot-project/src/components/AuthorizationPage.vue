@@ -74,32 +74,39 @@ import { required, minLength } from '@vuelidate/validators'
                     this.$emit('sendLogin', this.authorized)
                   }
             },
-            created() {
-              this.v$.user.$touch()
-              if (!this.v$.user.$error) {
-                console.log('post request')
-                fetch('http://localhost:5000/authorize', {
-                  method: 'POST',
-                  credentials: "include",
-                  cors: 'no-cors',
-                  headers: {
-                    'Content-Type': 'application/json;charset=utf-8',
-                  },
-                  body: JSON.stringify({'login': this.user.login, "password": this.user.password})
-                })
-                    .then(response => response.json())
-                    .then((response) => {
-                      console.log(response)
-                      if (response.login === true) {
-                        this.accessLogin = true
-                        this.checkForm()
-                      }
-                      else if (response.login === false) {
-                        alert('Неверный логин или пароль')
-                      }
-                    });
+            async created() {
+              let returnResult
+              try {
+                this.v$.user.$touch()
+                if (!this.v$.user.$error) {
+                  console.log('post request')
+                  returnResult = await fetch('http://localhost:5000/authorize', {
+                    method: 'POST',
+                    credentials: "include",
+                    cors: 'no-cors',
+                    headers: {
+                      'Content-Type': 'application/json;charset=utf-8',
+                    },
+                    body: JSON.stringify({'login': this.user.login, "password": this.user.password})
+                  })
+                      .then(response => response.json())
+                      .then((response) => {
+                        console.log(response)
+                        if (response.login === true) {
+                          this.accessLogin = true
+                          this.checkForm()
+                        }
+                        else if (response.login === false) {
+                          alert('Неверный логин или пароль')
+                        }
+                      });
+                }
+                else console.log('Валидация не прошла')
+              } catch (err) {
+                alert('Не удается подключиться к серверу')
+                console.log(err)
               }
-              else console.log('Валидация не прошла')
+              return returnResult
             }
         }
     }
