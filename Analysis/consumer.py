@@ -201,6 +201,7 @@ class Analysis(Thread):
                         else:
                             break
 
+                if len([filename for filename in os.listdir(self.path + "/detected")]) > threshold_for_delete:
                     count_deleted = 0
                     files = list(filter(os.path.isfile, glob.glob(self.path + "/detected/" + "*")))
                     files.sort(key=lambda x: os.path.getmtime(x))
