@@ -488,7 +488,13 @@ export default createStore({
         },
         getSectorsByCameraID: (state) => (id) => {
             if (state.sectors === null) return state.sectors
-            else return state.sectors.filter(sector => sector.camId === id)
+            else {
+                try {
+                    return state.sectors.filter(sector => sector.camId === id)
+                } catch (err) {
+                    console.log(err)
+                }
+            }
         },
         getSectorTypes(state) {
             return state.sectorTypes

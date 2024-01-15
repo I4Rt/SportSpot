@@ -4,6 +4,7 @@ from flask import request
 from sqlalchemy.exc import DatabaseError
 from tools.KafkaFactory import *
 
+from tools.LastTimeRunnerHolder import LastTimeRunnerHolder as ltrh
 
 from datetime import datetime
 
@@ -32,7 +33,7 @@ def testDecorator(foo):
 @testDecorator 
 @cross_origin()
 def appendDataToRoute():
-    
+    ltrh.setLastTime(datetime.now())
     query = request.json['query']
     data = request.json['data'] # data
 

@@ -96,7 +96,7 @@ export default{
       console.log('selectFunction')
       // console.log(respFunc)
       try{
-        if (respFunc.msg === 'Token has expired'){
+        if (respFunc.msg === 'Token has expired' || respFunc.msg === 'Bad token'){
           console.log('refresh')
           let refreshResp = await this.refreshToken()
           if (refreshResp.refresh === true) {

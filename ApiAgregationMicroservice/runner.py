@@ -2,20 +2,23 @@ import subprocess
 import os
 from time import time, sleep, ctime
 from datetime import datetime
+import shlex
 
 from multiprocessing import Process
 
 fileName = 'tempFile.txt'
+proc = subprocess.Popen(['python', 'AppApi.py'])
 
-proc = subprocess.Popen(['python', 'AppCameras.py'], shell=True)
+# for linux
+# proc = subprocess.Popen(shlex.split('python AppApi.py'))
 sleep(10)
 while True:
-    
+
     sleep(10)
     try:
         nowTime = time()
         print(nowTime - os.path.getmtime(fileName))
-        if nowTime - os.path.getmtime(fileName) > 40:
+        if nowTime - os.path.getmtime(fileName) > 300:
             try:
                 proc.terminate()
             except Exception as e:
@@ -26,7 +29,7 @@ while True:
             log = open('log.txt', 'a')
             log.write(f'{datetime.now()} rerunning\n')
             log.close()
-            proc = subprocess.Popen(['python', 'AppCameras.py'], shell=True)
+            proc = subprocess.Popen(['python', 'AppApi.py'], shell=True)
         sleep(10)
     except Exception as e:
         print('total exception', e)

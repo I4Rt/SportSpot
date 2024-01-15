@@ -7,10 +7,10 @@ from multiprocessing import Process
 
 fileName = 'tempFile.txt'
 
-proc = subprocess.Popen(['python', 'AppCameras.py'], shell=True)
+proc = subprocess.Popen(['python', 'AppManagement.py'], shell=True)
 sleep(10)
 while True:
-    
+
     sleep(10)
     try:
         nowTime = time()
@@ -26,7 +26,7 @@ while True:
             log = open('log.txt', 'a')
             log.write(f'{datetime.now()} rerunning\n')
             log.close()
-            proc = subprocess.Popen(['python', 'AppCameras.py'], shell=True)
+            proc = subprocess.Popen(['python', 'AppManagement.py'], shell=True)
         sleep(10)
     except Exception as e:
         print('total exception', e)

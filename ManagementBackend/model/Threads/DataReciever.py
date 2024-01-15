@@ -6,6 +6,9 @@ from system.kafka.KafkaSingleton import *
 from time import altzone, timezone, localtime
 from system.SideDataHolder import *
 
+from tools.LastTimeRunnerHolder import LastTimeRunnerHolder as ltrh
+from datetime import datetime
+
 from requests import get, ConnectTimeout
 class DataReciever(Thread):
     
@@ -29,6 +32,7 @@ class DataReciever(Thread):
                 '''
                 try:
                     print('getting data from topic ', f'SO{int(app.config["SPORT_OBJECT_ID"])}_receive')
+                    ltrh.setLastTime(datetime.now())
                     url = 'http://localhost:4998/readData'
                     
                     fetchData = get(url,params={'topic': f'SO{int(app.config["SPORT_OBJECT_ID"])}_receive'}, timeout=200)

@@ -9,6 +9,7 @@ from flask import request
 from sqlalchemy.exc import DatabaseError
 import sys
 from time import time, sleep
+from tools.LastTimeRunnerHolder import LastTimeRunnerHolder as ltrh
 from datetime import datetime
 
 
@@ -87,6 +88,7 @@ def soRegister():
 @exceptionProcessing
 @cross_origin()
 def appendData():
+    ltrh.setLastTime(datetime.now())
     global actualRoomsInfo
     data = request.json['data']
     soId = request.json['SOId']
